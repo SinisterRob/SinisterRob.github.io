@@ -4,7 +4,7 @@
     "href": "resume.html",
     "title": "Resume",
     "section": "",
-    "text": "Unable to display PDF file. Download instead."
+    "text": "Placeholder for my reusme in the future."
   },
   {
     "objectID": "professional_blog.html",
@@ -33,6 +33,13 @@
     "title": "Robert’s Github Site",
     "section": "",
     "text": "This is a Quarto website.\nTo learn more about Quarto websites visit https://quarto.org/docs/websites."
+  },
+  {
+    "objectID": "book_review.html",
+    "href": "book_review.html",
+    "title": "Book Reviews",
+    "section": "",
+    "text": "Reserving this page for when I want to do some book reviews."
   },
   {
     "objectID": "about_me.html",
