@@ -2,26 +2,14 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://SinisterRob.github.io/resume.html</loc>
-    <lastmod>2024-02-23T03:00:19.446Z</lastmod>
+    <lastmod>2024-02-23T04:29:19.110Z</lastmod>
   </url>
   <url>
-    <loc>https://SinisterRob.github.io/photography.html</loc>
-    <lastmod>2024-02-23T02:56:35.533Z</lastmod>
+    <loc>https://SinisterRob.github.io/professional_blog.html</loc>
+    <lastmod>2024-02-23T03:00:43.798Z</lastmod>
   </url>
   <url>
-    <loc>https://SinisterRob.github.io/music_review.html</loc>
-    <lastmod>2024-02-23T03:04:52.861Z</lastmod>
-  </url>
-  <url>
-    <loc>https://SinisterRob.github.io/food_review.html</loc>
-    <lastmod>2024-02-23T02:56:53.852Z</lastmod>
-  </url>
-  <url>
-    <loc>https://SinisterRob.github.io/about_me.html</loc>
-    <lastmod>2024-02-23T03:00:18.477Z</lastmod>
-  </url>
-  <url>
-    <loc>https://SinisterRob.github.io/index.html</loc>
+    <loc>https://SinisterRob.github.io/posts/2024-02-22-my-first-post/index.html</loc>
     <lastmod>2024-02-23T02:54:29.382Z</lastmod>
   </url>
   <url>
@@ -29,7 +17,31 @@
     <lastmod>2024-02-23T02:56:15.025Z</lastmod>
   </url>
   <url>
-    <loc>https://SinisterRob.github.io/professional_blog.html</loc>
-    <lastmod>2024-02-23T03:00:43.798Z</lastmod>
+    <loc>https://SinisterRob.github.io/index.html</loc>
+    <lastmod>2024-02-23T02:54:29.382Z</lastmod>
+  </url>
+  <url>
+    <loc>https://SinisterRob.github.io/about_me.html</loc>
+    <lastmod>2024-02-23T03:00:18.477Z</lastmod>
+  </url>
+  <url>
+    <loc>https://SinisterRob.github.io/food_review.html</loc>
+    <lastmod>2024-02-23T02:56:53.852Z</lastmod>
+  </url>
+  <url>
+    <loc>https://SinisterRob.github.io/music_review.html</loc>
+    <lastmod>2024-02-23T03:08:20.606Z</lastmod>
+  </url>
+  <url>
+    <loc>https://SinisterRob.github.io/photography.html</loc>
+    <lastmod>2024-02-23T02:56:35.533Z</lastmod>
+  </url>
+  <url>
+    <loc>https://SinisterRob.github.io/posts.html</loc>
+    <lastmod>2024-02-23T03:18:59.903Z</lastmod>
+  </url>
+  <url>
+    <loc>https://SinisterRob.github.io/projects.html</loc>
+    <lastmod>2024-02-23T03:08:11.462Z</lastmod>
   </url>
 </urlset>
