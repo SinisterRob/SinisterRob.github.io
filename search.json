@@ -7,18 +7,18 @@
     "text": "Reserving this page for my ongoing projects."
   },
   {
-    "objectID": "posts.html",
-    "href": "posts.html",
+    "objectID": "professional_posts/2024-02-22-my-first-post/index.html",
+    "href": "professional_posts/2024-02-22-my-first-post/index.html",
+    "title": "Robert’s Github Site",
+    "section": "",
+    "text": "This is a Quarto website.\nTo learn more about Quarto websites visit https://quarto.org/docs/websites."
+  },
+  {
+    "objectID": "personal_posts.html",
+    "href": "personal_posts.html",
     "title": "My Personal Blog",
     "section": "",
     "text": "Robert’s Github Site\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nNo matching items"
-  },
-  {
-    "objectID": "photography.html",
-    "href": "photography.html",
-    "title": "Photography",
-    "section": "",
-    "text": "Reserving this page for my photography."
   },
   {
     "objectID": "music_review.html",
@@ -56,24 +56,24 @@
     "text": "This is a Quarto website.\nTo learn more about Quarto websites visit https://quarto.org/docs/websites."
   },
   {
-    "objectID": "personal_blog.html",
-    "href": "personal_blog.html",
-    "title": "Personal Blog",
-    "section": "",
-    "text": "Reserving this page for personal blog topics."
-  },
-  {
-    "objectID": "posts/2024-02-22-my-first-post/index.html",
-    "href": "posts/2024-02-22-my-first-post/index.html",
+    "objectID": "personal_posts/2024-02-22-my-first-post/index.html",
+    "href": "personal_posts/2024-02-22-my-first-post/index.html",
     "title": "Robert’s Github Site",
     "section": "",
     "text": "This is a Quarto website.\nTo learn more about Quarto websites visit https://quarto.org/docs/websites."
   },
   {
-    "objectID": "professional_blog.html",
-    "href": "professional_blog.html",
-    "title": "Professional Blog",
+    "objectID": "photography.html",
+    "href": "photography.html",
+    "title": "Photography",
     "section": "",
-    "text": "Reserving this page for professional blog topics."
+    "text": "Reserving this page for my photography."
+  },
+  {
+    "objectID": "professional_posts.html",
+    "href": "professional_posts.html",
+    "title": "My Professional Blog",
+    "section": "",
+    "text": "Robert’s Github Site\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nNo matching items"
   }
 ]
