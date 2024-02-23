@@ -1,16 +1,23 @@
 [
   {
-    "objectID": "index.html",
-    "href": "index.html",
+    "objectID": "music_review.html",
+    "href": "music_review.html",
     "title": "Robert-GH-Site",
     "section": "",
-    "text": "This is a Quarto website.\nTo learn more about Quarto websites visit https://quarto.org/docs/websites."
+    "text": "Saving this site for when I want to start doing some music reviews."
   },
   {
     "objectID": "about.html",
     "href": "about.html",
     "title": "About",
     "section": "",
-    "text": "About this site"
+    "text": "About this site.. it’s the first I’ve made in this style! It’s tough to set up."
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Robert-GH-Site",
+    "section": "",
+    "text": "This is a Quarto website.\nTo learn more about Quarto websites visit https://quarto.org/docs/websites."
   }
 ]
