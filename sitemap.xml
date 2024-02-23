@@ -1,15 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>https://SinisterRob.github.io/resume.html</loc>
+    <lastmod>2024-02-23T02:58:24.270Z</lastmod>
+  </url>
+  <url>
+    <loc>https://SinisterRob.github.io/photography.html</loc>
+    <lastmod>2024-02-23T02:56:35.533Z</lastmod>
+  </url>
+  <url>
     <loc>https://SinisterRob.github.io/music_review.html</loc>
-    <lastmod>2024-02-23T02:53:30.473Z</lastmod>
+    <lastmod>2024-02-23T02:55:07.805Z</lastmod>
+  </url>
+  <url>
+    <loc>https://SinisterRob.github.io/food_review.html</loc>
+    <lastmod>2024-02-23T02:56:53.852Z</lastmod>
   </url>
   <url>
     <loc>https://SinisterRob.github.io/about.html</loc>
     <lastmod>2024-02-23T02:50:38.373Z</lastmod>
   </url>
   <url>
+    <loc>https://SinisterRob.github.io/about_me.html</loc>
+    <lastmod>2024-02-23T02:56:07.799Z</lastmod>
+  </url>
+  <url>
     <loc>https://SinisterRob.github.io/index.html</loc>
-    <lastmod>2024-02-23T02:53:32.662Z</lastmod>
+    <lastmod>2024-02-23T02:54:29.382Z</lastmod>
+  </url>
+  <url>
+    <loc>https://SinisterRob.github.io/personal_blog.html</loc>
+    <lastmod>2024-02-23T02:56:15.025Z</lastmod>
+  </url>
+  <url>
+    <loc>https://SinisterRob.github.io/professional_blog.html</loc>
+    <lastmod>2024-02-23T02:56:07.799Z</lastmod>
   </url>
 </urlset>

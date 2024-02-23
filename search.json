@@ -1,10 +1,31 @@
 [
   {
+    "objectID": "resume.html",
+    "href": "resume.html",
+    "title": "Resume",
+    "section": "",
+    "text": "Reserving this page for my resume."
+  },
+  {
+    "objectID": "photography.html",
+    "href": "photography.html",
+    "title": "Photography",
+    "section": "",
+    "text": "Reserving this page for my photography."
+  },
+  {
     "objectID": "music_review.html",
     "href": "music_review.html",
-    "title": "Robert-GH-Site",
+    "title": "Music Reviews",
     "section": "",
-    "text": "Saving this site for when I want to start doing some music reviews."
+    "text": "Reserving this page for when I want to start doing some music reviews."
+  },
+  {
+    "objectID": "food_review.html",
+    "href": "food_review.html",
+    "title": "Food Reviews",
+    "section": "",
+    "text": "Reserving this page for when I want to start doing some food reviews."
   },
   {
     "objectID": "about.html",
@@ -14,10 +35,31 @@
     "text": "About this site.. it’s the first I’ve made in this style! It’s tough to set up."
   },
   {
+    "objectID": "about_me.html",
+    "href": "about_me.html",
+    "title": "Professional Blog",
+    "section": "",
+    "text": "Reserving this page for professional blog topics."
+  },
+  {
     "objectID": "index.html",
     "href": "index.html",
-    "title": "Robert-GH-Site",
+    "title": "Robert’s Github Site",
     "section": "",
     "text": "This is a Quarto website.\nTo learn more about Quarto websites visit https://quarto.org/docs/websites."
+  },
+  {
+    "objectID": "personal_blog.html",
+    "href": "personal_blog.html",
+    "title": "Personal Blog",
+    "section": "",
+    "text": "Reserving this page for personal blog topics."
+  },
+  {
+    "objectID": "professional_blog.html",
+    "href": "professional_blog.html",
+    "title": "Professional Blog",
+    "section": "",
+    "text": "Reserving this page for professional blog topics."
   }
 ]
