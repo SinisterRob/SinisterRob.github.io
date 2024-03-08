@@ -14,11 +14,11 @@
     "text": "This is a Quarto website.\nTo learn more about Quarto websites visit https://quarto.org/docs/websites."
   },
   {
-    "objectID": "personal_posts.html",
-    "href": "personal_posts.html",
-    "title": "My Personal Blog",
+    "objectID": "personal_posts/2024-02-22-my-first-post/index.html",
+    "href": "personal_posts/2024-02-22-my-first-post/index.html",
+    "title": "Robert’s Github Site",
     "section": "",
-    "text": "Robert’s Github Site\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nNo matching items"
+    "text": "This is a Quarto website.\nTo learn more about Quarto websites visit https://quarto.org/docs/websites."
   },
   {
     "objectID": "music_review.html",
@@ -37,23 +37,16 @@
   {
     "objectID": "about_me.html",
     "href": "about_me.html",
-    "title": "Robert Jurgens",
+    "title": "About",
     "section": "",
-    "text": "University of Texas at Austin | Austin, TX\nB.S. in Mathematics | 2014 - 2018"
+    "text": "I’m Robert, an actuarial consultant living in Chicago. I like photography, eating and reviewing good food, travelling, biking, chess, and chilling with my cats. I’m planning on using this blog to write about those things and more, so stay tuned!"
   },
   {
-    "objectID": "about_me.html#education",
-    "href": "about_me.html#education",
-    "title": "Robert Jurgens",
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About",
     "section": "",
-    "text": "University of Texas at Austin | Austin, TX\nB.S. in Mathematics | 2014 - 2018"
-  },
-  {
-    "objectID": "about_me.html#experience",
-    "href": "about_me.html#experience",
-    "title": "Robert Jurgens",
-    "section": "Experience",
-    "text": "Experience\nEdgewater Actuarial Insights | Actuarial Consultant | June 2023 - present\nOliver Wyman Actuarial Consulting | Manager | July 2022 - July 2023\nTokio Marine HCC | Actuarial Supervisor | May 2018 - June 2022"
+    "text": "This site was made using a Quarto website and published for free using Github Pages."
   },
   {
     "objectID": "book_review.html",
@@ -70,18 +63,25 @@
     "text": "This is a Quarto website.\nTo learn more about Quarto websites visit https://quarto.org/docs/websites."
   },
   {
-    "objectID": "personal_posts/2024-02-22-my-first-post/index.html",
-    "href": "personal_posts/2024-02-22-my-first-post/index.html",
-    "title": "Robert’s Github Site",
+    "objectID": "personal_blog.html",
+    "href": "personal_blog.html",
+    "title": "Personal Blog",
     "section": "",
-    "text": "This is a Quarto website.\nTo learn more about Quarto websites visit https://quarto.org/docs/websites."
+    "text": "Reserving this page for personal blog topics."
   },
   {
-    "objectID": "photography.html",
-    "href": "photography.html",
-    "title": "Photography",
+    "objectID": "personal_posts.html",
+    "href": "personal_posts.html",
+    "title": "My Personal Blog",
     "section": "",
-    "text": "Reserving this page for my photography."
+    "text": "Robert’s Github Site\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nNo matching items"
+  },
+  {
+    "objectID": "professional_blog.html",
+    "href": "professional_blog.html",
+    "title": "Professional Blog",
+    "section": "",
+    "text": "Reserving this page for professional blog topics."
   },
   {
     "objectID": "professional_posts.html",
