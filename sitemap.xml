@@ -1,16 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://sinisterrob.github.io/projects.html</loc>
-    <lastmod>2024-02-23T04:39:42.794Z</lastmod>
+    <loc>https://sinisterrob.github.io/professional_blog.html</loc>
+    <lastmod>2024-03-08T06:23:13.260Z</lastmod>
   </url>
   <url>
-    <loc>https://sinisterrob.github.io/music_review.html</loc>
-    <lastmod>2024-02-23T04:55:44.296Z</lastmod>
+    <loc>https://sinisterrob.github.io/photography.html</loc>
+    <lastmod>2024-03-08T06:28:37.352Z</lastmod>
   </url>
   <url>
-    <loc>https://sinisterrob.github.io/food_review.html</loc>
-    <lastmod>2024-03-08T05:35:00.697Z</lastmod>
+    <loc>https://sinisterrob.github.io/index.html</loc>
+    <lastmod>2024-03-08T05:44:51.011Z</lastmod>
+  </url>
+  <url>
+    <loc>https://sinisterrob.github.io/food_review/2024-03-07-galit/2024-03-07-galit.html</loc>
+    <lastmod>2024-03-08T06:06:17.058Z</lastmod>
   </url>
   <url>
     <loc>https://sinisterrob.github.io/book_review.html</loc>
@@ -25,15 +29,19 @@
     <lastmod>2024-03-08T05:52:01.747Z</lastmod>
   </url>
   <url>
-    <loc>https://sinisterrob.github.io/food_review/2024-03-07-galit/2024-03-07-galit.html</loc>
-    <lastmod>2024-03-08T06:06:17.058Z</lastmod>
+    <loc>https://sinisterrob.github.io/chess_analysis.html</loc>
+    <lastmod>2024-03-08T06:40:56.317Z</lastmod>
   </url>
   <url>
-    <loc>https://sinisterrob.github.io/index.html</loc>
-    <lastmod>2024-03-08T05:44:51.011Z</lastmod>
+    <loc>https://sinisterrob.github.io/food_review.html</loc>
+    <lastmod>2024-03-08T05:35:00.697Z</lastmod>
   </url>
   <url>
-    <loc>https://sinisterrob.github.io/photography.html</loc>
-    <lastmod>2024-03-08T05:34:12.269Z</lastmod>
+    <loc>https://sinisterrob.github.io/music_review.html</loc>
+    <lastmod>2024-02-23T04:55:44.296Z</lastmod>
+  </url>
+  <url>
+    <loc>https://sinisterrob.github.io/personal_blog.html</loc>
+    <lastmod>2024-03-08T06:22:13.936Z</lastmod>
   </url>
 </urlset>

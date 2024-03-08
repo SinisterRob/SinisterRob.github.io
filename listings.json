@@ -1,8 +1,16 @@
 [
   {
+    "listing": "/professional_blog.html",
+    "items": []
+  },
+  {
     "listing": "/food_review.html",
     "items": [
       "/food_review/2024-03-07-galit/2024-03-07-galit.html"
     ]
+  },
+  {
+    "listing": "/personal_blog.html",
+    "items": []
   }
 ]

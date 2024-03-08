@@ -1,45 +1,24 @@
 [
   {
-    "objectID": "projects.html",
-    "href": "projects.html",
-    "title": "Projects",
+    "objectID": "professional_blog.html",
+    "href": "professional_blog.html",
+    "title": "Professional Blog",
     "section": "",
-    "text": "Reserving this page for my ongoing projects."
+    "text": "On this page I will talk about random professional topics that are interesting to me.\n\n\n\n\n\n\n\n\n\nNo matching items"
   },
   {
-    "objectID": "music_review.html",
-    "href": "music_review.html",
-    "title": "Music Reviews",
+    "objectID": "photography.html",
+    "href": "photography.html",
+    "title": "Photography",
     "section": "",
-    "text": "Reserving this page for when I want to do some music reviews."
+    "text": "Two Weeks in Vietnam\nKedzie Wells L Train S Curve\nFlowers of Đà Lạt\n\n\n\n\n\n\n\n\n\n\nQuincy\n\n\n\n\n\n\n\nEnyo\n\n\n\n\n\n\n\n\nQuincy\nEnyo"
   },
   {
-    "objectID": "food_review.html",
-    "href": "food_review.html",
-    "title": "Food Reviews",
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Robert’s Github Site",
     "section": "",
-    "text": "On this page I will review restaurants and talk about the wide variety of food that is available in Chicago (and occasionally other cities!)\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nGalit (⭐)\n\n\nI ventured out to the Michelin Star restaurant named Galit in Lincoln Park to give chef Zach Engel’s take on Middle-Eastern cuisine a try.\n\n\n\n\n\n\nMar 7, 2024\n\n\n\n\n\n\n\n\nNo matching items"
-  },
-  {
-    "objectID": "book_review.html",
-    "href": "book_review.html",
-    "title": "Book Reviews",
-    "section": "",
-    "text": "Reserving this page for when I want to do some book reviews."
-  },
-  {
-    "objectID": "about.html",
-    "href": "about.html",
-    "title": "About",
-    "section": "",
-    "text": "This site was made using a Quarto website and published for free using Github Pages."
-  },
-  {
-    "objectID": "about_me.html",
-    "href": "about_me.html",
-    "title": "About Me",
-    "section": "",
-    "text": "I’m Robert, an actuarial consultant living in Chicago. I like photography, eating and reviewing good food, travelling, biking, chess, predictive modelling and data visualization, watching Texas Longhorns football, and chilling with my cats. I’m planning on using this blog to write about those things and more, so stay tuned!"
+    "text": "This is a Quarto website hosted for free on a GitHub Page.\nTo learn more about Quarto websites visit https://quarto.org/docs/websites."
   },
   {
     "objectID": "food_review/2024-03-07-galit/2024-03-07-galit.html",
@@ -84,17 +63,52 @@
     "text": "Overall score: 4.6 out of 5.0 stars\nWould definitely go back here if I ever have the opportunity!"
   },
   {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "Robert’s Github Site",
+    "objectID": "book_review.html",
+    "href": "book_review.html",
+    "title": "Book Reviews",
     "section": "",
-    "text": "This is a Quarto website hosted for free on a GitHub Page.\nTo learn more about Quarto websites visit https://quarto.org/docs/websites."
+    "text": "Reserving this page for when I want to do some book reviews."
   },
   {
-    "objectID": "photography.html",
-    "href": "photography.html",
-    "title": "Photography",
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About",
     "section": "",
-    "text": "Two Weeks in Vietnam - October 2023\nKedzie Wells L Train S Curve\nFlowers of Đà Lạt\n\n\n\n\n\n\n\n\n\n\nQuincy\n\n\n\n\n\n\n\nEnyo\n\n\n\n\n\n\n\n\nQuincy\nEnyo"
+    "text": "This site was made using a Quarto website and published for free using Github Pages."
+  },
+  {
+    "objectID": "about_me.html",
+    "href": "about_me.html",
+    "title": "About Me",
+    "section": "",
+    "text": "I’m Robert, an actuarial consultant living in Chicago. I like photography, eating and reviewing good food, travelling, biking, chess, predictive modelling and data visualization, watching Texas Longhorns football, and chilling with my cats. I’m planning on using this blog to write about those things and more, so stay tuned!"
+  },
+  {
+    "objectID": "chess_analysis.html",
+    "href": "chess_analysis.html",
+    "title": "Chess Analysis",
+    "section": "",
+    "text": "Reserving this page for when I want to do some analysis of my own chess games. One of my goals for 2024 is to try to get an official chess rating."
+  },
+  {
+    "objectID": "food_review.html",
+    "href": "food_review.html",
+    "title": "Food Reviews",
+    "section": "",
+    "text": "On this page I will review restaurants and talk about the wide variety of food that is available in Chicago (and occasionally other cities!)\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nGalit (⭐)\n\n\nI ventured out to the Michelin Star restaurant named Galit in Lincoln Park to give chef Zach Engel’s take on Middle-Eastern cuisine a try.\n\n\n\n\n\n\nMar 7, 2024\n\n\n\n\n\n\n\n\nNo matching items"
+  },
+  {
+    "objectID": "music_review.html",
+    "href": "music_review.html",
+    "title": "Music Reviews",
+    "section": "",
+    "text": "Reserving this page for when I want to do some music reviews."
+  },
+  {
+    "objectID": "personal_blog.html",
+    "href": "personal_blog.html",
+    "title": "Personal Blog",
+    "section": "",
+    "text": "On this page I will talk about random personal topics that are interesting to me.\n\n\n\n\n\n\n\n\n\nNo matching items"
   }
 ]
