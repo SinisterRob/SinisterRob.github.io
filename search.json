@@ -7,20 +7,6 @@
     "text": "Reserving this page for my ongoing projects."
   },
   {
-    "objectID": "professional_posts/2024-02-22-my-first-post/index.html",
-    "href": "professional_posts/2024-02-22-my-first-post/index.html",
-    "title": "Robert’s Github Site",
-    "section": "",
-    "text": "This is a Quarto website.\nTo learn more about Quarto websites visit https://quarto.org/docs/websites."
-  },
-  {
-    "objectID": "personal_posts/2024-02-22-my-first-post/index.html",
-    "href": "personal_posts/2024-02-22-my-first-post/index.html",
-    "title": "Robert’s Github Site",
-    "section": "",
-    "text": "This is a Quarto website.\nTo learn more about Quarto websites visit https://quarto.org/docs/websites."
-  },
-  {
     "objectID": "music_review.html",
     "href": "music_review.html",
     "title": "Music Reviews",
@@ -32,21 +18,7 @@
     "href": "food_review.html",
     "title": "Food Reviews",
     "section": "",
-    "text": "Reserving this page for when I want to start doing some food reviews."
-  },
-  {
-    "objectID": "about_me.html",
-    "href": "about_me.html",
-    "title": "About",
-    "section": "",
-    "text": "I’m Robert, an actuarial consultant living in Chicago. I like photography, eating and reviewing good food, travelling, biking, chess, and chilling with my cats. I’m planning on using this blog to write about those things and more, so stay tuned!"
-  },
-  {
-    "objectID": "about.html",
-    "href": "about.html",
-    "title": "About",
-    "section": "",
-    "text": "This site was made using a Quarto website and published for free using Github Pages."
+    "text": "On this page I will review restaurants and talk about the variety of food that is available in Chicago!\n\n\n\n\n\n\n\n\n\n\n\n\nGalit ⭐\n\n\nI ventured out to the Michelin Star restaurant named Galit in Lincoln Park to give chef Zach Engel’s take on Middle-Eastern cuisine a try.\n\n\n\n\n\n\nMar 7, 2024\n\n\n\n\n\n\n\n\nNo matching items"
   },
   {
     "objectID": "book_review.html",
@@ -56,6 +28,27 @@
     "text": "Reserving this page for when I want to do some book reviews."
   },
   {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About",
+    "section": "",
+    "text": "This site was made using a Quarto website and published for free using Github Pages."
+  },
+  {
+    "objectID": "about_me.html",
+    "href": "about_me.html",
+    "title": "About",
+    "section": "",
+    "text": "I’m Robert, an actuarial consultant living in Chicago. I like photography, eating and reviewing good food, travelling, biking, chess, and chilling with my cats. I’m planning on using this blog to write about those things and more, so stay tuned!"
+  },
+  {
+    "objectID": "food_review/2024-03-07-galit/2024-03-07-galit.html",
+    "href": "food_review/2024-03-07-galit/2024-03-07-galit.html",
+    "title": "Galit ⭐",
+    "section": "",
+    "text": "Heading 1\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Nam suscipit est nec dui eleifend, at dictum elit ullamcorper. Aliquam feugiat dictum bibendum. Praesent fermentum laoreet quam, cursus volutpat odio dapibus in. Fusce luctus porttitor vehicula. Donec ac tortor nisi. Donec at lectus tortor. Morbi tempor, nibh non euismod viverra, metus arcu aliquet elit, sed fringilla urna leo vel purus."
+  },
+  {
     "objectID": "index.html",
     "href": "index.html",
     "title": "Robert’s Github Site",
@@ -63,31 +56,10 @@
     "text": "This is a Quarto website.\nTo learn more about Quarto websites visit https://quarto.org/docs/websites."
   },
   {
-    "objectID": "personal_blog.html",
-    "href": "personal_blog.html",
-    "title": "Personal Blog",
+    "objectID": "photography.html",
+    "href": "photography.html",
+    "title": "Photography",
     "section": "",
-    "text": "Reserving this page for personal blog topics."
-  },
-  {
-    "objectID": "personal_posts.html",
-    "href": "personal_posts.html",
-    "title": "My Personal Blog",
-    "section": "",
-    "text": "Robert’s Github Site\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nNo matching items"
-  },
-  {
-    "objectID": "professional_blog.html",
-    "href": "professional_blog.html",
-    "title": "Professional Blog",
-    "section": "",
-    "text": "Reserving this page for professional blog topics."
-  },
-  {
-    "objectID": "professional_posts.html",
-    "href": "professional_posts.html",
-    "title": "My Professional Blog",
-    "section": "",
-    "text": "Robert’s Github Site\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nNo matching items"
+    "text": "Two Weeks in Vietnam - October 2023\nKedzie Wells L Train S Curve\nFlowers of Đà Lạt\n\n\n\n\n\n\n\n\n\n\nQuincy\n\n\n\n\n\n\n\nEnyo\n\n\n\n\n\n\n\n\nQuincy\nEnyo"
   }
 ]

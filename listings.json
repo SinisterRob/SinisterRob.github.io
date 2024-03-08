@@ -1,14 +1,8 @@
 [
   {
-    "listing": "/personal_posts.html",
+    "listing": "/food_review.html",
     "items": [
-      "/personal_posts/2024-02-22-my-first-post/index.html"
-    ]
-  },
-  {
-    "listing": "/professional_posts.html",
-    "items": [
-      "/professional_posts/2024-02-22-my-first-post/index.html"
+      "/food_review/2024-03-07-galit/2024-03-07-galit.html"
     ]
   }
 ]
