@@ -81,9 +81,6 @@ ul.task-list li input[type="checkbox"] {
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
-    <a href="./index.html" class="navbar-brand navbar-brand-logo">
-    <img src="./img/bites_brews_paws.png" alt="" class="navbar-logo">
-    </a>
     <a class="navbar-brand" href="./index.html">
     <span class="navbar-title">bites | brews | paws</span>
     </a>
@@ -177,7 +174,7 @@ ul.task-list li input[type="checkbox"] {
 <div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><a href="data/quincy.jpg" class="lightbox" data-glightbox="description: .lightbox-desc-1" data-gallery="quarto-lightbox-gallery-1" title="Quincy"><img src="data/quincy.jpg" class="img-fluid figure-img" alt="Quincy"></a></p>
+<p><a href="data/quincy.jpg" class="lightbox" data-glightbox="description: .lightbox-desc-1" data-gallery="quarto-lightbox-gallery-1" title="Quincy"><img src="data/quincy.jpg" class="img-fluid quarto-figure quarto-figure-center figure-img" alt="Quincy"></a></p>
 <figcaption>Quincy</figcaption>
 </figure>
 </div>
@@ -185,7 +182,7 @@ ul.task-list li input[type="checkbox"] {
 <div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><a href="data/enyo.jpg" class="lightbox" data-glightbox="description: .lightbox-desc-2" data-gallery="quarto-lightbox-gallery-2" title="Enyo"><img src="data/enyo.jpg" class="img-fluid figure-img" alt="Enyo"></a></p>
+<p><a href="data/enyo.jpg" class="lightbox" data-glightbox="description: .lightbox-desc-2" data-gallery="quarto-lightbox-gallery-2" title="Enyo"><img src="data/enyo.jpg" class="img-fluid quarto-figure quarto-figure-center figure-img" alt="Enyo"></a></p>
 <figcaption>Enyo</figcaption>
 </figure>
 </div>
@@ -588,7 +585,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 });
 </script>
 </div> <!-- /content -->
-<script>var lightboxQuarto = GLightbox({"closeEffect":"fade","descPosition":"bottom","selector":".lightbox","loop":false,"openEffect":"fade"});
+<script>var lightboxQuarto = GLightbox({"descPosition":"bottom","selector":".lightbox","openEffect":"fade","loop":false,"closeEffect":"fade"});
 window.onload = () => {
   lightboxQuarto.on('slide_before_load', (data) => {
     const { slideIndex, slideNode, slideConfig, player, trigger } = data;

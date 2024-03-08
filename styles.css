@@ -2,3 +2,7 @@
 body {
   font-family: 'Iosevka', monospace;
 }
+
+figcaption {
+  text-align: center;
+}
