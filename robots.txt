@@ -1,1 +1,1 @@
-Sitemap: https://SinisterRob.github.io/sitemap.xml
+Sitemap: sinisterrob.github.io/sitemap.xml
