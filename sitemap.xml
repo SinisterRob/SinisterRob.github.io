@@ -2,11 +2,11 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://sinisterrob.github.io/professional_blog.html</loc>
-    <lastmod>2024-03-08T06:23:13.260Z</lastmod>
+    <lastmod>2024-03-09T03:09:04.235Z</lastmod>
   </url>
   <url>
     <loc>https://sinisterrob.github.io/photography.html</loc>
-    <lastmod>2024-03-08T06:28:37.352Z</lastmod>
+    <lastmod>2024-03-09T03:00:28.037Z</lastmod>
   </url>
   <url>
     <loc>https://sinisterrob.github.io/index.html</loc>
@@ -18,15 +18,15 @@
   </url>
   <url>
     <loc>https://sinisterrob.github.io/book_review.html</loc>
-    <lastmod>2024-03-09T00:20:12.670Z</lastmod>
-  </url>
-  <url>
-    <loc>https://sinisterrob.github.io/about.html</loc>
-    <lastmod>2024-03-03T16:42:13.916Z</lastmod>
+    <lastmod>2024-03-09T02:59:10.220Z</lastmod>
   </url>
   <url>
     <loc>https://sinisterrob.github.io/about_me.html</loc>
     <lastmod>2024-03-09T00:16:23.958Z</lastmod>
+  </url>
+  <url>
+    <loc>https://sinisterrob.github.io/about.html</loc>
+    <lastmod>2024-03-03T16:42:13.916Z</lastmod>
   </url>
   <url>
     <loc>https://sinisterrob.github.io/chess_analysis.html</loc>
@@ -43,5 +43,9 @@
   <url>
     <loc>https://sinisterrob.github.io/personal_blog.html</loc>
     <lastmod>2024-03-09T00:20:33.772Z</lastmod>
+  </url>
+  <url>
+    <loc>https://sinisterrob.github.io/professional_blog/2024-03-08-spaceship-titanic-part-1/2024-03-08-spaceship-titanic-part-1.html</loc>
+    <lastmod>2024-03-09T03:24:47.290Z</lastmod>
   </url>
 </urlset>

@@ -1,22 +1,13 @@
 [
   {
     "listing": "/professional_blog.html",
-    "items": []
+    "items": [
+      "/professional_blog/2024-03-08-spaceship-titanic-part-1/2024-03-08-spaceship-titanic-part-1.html"
+    ]
   },
   {
     "listing": "/book_review.html",
-    "items": [
-      "/about.html",
-      "/about_me.html",
-      "/chess_analysis.html",
-      "/food_review.html",
-      "/food_review/2024-03-07-galit/2024-03-07-galit.html",
-      "/music_review.html",
-      "/personal_blog.html",
-      "/photography.html",
-      "/professional_blog.html",
-      "/index.html"
-    ]
+    "items": []
   },
   {
     "listing": "/food_review.html",

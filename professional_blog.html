@@ -79,9 +79,9 @@ ul.task-list li input[type="checkbox"] {
     }
 
     const options = {
-      valueNames: [{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
+      valueNames: ['listing-title','listing-author','listing-image','listing-description',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
       
-      searchColumns: [],
+      searchColumns: ["listing-title","listing-author","listing-image","listing-description"],
     };
 
     window['quarto-listings'] = window['quarto-listings'] || {};
@@ -252,9 +252,30 @@ window.Quarto = {
 
 
 
-<div class="quarto-listing quarto-listing-container-grid" id="listing-listing">
-<div class="list grid quarto-listing-cols-3">
-
+<div class="quarto-listing quarto-listing-container-default" id="listing-listing">
+<div class="list quarto-listing-default">
+<div class="quarto-post image-right" data-index="0" data-listing-file-modified-sort="1709954687290" data-listing-reading-time-sort="4" data-listing-word-count-sort="794">
+<div class="thumbnail">
+<p><a href="./professional_blog/2024-03-08-spaceship-titanic-part-1/2024-03-08-spaceship-titanic-part-1.html" class="no-external"></a></p><a href="./professional_blog/2024-03-08-spaceship-titanic-part-1/2024-03-08-spaceship-titanic-part-1.html" class="no-external">
+<p><img src="./../../img/titanic.png" class="thumbnail-image"></p>
+</a><p><a href="./professional_blog/2024-03-08-spaceship-titanic-part-1/2024-03-08-spaceship-titanic-part-1.html" class="no-external"></a></p>
+</div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./professional_blog/2024-03-08-spaceship-titanic-part-1/2024-03-08-spaceship-titanic-part-1.html" class="no-external">Spaceship Titanic - Introduction to Bayesian Models - Part 1</a>
+</h3>
+<div class="listing-subtitle">
+<a href="./professional_blog/2024-03-08-spaceship-titanic-part-1/2024-03-08-spaceship-titanic-part-1.html" class="no-external"></a>
+</div>
+<div class="listing-description">
+<a href="./professional_blog/2024-03-08-spaceship-titanic-part-1/2024-03-08-spaceship-titanic-part-1.html" class="no-external">Predict which passengers are transported to an alternate dimension.</a>
+</div>
+</div>
+<div class="metadata">
+<p><a href="./professional_blog/2024-03-08-spaceship-titanic-part-1/2024-03-08-spaceship-titanic-part-1.html" class="no-external"></a></p><a href="./professional_blog/2024-03-08-spaceship-titanic-part-1/2024-03-08-spaceship-titanic-part-1.html" class="no-external">
+</a>
+</div>
+</div>
 </div>
 <div class="listing-no-matching d-none">
 No matching items
