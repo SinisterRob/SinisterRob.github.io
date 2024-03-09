@@ -4,6 +4,21 @@
     "items": []
   },
   {
+    "listing": "/book_review.html",
+    "items": [
+      "/about.html",
+      "/about_me.html",
+      "/chess_analysis.html",
+      "/food_review.html",
+      "/food_review/2024-03-07-galit/2024-03-07-galit.html",
+      "/music_review.html",
+      "/personal_blog.html",
+      "/photography.html",
+      "/professional_blog.html",
+      "/index.html"
+    ]
+  },
+  {
     "listing": "/food_review.html",
     "items": [
       "/food_review/2024-03-07-galit/2024-03-07-galit.html"
