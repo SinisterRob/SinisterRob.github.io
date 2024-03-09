@@ -6,7 +6,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="description" content="👽 Predict which passengers are transported to an alternate dimension. 👽">
+<meta name="description" content="Predict which passengers are transported to an alternate dimension.">
 
 <title>bites | brews | paws - Spaceship Titanic - Introduction to Bayesian Models - Part 1</title>
 <style>
@@ -111,6 +111,8 @@ function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
 gtag('config', 'G-TLJMCG2VMV', { 'anonymize_ip': true});
 </script>
+<link href="../../site_libs/tabwid-1.1.3/tabwid.css" rel="stylesheet">
+<script src="../../site_libs/tabwid-1.1.3/tabwid.js"></script>
 
   <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
@@ -144,12 +146,12 @@ window.Quarto = {
 
 <link rel="stylesheet" href="../../styles.css">
 <meta property="og:title" content="bites | brews | paws - Spaceship Titanic - Introduction to Bayesian Models - Part 1">
-<meta property="og:description" content="👽 Predict which passengers are transported to an alternate dimension. 👽">
+<meta property="og:description" content="Predict which passengers are transported to an alternate dimension.">
 <meta property="og:image" content="https://sinisterrob.github.io/../../img/titanic.png">
 <meta property="og:site_name" content="bites | brews | paws">
 <meta property="og:locale" content="es_ES">
 <meta name="twitter:title" content="bites | brews | paws - Spaceship Titanic - Introduction to Bayesian Models - Part 1">
-<meta name="twitter:description" content="👽 Predict which passengers are transported to an alternate dimension. 👽">
+<meta name="twitter:description" content="Predict which passengers are transported to an alternate dimension.">
 <meta name="twitter:image" content="https://sinisterrob.github.io/../../img/titanic.png">
 <meta name="twitter:card" content="summary_large_image">
 </head>
@@ -237,7 +239,8 @@ window.Quarto = {
   <li><a href="#part-1-data-intake-and-exploration" id="toc-part-1-data-intake-and-exploration" class="nav-link" data-scroll-target="#part-1-data-intake-and-exploration">Part 1: Data Intake and Exploration</a>
   <ul class="collapse">
   <li><a href="#load-the-data" id="toc-load-the-data" class="nav-link" data-scroll-target="#load-the-data">Load the Data</a></li>
-  <li><a href="#data-exploration-modeling-approach" id="toc-data-exploration-modeling-approach" class="nav-link" data-scroll-target="#data-exploration-modeling-approach">Data Exploration &amp; Modeling Approach</a></li>
+  <li><a href="#modeling-approach" id="toc-modeling-approach" class="nav-link" data-scroll-target="#modeling-approach">Modeling Approach</a></li>
+  <li><a href="#exploring-vip-status-age-and-home-planet-variables" id="toc-exploring-vip-status-age-and-home-planet-variables" class="nav-link" data-scroll-target="#exploring-vip-status-age-and-home-planet-variables">Exploring VIP Status, Age, and Home Planet variables</a></li>
   <li><a href="#part-2-preview-building-the-model" id="toc-part-2-preview-building-the-model" class="nav-link" data-scroll-target="#part-2-preview-building-the-model">Part 2 Preview: Building the Model</a></li>
   </ul></li>
   </ul>
@@ -253,7 +256,7 @@ window.Quarto = {
 
 <div>
   <div class="description">
-    👽 Predict which passengers are transported to an alternate dimension. 👽
+    Predict which passengers are transported to an alternate dimension.
   </div>
 </div>
 
@@ -270,6 +273,15 @@ window.Quarto = {
 </header>
 
 
+<div class="cell">
+<style type="text/css">
+table {
+  width: 50%;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+</div>
 <div style="text-align: center;">
 <p><img src="./../../img/titanic.png" class="img-fluid" width="300"></p>
 </div>
@@ -285,163 +297,41 @@ window.Quarto = {
 <h2 class="anchored" data-anchor-id="load-the-data">Load the Data</h2>
 <p>The first steps in any data analysis done in R will be loading the libraries you want to use and reading in the data to a data.frame or a data.table object. I load the <a href="https://mc-stan.org/rstan/">rstan package</a> because I will be writing the main part of the model in Stan, and set the options to use all of the cores on my computer and not recompile the model every time I run it (Stan models have to be compiled and that can be a slow process to repeat.)</p>
 <div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rstan)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(data.table)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(kableExtra)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(knitr)</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(plotly)</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mgcv)</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">mc.cores =</span> parallel<span class="sc">::</span><span class="fu">detectCores</span>())</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="fu">rstan_options</span>(<span class="at">auto_write =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>sst_data <span class="ot">&lt;-</span> data.table<span class="sc">::</span><span class="fu">fread</span>(<span class="st">"../../data/train.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(knitr)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(plotly)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mgcv)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(showtext)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(flextable)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">mc.cores =</span> parallel<span class="sc">::</span><span class="fu">detectCores</span>())</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="fu">rstan_options</span>(<span class="at">auto_write =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="fu">showtext_auto</span>()</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>sst_data <span class="ot">&lt;-</span> data.table<span class="sc">::</span><span class="fu">fread</span>(<span class="st">"../../data/train.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 </div>
 <p>For reference, I will show the first few rows of the data set. For the sake of keeping the post shorter, you can refer to the <a href="https://www.kaggle.com/competitions/spaceship-titanic">Kaggle link</a> for the definitions of each of the data fields.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(<span class="fu">head</span>(sst_data))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(sst_data) <span class="sc">%&gt;%</span> </span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">flextable</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bold</span>(<span class="at">part =</span> <span class="st">"header"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">align</span>(<span class="at">align =</span> <span class="st">"center"</span>, <span class="at">part =</span> <span class="st">"all"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 <div class="cell-output-display">
-<table class="table table-sm table-striped small">
-<colgroup>
-<col style="width: 8%">
-<col style="width: 7%">
-<col style="width: 7%">
-<col style="width: 4%">
-<col style="width: 10%">
-<col style="width: 2%">
-<col style="width: 4%">
-<col style="width: 8%">
-<col style="width: 7%">
-<col style="width: 9%">
-<col style="width: 3%">
-<col style="width: 5%">
-<col style="width: 12%">
-<col style="width: 8%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: left;">PassengerId</th>
-<th style="text-align: left;">HomePlanet</th>
-<th style="text-align: left;">CryoSleep</th>
-<th style="text-align: left;">Cabin</th>
-<th style="text-align: left;">Destination</th>
-<th style="text-align: right;">Age</th>
-<th style="text-align: left;">VIP</th>
-<th style="text-align: right;">RoomService</th>
-<th style="text-align: right;">FoodCourt</th>
-<th style="text-align: right;">ShoppingMall</th>
-<th style="text-align: right;">Spa</th>
-<th style="text-align: right;">VRDeck</th>
-<th style="text-align: left;">Name</th>
-<th style="text-align: left;">Transported</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">0001_01</td>
-<td style="text-align: left;">Europa</td>
-<td style="text-align: left;">FALSE</td>
-<td style="text-align: left;">B/0/P</td>
-<td style="text-align: left;">TRAPPIST-1e</td>
-<td style="text-align: right;">39</td>
-<td style="text-align: left;">FALSE</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: left;">Maham Ofracculy</td>
-<td style="text-align: left;">FALSE</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">0002_01</td>
-<td style="text-align: left;">Earth</td>
-<td style="text-align: left;">FALSE</td>
-<td style="text-align: left;">F/0/S</td>
-<td style="text-align: left;">TRAPPIST-1e</td>
-<td style="text-align: right;">24</td>
-<td style="text-align: left;">FALSE</td>
-<td style="text-align: right;">109</td>
-<td style="text-align: right;">9</td>
-<td style="text-align: right;">25</td>
-<td style="text-align: right;">549</td>
-<td style="text-align: right;">44</td>
-<td style="text-align: left;">Juanna Vines</td>
-<td style="text-align: left;">TRUE</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">0003_01</td>
-<td style="text-align: left;">Europa</td>
-<td style="text-align: left;">FALSE</td>
-<td style="text-align: left;">A/0/S</td>
-<td style="text-align: left;">TRAPPIST-1e</td>
-<td style="text-align: right;">58</td>
-<td style="text-align: left;">TRUE</td>
-<td style="text-align: right;">43</td>
-<td style="text-align: right;">3576</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">6715</td>
-<td style="text-align: right;">49</td>
-<td style="text-align: left;">Altark Susent</td>
-<td style="text-align: left;">FALSE</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">0003_02</td>
-<td style="text-align: left;">Europa</td>
-<td style="text-align: left;">FALSE</td>
-<td style="text-align: left;">A/0/S</td>
-<td style="text-align: left;">TRAPPIST-1e</td>
-<td style="text-align: right;">33</td>
-<td style="text-align: left;">FALSE</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">1283</td>
-<td style="text-align: right;">371</td>
-<td style="text-align: right;">3329</td>
-<td style="text-align: right;">193</td>
-<td style="text-align: left;">Solam Susent</td>
-<td style="text-align: left;">FALSE</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">0004_01</td>
-<td style="text-align: left;">Earth</td>
-<td style="text-align: left;">FALSE</td>
-<td style="text-align: left;">F/1/S</td>
-<td style="text-align: left;">TRAPPIST-1e</td>
-<td style="text-align: right;">16</td>
-<td style="text-align: left;">FALSE</td>
-<td style="text-align: right;">303</td>
-<td style="text-align: right;">70</td>
-<td style="text-align: right;">151</td>
-<td style="text-align: right;">565</td>
-<td style="text-align: right;">2</td>
-<td style="text-align: left;">Willy Santantines</td>
-<td style="text-align: left;">TRUE</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">0005_01</td>
-<td style="text-align: left;">Earth</td>
-<td style="text-align: left;">FALSE</td>
-<td style="text-align: left;">F/0/P</td>
-<td style="text-align: left;">PSO J318.5-22</td>
-<td style="text-align: right;">44</td>
-<td style="text-align: left;">FALSE</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">483</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">291</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: left;">Sandie Hinetthews</td>
-<td style="text-align: left;">TRUE</td>
-</tr>
-</tbody>
-</table>
+<div class="tabwid"><style>.cl-5fa5ffda{}.cl-5f9e0e9c{font-family:'Iosevka';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-5f9e0eb0{font-family:'Iosevka';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-5fa124d8{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-5fa13662{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 1.5pt solid rgba(190, 190, 190, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-5fa1366c{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-5fa1366d{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-5fa5ffda"><thead><tr style="overflow-wrap:break-word;"><th class="cl-5fa13662"><p class="cl-5fa124d8"><span class="cl-5f9e0e9c">PassengerId</span></p></th><th class="cl-5fa13662"><p class="cl-5fa124d8"><span class="cl-5f9e0e9c">HomePlanet</span></p></th><th class="cl-5fa13662"><p class="cl-5fa124d8"><span class="cl-5f9e0e9c">CryoSleep</span></p></th><th class="cl-5fa13662"><p class="cl-5fa124d8"><span class="cl-5f9e0e9c">Cabin</span></p></th><th class="cl-5fa13662"><p class="cl-5fa124d8"><span class="cl-5f9e0e9c">Destination</span></p></th><th class="cl-5fa13662"><p class="cl-5fa124d8"><span class="cl-5f9e0e9c">Age</span></p></th><th class="cl-5fa13662"><p class="cl-5fa124d8"><span class="cl-5f9e0e9c">VIP</span></p></th><th class="cl-5fa13662"><p class="cl-5fa124d8"><span class="cl-5f9e0e9c">RoomService</span></p></th><th class="cl-5fa13662"><p class="cl-5fa124d8"><span class="cl-5f9e0e9c">FoodCourt</span></p></th><th class="cl-5fa13662"><p class="cl-5fa124d8"><span class="cl-5f9e0e9c">ShoppingMall</span></p></th><th class="cl-5fa13662"><p class="cl-5fa124d8"><span class="cl-5f9e0e9c">Spa</span></p></th><th class="cl-5fa13662"><p class="cl-5fa124d8"><span class="cl-5f9e0e9c">VRDeck</span></p></th><th class="cl-5fa13662"><p class="cl-5fa124d8"><span class="cl-5f9e0e9c">Name</span></p></th><th class="cl-5fa13662"><p class="cl-5fa124d8"><span class="cl-5f9e0e9c">Transported</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">0001_01</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">Europa</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">FALSE</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">B/0/P</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">TRAPPIST-1e</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">39</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">FALSE</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">0</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">0</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">0</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">0</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">0</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">Maham Ofracculy</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">FALSE</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">0002_01</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">Earth</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">FALSE</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">F/0/S</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">TRAPPIST-1e</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">24</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">FALSE</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">109</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">9</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">25</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">549</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">44</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">Juanna Vines</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">TRUE</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">0003_01</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">Europa</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">FALSE</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">A/0/S</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">TRAPPIST-1e</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">58</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">TRUE</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">43</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">3576</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">0</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">6715</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">49</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">Altark Susent</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">FALSE</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">0003_02</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">Europa</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">FALSE</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">A/0/S</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">TRAPPIST-1e</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">33</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">FALSE</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">0</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">1283</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">371</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">3329</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">193</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">Solam Susent</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">FALSE</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">0004_01</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">Earth</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">FALSE</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">F/1/S</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">TRAPPIST-1e</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">16</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">FALSE</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">303</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">70</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">151</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">565</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">2</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">Willy Santantines</span></p></td><td class="cl-5fa1366c"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">TRUE</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-5fa1366d"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">0005_01</span></p></td><td class="cl-5fa1366d"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">Earth</span></p></td><td class="cl-5fa1366d"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">FALSE</span></p></td><td class="cl-5fa1366d"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">F/0/P</span></p></td><td class="cl-5fa1366d"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">PSO J318.5-22</span></p></td><td class="cl-5fa1366d"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">44</span></p></td><td class="cl-5fa1366d"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">FALSE</span></p></td><td class="cl-5fa1366d"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">0</span></p></td><td class="cl-5fa1366d"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">483</span></p></td><td class="cl-5fa1366d"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">0</span></p></td><td class="cl-5fa1366d"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">291</span></p></td><td class="cl-5fa1366d"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">0</span></p></td><td class="cl-5fa1366d"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">Sandie Hinetthews</span></p></td><td class="cl-5fa1366d"><p class="cl-5fa124d8"><span class="cl-5f9e0eb0">TRUE</span></p></td></tr></tbody></table></div>
 </div>
 </div>
 </section>
-<section id="data-exploration-modeling-approach" class="level2">
-<h2 class="anchored" data-anchor-id="data-exploration-modeling-approach">Data Exploration &amp; Modeling Approach</h2>
+<section id="modeling-approach" class="level2">
+<h2 class="anchored" data-anchor-id="modeling-approach">Modeling Approach</h2>
 <p>After looking at the predictive fields available in this data set, the first thing I try to do is come up with a plan to approach the modeling structure.</p>
 <p>I have a couple of initial thoughts here:</p>
 <ul>
@@ -453,81 +343,120 @@ window.Quarto = {
 <li><p>This transformation (often called the logit function or <a href="https://en.wikipedia.org/wiki/Logit">log-odds</a>) is useful, because it is a function that maps values between 0 and 1, like probabilities, to real numbers.</p></li>
 <li><p>In this model, <span class="math inline">\(\pi\)</span> will represent our response (Probability % of being Transported) and the <span class="math inline">\(\beta\)</span> will represent our predictive variables, so let’s explore some of the possibilities for <span class="math inline">\(\beta\)</span>.</p></li>
 </ul>
-<section id="exploring-vip-age-and-homeplanet-variables" class="level3">
-<h3 class="anchored" data-anchor-id="exploring-vip-age-and-homeplanet-variables">Exploring VIP, Age, and HomePlanet variables</h3>
+</section>
+<section id="exploring-vip-status-age-and-home-planet-variables" class="level2">
+<h2 class="anchored" data-anchor-id="exploring-vip-status-age-and-home-planet-variables">Exploring VIP Status, Age, and Home Planet variables</h2>
 <p>I really want to start with a simple model and build from there, so I’ll start by just examining the relationship between a couple of the explanatory variables and the <code>Transported</code> response variable.</p>
 <p>First of all, let’s see how many people were Transported in total.</p>
 <div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>sst_data <span class="sc">%&gt;%</span> </span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(Transported) <span class="sc">%&gt;%</span> </span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Proportion =</span> n <span class="sc">/</span> <span class="fu">sum</span>(n))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>   Transported    n Proportion
-1:       FALSE 4315  0.4963764
-2:        TRUE 4378  0.5036236</code></pre>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Proportion =</span> scales<span class="sc">::</span><span class="fu">percent_format</span>()(n <span class="sc">/</span> <span class="fu">sum</span>(n))) <span class="sc">%&gt;%</span> </span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">flextable</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bold</span>(<span class="at">part =</span> <span class="st">"header"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">align</span>(<span class="at">align =</span> <span class="st">"center"</span>, <span class="at">part =</span> <span class="st">"all"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div class="tabwid"><style>.cl-5fbcc418{}.cl-5fb5e7f6{font-family:'Iosevka';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-5fb5e800{font-family:'Iosevka';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-5fb89ff0{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-5fb8aec8{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 1.5pt solid rgba(190, 190, 190, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-5fb8aec9{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-5fb8aed2{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-5fbcc418"><thead><tr style="overflow-wrap:break-word;"><th class="cl-5fb8aec8"><p class="cl-5fb89ff0"><span class="cl-5fb5e7f6">Transported</span></p></th><th class="cl-5fb8aec8"><p class="cl-5fb89ff0"><span class="cl-5fb5e7f6">n</span></p></th><th class="cl-5fb8aec8"><p class="cl-5fb89ff0"><span class="cl-5fb5e7f6">Proportion</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-5fb8aec9"><p class="cl-5fb89ff0"><span class="cl-5fb5e800">FALSE</span></p></td><td class="cl-5fb8aec9"><p class="cl-5fb89ff0"><span class="cl-5fb5e800">4315</span></p></td><td class="cl-5fb8aec9"><p class="cl-5fb89ff0"><span class="cl-5fb5e800">49.64%</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-5fb8aed2"><p class="cl-5fb89ff0"><span class="cl-5fb5e800">TRUE</span></p></td><td class="cl-5fb8aed2"><p class="cl-5fb89ff0"><span class="cl-5fb5e800">4378</span></p></td><td class="cl-5fb8aed2"><p class="cl-5fb89ff0"><span class="cl-5fb5e800">50.36%</span></p></td></tr></tbody></table></div>
 </div>
 </div>
-<p>Looks like a pretty even split, which is good. It might be harder to model a huge imbalance of response classes, especially if you don’t have a lot of data observations in the first place.</p>
-<p>I’ve found this type of visual exploratory analysis is useful to see which of our data variables might provide some information that explains a difference in categorizing who was transported and who was not transported.</p>
-<section id="age" class="level4">
-<h4 class="anchored" data-anchor-id="age"><strong>Age</strong></h4>
+<p>Looks like a fairly even split, which is good. It might be harder to model a huge imbalance of response classes, especially if you don’t have a lot of observations in the first place.</p>
+<p>I’ve found visual analysis can be useful to see which of our variables might provide some information that explains a difference in categorizing who was transported and who was not transported.</p>
+<section id="age" class="level3" style="text-align: center;">
+<h3 class="anchored" data-anchor-id="age"><strong>Age</strong></h3>
 <div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(sst_data, <span class="fu">aes</span>(<span class="at">x =</span> Age, <span class="at">y =</span> <span class="fu">as.numeric</span>(Transported))) <span class="sc">+</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.1</span>) <span class="sc">+</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"loess"</span>, <span class="at">formula =</span> y <span class="sc">~</span> x, <span class="at">span =</span> <span class="fl">0.5</span>, <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">color =</span> <span class="st">"blue"</span>) <span class="sc">+</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Relationship between Age and Transported Status"</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Age"</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Probability of Being Transported"</span>) <span class="sc">+</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rj_custom_theme</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="2024-03-08-spaceship-titanic-part-1_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid figure-img" width="768"></p>
+<p><img src="2024-03-08-spaceship-titanic-part-1_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
-<p>There are 179 missing Age values in the dataset (which we will have to handle later), and it looks like passengers from Age 0 to about Age 17 are much more likely to be transported, and then it kind of levels off after that.</p>
 </section>
-<section id="vip" class="level4">
-<h4 class="anchored" data-anchor-id="vip"><strong>VIP</strong></h4>
+<ul>
+<li><p>There are 179 missing Age values in the dataset (which we will have to handle later.)</p></li>
+<li><p>It looks like passengers from Age 0 to about Age 17 are much more likely to be transported, and then the effect kind of levels off after that.</p></li>
+</ul>
+<section id="vip-status" class="level3" style="text-align: center;">
+<h3 class="anchored" data-anchor-id="vip-status"><strong>VIP Status</strong></h3>
 <div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(sst_data, <span class="fu">aes</span>(<span class="at">x =</span> VIP, <span class="at">fill =</span> Transported)) <span class="sc">+</span> </span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>(<span class="at">position =</span> <span class="st">"fill"</span>) <span class="sc">+</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> scales<span class="sc">::</span><span class="fu">percent_format</span>()) <span class="sc">+</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Proportion of Transported by VIP Status"</span>, <span class="at">x =</span> <span class="st">"VIP Status"</span>, <span class="at">y =</span> <span class="st">"Proportion Transported"</span>) <span class="sc">+</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rj_custom_theme</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="2024-03-08-spaceship-titanic-part-1_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid figure-img" width="768"></p>
+<p><img src="2024-03-08-spaceship-titanic-part-1_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid figure-img" width="480"></p>
 </figure>
 </div>
 </div>
 </div>
-<p>VIPs were transported at a 38.2% rate, while non-VIPs were transported at a 50.6% rate.</p>
 </section>
-<section id="homeplanet" class="level4">
-<h4 class="anchored" data-anchor-id="homeplanet"><strong>HomePlanet</strong></h4>
+<ul>
+<li>VIPs were transported at a 38.2% rate, while non-VIPs were transported at a 50.6% rate.</li>
+</ul>
+<section id="home-planet" class="level3" style="text-align: center;">
+<h3 class="anchored" data-anchor-id="home-planet"><strong>Home Planet</strong></h3>
 <div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(sst_data, <span class="fu">aes</span>(<span class="at">x =</span> HomePlanet, <span class="at">fill =</span> Transported)) <span class="sc">+</span> </span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>(<span class="at">position =</span> <span class="st">"fill"</span>) <span class="sc">+</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> scales<span class="sc">::</span><span class="fu">percent_format</span>()) <span class="sc">+</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Proportion of Transported by Home Planet"</span>, <span class="at">x =</span> <span class="st">"Home Planet"</span>, <span class="at">y =</span> <span class="st">"Proportion Transported"</span>) <span class="sc">+</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rj_custom_theme</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="2024-03-08-spaceship-titanic-part-1_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid figure-img" width="768"></p>
+<p><img src="2024-03-08-spaceship-titanic-part-1_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid figure-img" width="480"></p>
 </figure>
 </div>
 </div>
 </div>
+</section>
 <ul>
 <li><p>It appears there are three possible Home Planets: Earth, Europa, and Mars.</p></li>
 <li><p>They all have different Transportation proportions which makes it a great candidate for a categorical predictive variable.</p></li>
 <li><p>The aliens really seem to have taken a liking to residents from Europa.</p></li>
 </ul>
-</section>
-</section>
 <section id="summary" class="level3">
 <h3 class="anchored" data-anchor-id="summary">Summary</h3>
-<p>To summarize, it looks like a non-VIP from Europa that is between Age 0 and 17 has the highest risk factors for being abducted.</p>
+<p>To summarize, it looks like a <span style="color: #BF5700;"><strong>non-VIP</strong></span> from <span style="color: #BF5700;"><strong>Europa</strong></span> that is <span style="color: #BF5700;"><strong>between Age 0 and 17</strong></span> has the highest risk factors for being abducted.</p>
 <ul>
-<li>It’s good to do sense checks on your exploration is saying, so let’s see if we can take a slice of the data (e.g.: a population that has two out of any three of these risk factors) and see how strong the effects we discovered are.</li>
+<li>It’s good to do sense checks on your exploration is saying, so let’s see if we can take a slice of the data (like a population that has two out of any three of these risk factors) and see how strong the effects we discovered are.</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>sst_data <span class="sc">%&gt;%</span> </span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="st">`</span><span class="at">VIP</span><span class="st">`</span>, <span class="st">`</span><span class="at">Age</span><span class="st">`</span>, <span class="st">`</span><span class="at">HomePlanet</span><span class="st">`</span>, <span class="st">`</span><span class="at">Transported</span><span class="st">`</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>((<span class="st">`</span><span class="at">VIP</span><span class="st">`</span> <span class="sc">==</span> <span class="cn">FALSE</span> <span class="sc">&amp;</span> <span class="st">`</span><span class="at">Age</span><span class="st">`</span> <span class="sc">&lt;</span> <span class="dv">18</span>) <span class="sc">|</span> (<span class="st">`</span><span class="at">VIP</span><span class="st">`</span> <span class="sc">==</span> <span class="cn">FALSE</span> <span class="sc">&amp;</span> <span class="st">`</span><span class="at">HomePlanet</span><span class="st">`</span> <span class="sc">==</span> <span class="st">"Europa"</span>) <span class="sc">|</span> (<span class="st">`</span><span class="at">Age</span><span class="st">`</span> <span class="sc">&lt;</span> <span class="dv">18</span> <span class="sc">&amp;</span> <span class="st">`</span><span class="at">HomePlanet</span><span class="st">`</span> <span class="sc">==</span> <span class="st">"Europa"</span>)) <span class="sc">%&gt;%</span> </span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(Transported)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>   Transported    n
-1:       FALSE 1180
-2:        TRUE 2119</code></pre>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>sst_data <span class="sc">%&gt;%</span> </span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="st">`</span><span class="at">VIP</span><span class="st">`</span>, <span class="st">`</span><span class="at">Age</span><span class="st">`</span>, <span class="st">`</span><span class="at">HomePlanet</span><span class="st">`</span>, <span class="st">`</span><span class="at">Transported</span><span class="st">`</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>((<span class="st">`</span><span class="at">VIP</span><span class="st">`</span> <span class="sc">==</span> <span class="cn">FALSE</span> <span class="sc">&amp;</span> <span class="st">`</span><span class="at">Age</span><span class="st">`</span> <span class="sc">&lt;</span> <span class="dv">18</span>) <span class="sc">|</span> (<span class="st">`</span><span class="at">VIP</span><span class="st">`</span> <span class="sc">==</span> <span class="cn">FALSE</span> <span class="sc">&amp;</span> <span class="st">`</span><span class="at">HomePlanet</span><span class="st">`</span> <span class="sc">==</span> <span class="st">"Europa"</span>) <span class="sc">|</span> (<span class="st">`</span><span class="at">Age</span><span class="st">`</span> <span class="sc">&lt;</span> <span class="dv">18</span> <span class="sc">&amp;</span> <span class="st">`</span><span class="at">HomePlanet</span><span class="st">`</span> <span class="sc">==</span> <span class="st">"Europa"</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(Transported) <span class="sc">%&gt;%</span> </span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">flextable</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bold</span>(<span class="at">part =</span> <span class="st">"header"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">align</span>(<span class="at">align =</span> <span class="st">"center"</span>, <span class="at">part =</span> <span class="st">"all"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div class="tabwid"><style>.cl-60c5e448{}.cl-60be64a2{font-family:'Iosevka';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-60be64ac{font-family:'Iosevka';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-60c1b3a0{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-60c1c282{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 1.5pt solid rgba(190, 190, 190, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-60c1c28c{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-60c1c296{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-60c5e448"><thead><tr style="overflow-wrap:break-word;"><th class="cl-60c1c282"><p class="cl-60c1b3a0"><span class="cl-60be64a2">Transported</span></p></th><th class="cl-60c1c282"><p class="cl-60c1b3a0"><span class="cl-60be64a2">n</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-60c1c28c"><p class="cl-60c1b3a0"><span class="cl-60be64ac">FALSE</span></p></td><td class="cl-60c1c28c"><p class="cl-60c1b3a0"><span class="cl-60be64ac">1180</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-60c1c296"><p class="cl-60c1b3a0"><span class="cl-60be64ac">TRUE</span></p></td><td class="cl-60c1c296"><p class="cl-60c1b3a0"><span class="cl-60be64ac">2119</span></p></td></tr></tbody></table></div>
 </div>
 </div>
 <p>It definitely seems like we have some potential predictive power if we use these variables since we were able to pull out twice as many TRUE as FALSE using this naive approach, so in the next post I will explore how to take these three insights and formally build them into a probability model using Stan.</p>
@@ -536,7 +465,7 @@ window.Quarto = {
 <section id="part-2-preview-building-the-model" class="level2">
 <h2 class="anchored" data-anchor-id="part-2-preview-building-the-model">Part 2 Preview: Building the Model</h2>
 <p>I think that’s enough data exploration content for one blog post - thanks for reading and my goal going forward will be to create short and digestible posts that are easy to casually read and understand without investing too much time.</p>
-<p>Keep these data insights that I just discovered in mind, since those will be used in Part 2 to describe a Bayesian probability model on the odds our poor travelers were subjected to alien transportation.</p>
+<p>Keep these insights that I just discovered in mind, since those will be used in Part 2 to describe a Bayesian probability model on the odds our poor travelers were subjected to alien transportation.</p>
 
 
 </section>
