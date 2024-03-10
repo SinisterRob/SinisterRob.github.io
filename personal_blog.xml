@@ -9,7 +9,12 @@
 <link>https://sinisterrob.github.io/personal_blog.html</link>
 <atom:link href="https://sinisterrob.github.io/personal_blog.xml" rel="self" type="application/rss+xml"/>
 <description>A personal take on Chicago food, music, photography, and other topics.</description>
+<image>
+<url>https://sinisterrob.github.io/img/bites_brews_paws.png</url>
+<title>bites | brews | paws</title>
+<link>https://sinisterrob.github.io/personal_blog.html</link>
+</image>
 <generator>quarto-1.4.550</generator>
-<lastBuildDate>Sun, 10 Mar 2024 19:30:12 GMT</lastBuildDate>
+<lastBuildDate>Sun, 10 Mar 2024 19:32:39 GMT</lastBuildDate>
 </channel>
 </rss>
