@@ -1,10 +1,14 @@
 /* css styles */
 body {
-  font-family: 'Iosevka', monospace; !important
+  font-family: 'Iosevka Web', monospace; !important
 }
 
 p {
-  font-family: 'Iosevka', monospace; !important
+  font-family: 'Iosevka Web', monospace; !important
+}
+
+span {
+  font-family: 'Iosevka Web', monospace; !important
 }
 
 figcaption {
@@ -14,6 +18,7 @@ figcaption {
 .navbar-nav-scroll.ms-auto .nav-item .nav-link .menu-text {
     color: #BF5700; /* UT Burnt Orange */
     font-weight: bold;
+    font-size: 18px;
 }
 
 .navbar-title {
@@ -24,7 +29,7 @@ figcaption {
 /* Base styles for the navbar - adjust these as needed */
 .navbar {
     padding: 5px;
-    font-size: 18px;
+    font-size: 16px;
 }
 
 /* Styles for mobile devices */
