@@ -4,21 +4,77 @@
     "href": "professional_blog.html",
     "title": "Professional Blog",
     "section": "",
-    "text": "On this page I will talk about random professional topics that are interesting to me.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nSpaceship Titanic - Introduction to Bayesian Models - Part 1\n\n\n\n\n\nPredict which passengers are transported to an alternate dimension.\n\n\n\n\n\n\n\n\n\nNo matching items"
+    "text": "On this page I will talk about random professional topics that are interesting to me.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nSpaceship Titanic - Introduction to Bayesian Models - Part 1\n\n\n\n\n\nPredict which passengers are transported to an alternate dimension.\n\n\n\n\n\nMar 8, 2024\n\n\n\n\n\n\n\n\n\n\n\n\nSpaceship Titanic - Introduction to Bayesian Models - Part 2\n\n\n\n\n\nUsing Stan to determine who was transported and who was not.\n\n\n\n\n\nMar 9, 2024\n\n\n\n\n\n\nNo matching items"
   },
   {
-    "objectID": "photography.html",
-    "href": "photography.html",
-    "title": "Photography",
-    "section": "",
-    "text": "Two Weeks in Vietnam\nKedzie Wells L Train S Curve\nFlowers of Đà Lạt\n\n\n\n\n\n\n\n\n\n\nQuincy\n\n\n\n\n\n\n\nEnyo\n\n\n\n\n\n\n\n\nQuincy\nEnyo"
+    "objectID": "professional_blog/2024-03-08-spaceship-titanic-part-1/index.html#load-the-data",
+    "href": "professional_blog/2024-03-08-spaceship-titanic-part-1/index.html#load-the-data",
+    "title": "Spaceship Titanic - Introduction to Bayesian Models - Part 1",
+    "section": "Load the Data",
+    "text": "Load the Data\nThe first steps in any data analysis done in R will be loading the libraries you want to use and reading in the data to a data.frame or a data.table object. I load the rstan package because I will be writing the main part of the model in Stan, and set the options to use all of the cores on my computer and not recompile the model every time I run it.\n\n\nCode\nlibrary(rstan)\nlibrary(data.table)\nlibrary(dplyr)\nlibrary(ggplot2)\nlibrary(knitr)\nlibrary(plotly)\nlibrary(mgcv)\nlibrary(showtext)\nlibrary(flextable)\n\noptions(mc.cores = parallel::detectCores())\nrstan_options(auto_write = TRUE)\nshowtext_auto()\n\nsst_data &lt;- data.table::fread(\"../../data/train.csv\")\n\n\nFor reference, I will show the first few rows of the data set. For the sake of keeping the post shorter, you can refer to the Kaggle link for the definitions of each of the data fields.\n\n\nCode\nhead(sst_data) %&gt;% \nrj_custom_table()\n\n\nPassengerIdHomePlanetCryoSleepCabinDestinationAgeVIPRoomServiceFoodCourtShoppingMallSpaVRDeckNameTransported0001_01EuropaFALSEB/0/PTRAPPIST-1e39FALSE00000Maham OfracculyFALSE0002_01EarthFALSEF/0/STRAPPIST-1e24FALSE10992554944Juanna VinesTRUE0003_01EuropaFALSEA/0/STRAPPIST-1e58TRUE4335760671549Altark SusentFALSE0003_02EuropaFALSEA/0/STRAPPIST-1e33FALSE012833713329193Solam SusentFALSE0004_01EarthFALSEF/1/STRAPPIST-1e16FALSE303701515652Willy SantantinesTRUE0005_01EarthFALSEF/0/PPSO J318.5-2244FALSE048302910Sandie HinetthewsTRUE"
   },
   {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "Robert’s Github Site",
+    "objectID": "professional_blog/2024-03-08-spaceship-titanic-part-1/index.html#modeling-approach",
+    "href": "professional_blog/2024-03-08-spaceship-titanic-part-1/index.html#modeling-approach",
+    "title": "Spaceship Titanic - Introduction to Bayesian Models - Part 1",
+    "section": "Modeling Approach",
+    "text": "Modeling Approach\nAfter looking at the predictive fields available in this data set, the first thing I try to do is come up with a plan to approach the modeling structure.\nI have a couple of initial thoughts here:\n\nWe are trying to predict the Transported field which is a boolean variable: either TRUE or FALSE.\nThis leads me to believe that logistic regression is probably the best and simplest modelling approach.\nIn statistical terms, this means we want a model with the following structure: \\[\n\\log\\left(\\frac{\\pi}{1-\\pi}\\right) = \\alpha + \\beta X\n\\]\nThis transformation (often called the logit function or log-odds) is useful, because it is a function that maps values between 0 and 1, like probabilities, to real numbers.\nIn this model, \\(\\pi\\) will represent our response (Probability % of being Transported) and the \\(\\beta\\) will represent our predictive variables, so let’s explore some of the possibilities for \\(\\beta\\)."
+  },
+  {
+    "objectID": "professional_blog/2024-03-08-spaceship-titanic-part-1/index.html#exploring-vip-status-age-and-home-planet-variables",
+    "href": "professional_blog/2024-03-08-spaceship-titanic-part-1/index.html#exploring-vip-status-age-and-home-planet-variables",
+    "title": "Spaceship Titanic - Introduction to Bayesian Models - Part 1",
+    "section": "Exploring VIP Status, Age, and Home Planet variables",
+    "text": "Exploring VIP Status, Age, and Home Planet variables\nI really want to start with a simple model and build from there, so I’ll start by just examining the relationship between a couple of the explanatory variables and the Transported response variable.\nFirst of all, let’s see how many people were Transported in total.\n\n\nCode\nsst_data %&gt;% \n  count(Transported) %&gt;% \n  mutate(Proportion = scales::percent_format()(n / sum(n))) %&gt;% \n  flextable() %&gt;% \n  bold(part = \"header\") %&gt;% \n  align(align = \"center\", part = \"all\")\n\n\nTransportednProportionFALSE431549.64%TRUE437850.36%\n\n\nLooks like a fairly even split, which is good. It might be harder to model a huge imbalance of response classes, especially if you don’t have a lot of observations in the first place.\nI’ve found visual analysis can be useful to see which of our variables might provide some information that explains a difference in categorizing who was transported and who was not transported.\n\nAge\n\n\nCode\nggplot(sst_data, aes(x = Age, y = as.numeric(Transported))) +\n  geom_point(alpha = 0.1) +\n  geom_smooth(method = \"loess\", formula = y ~ x, span = 0.5, se = FALSE, color = \"blue\") +\n  labs(title = \"Relationship between Age and Transported Status\",\n       x = \"Age\",\n       y = \"Probability of Being Transported\") +\n  rj_custom_theme()\n\n\n\n\n\n\n\n\n\n\n\nThere are 179 missing Age values in the dataset (which we will have to handle later.)\nIt looks like passengers from Age 0 to about Age 17 are much more likely to be transported, and then the effect kind of levels off after that.\n\n\nVIP Status\n\n\nCode\nggplot(sst_data, aes(x = VIP, fill = Transported)) + \n  geom_bar(position = \"fill\") +\n  scale_y_continuous(labels = scales::percent_format()) +\n  labs(title = \"Proportion of Transported by VIP Status\", x = \"VIP Status\", y = \"Proportion Transported\") +\n  rj_custom_theme()\n\n\n\n\n\n\n\n\n\n\n\nVIPs were transported at a 38.2% rate, while non-VIPs were transported at a 50.6% rate.\n\n\nHome Planet\n\n\nCode\nggplot(sst_data, aes(x = HomePlanet, fill = Transported)) + \n  geom_bar(position = \"fill\") +\n  scale_y_continuous(labels = scales::percent_format()) +\n  labs(title = \"Proportion of Transported by Home Planet\", x = \"Home Planet\", y = \"Proportion Transported\") +\n  rj_custom_theme()\n\n\n\n\n\n\n\n\n\n\n\nIt appears there are three possible Home Planets: Earth, Europa, and Mars.\nThey all have different Transportation proportions which makes it a great candidate for a categorical predictive variable.\nThe aliens really seem to have taken a liking to residents from Europa.\n\n\nSummary\nTo summarize, it looks like a non-VIP from Europa that is between Age 0 and 17 has the highest risk factors for being abducted.\n\nIt’s good to do sense checks on your exploration is saying, so let’s see if we can take a slice of the data (like a population that has two out of any three of these risk factors) and see how strong the effects we discovered are.\n\n\n\nCode\nsst_data %&gt;% \n  select(`VIP`, `Age`, `HomePlanet`, `Transported`) %&gt;% \n  filter((`VIP` == FALSE & `Age` &lt; 18) | (`VIP` == FALSE & `HomePlanet` == \"Europa\") | (`Age` &lt; 18 & `HomePlanet` == \"Europa\")) %&gt;% \n  count(Transported) %&gt;% \n  rj_custom_table()\n\n\nTransportednFALSE1180TRUE2119\n\n\nIt definitely seems like we have some potential predictive power if we use these variables since we were able to pull out twice as many TRUE as FALSE using this naive approach (not to be confused with a Naïve Bayes Classifier.)\nIn the next post I will explore how to take these three insights and formally build them into a probability model using Stan."
+  },
+  {
+    "objectID": "professional_blog/2024-03-08-spaceship-titanic-part-1/index.html#part-2-preview-building-the-model",
+    "href": "professional_blog/2024-03-08-spaceship-titanic-part-1/index.html#part-2-preview-building-the-model",
+    "title": "Spaceship Titanic - Introduction to Bayesian Models - Part 1",
+    "section": "Part 2 Preview: Building the Model",
+    "text": "Part 2 Preview: Building the Model\nThat’s enough data exploration content for one blog post - thanks for reading and my goal going forward will be to create short and digestible posts that are easy to casually read and understand without investing too much of your time.\nKeep these insights that I just discovered in mind, since those will be used in Part 2 to describe a Bayesian probability model on the odds our poor travelers were subjected to alien transportation."
+  },
+  {
+    "objectID": "personal_blog.html",
+    "href": "personal_blog.html",
+    "title": "Personal Blog",
     "section": "",
-    "text": "This is a Quarto website hosted for free on a GitHub Page.\nTo learn more about Quarto websites visit https://quarto.org/docs/websites."
+    "text": "On this page I will talk about random personal topics that are interesting to me.\n\n\n\n\n\n\n\n\n\nNo matching items"
+  },
+  {
+    "objectID": "music_review.html",
+    "href": "music_review.html",
+    "title": "Music Reviews",
+    "section": "",
+    "text": "Reserving this page for when I want to do some music reviews."
+  },
+  {
+    "objectID": "food_review.html",
+    "href": "food_review.html",
+    "title": "Food Reviews",
+    "section": "",
+    "text": "On this page I will review restaurants and talk about the wide variety of food that is available in Chicago (and occasionally other cities!)\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nGalit (⭐)\n\n\nI ventured out to the Michelin Star restaurant named Galit in Lincoln Park to give chef Zach Engel’s take on Middle-Eastern cuisine a try.\n\n\n\n\n\n\nMar 7, 2024\n\n\n\n\n\n\n\n\nNo matching items"
+  },
+  {
+    "objectID": "chess_analysis.html",
+    "href": "chess_analysis.html",
+    "title": "Chess Analysis",
+    "section": "",
+    "text": "Reserving this page for when I want to do some analysis of my own chess games. One of my goals for 2024 is to try to get an official chess rating."
+  },
+  {
+    "objectID": "about_me.html",
+    "href": "about_me.html",
+    "title": "About Me",
+    "section": "",
+    "text": "I’m Robert, an actuarial consultant living in Chicago. I like photography, eating and reviewing good food, travelling, biking, chess, predictive modelling, data visualization, watching Texas Longhorns football, and chilling with my cats. I’m planning on using this blog to write about those things and more, so stay tuned!"
+  },
+  {
+    "objectID": "book_review.html",
+    "href": "book_review.html",
+    "title": "Book Reviews",
+    "section": "",
+    "text": "Reserving this page for when I want to do some book reviews.\n\n\n\n\n\n\n\n\n\nNo matching items"
   },
   {
     "objectID": "food_review/2024-03-07-galit/index.html",
@@ -63,80 +119,52 @@
     "text": "Overall score: 4.6 out of 5.0 stars\nWould definitely go back here if I ever have the opportunity! Thanks for reading, and shalom y’all!"
   },
   {
-    "objectID": "book_review.html",
-    "href": "book_review.html",
-    "title": "Book Reviews",
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "bites | brews | paws",
     "section": "",
-    "text": "Reserving this page for when I want to do some book reviews.\n\n\n\n\n\n\n\n\n\nNo matching items"
+    "text": "Welcome to bites | brews | paws!\nThis is a Quarto website hosted for free on a GitHub Page.\nTo learn more about Quarto websites visit https://quarto.org/docs/websites."
   },
   {
-    "objectID": "about_me.html",
-    "href": "about_me.html",
-    "title": "About Me",
+    "objectID": "photography.html",
+    "href": "photography.html",
+    "title": "Photography",
     "section": "",
-    "text": "I’m Robert, an actuarial consultant living in Chicago. I like photography, eating and reviewing good food, travelling, biking, chess, predictive modelling, data visualization, watching Texas Longhorns football, and chilling with my cats. I’m planning on using this blog to write about those things and more, so stay tuned!"
+    "text": "Two Weeks in Vietnam\nKedzie Wells L Train S Curve\nFlowers of Đà Lạt\n\n\n\n\n\n\n\n\n\n\nQuincy\n\n\n\n\n\n\n\nEnyo\n\n\n\n\n\n\n\n\nQuincy\nEnyo"
   },
   {
-    "objectID": "about.html",
-    "href": "about.html",
-    "title": "About",
-    "section": "",
-    "text": "This site was made using a Quarto website and published for free using Github Pages."
+    "objectID": "professional_blog/2024-03-09-spaceship-titanic-part-2/index.html#starting-with-stan",
+    "href": "professional_blog/2024-03-09-spaceship-titanic-part-2/index.html#starting-with-stan",
+    "title": "Spaceship Titanic - Introduction to Bayesian Models - Part 2",
+    "section": "Starting with Stan",
+    "text": "Starting with Stan\nStan is a probabilistic programming language for statistical inference. To write a Stan model, I will create a .stan file using the Stan programming language, and then compile and run this model in R using the rstan package.\nI will first show the basic code for the model, but there are a couple of key parts that will need to be explained:\n\n\n\ndata\n\nThis section declares all of the data that will be used in the model.\nI will be using a classic design matrix that has N rows representing N observations, and K predictive variables.\n\nparameters\n\nThis section defines all of the unknown parameters in your model that Stan will estimate using the data.\n\nmodel\n\nThis section will define the statistical model, and provide a link between your parameters and data.\nIn Part 1 I decided to use a logistic regression, which is represented in Stan using the bernoulli_logit(...) function.\nNote that Age is a continuous variable, so it will be modeled as a linear effect which we saw previously may not be completely correct. We can still run the model like this and see what the output tells us.\n\ngenerated quantities\n\nAfter running a stan model and having some fitted posterior distributions from the data, you may want to sample from these distributions (or even from some algebraically manipulated variation of the distributions). Sampling can be set up in the generated quantities block."
   },
   {
-    "objectID": "chess_analysis.html",
-    "href": "chess_analysis.html",
-    "title": "Chess Analysis",
-    "section": "",
-    "text": "Reserving this page for when I want to do some analysis of my own chess games. One of my goals for 2024 is to try to get an official chess rating."
+    "objectID": "professional_blog/2024-03-09-spaceship-titanic-part-2/index.html#handling-missing-values",
+    "href": "professional_blog/2024-03-09-spaceship-titanic-part-2/index.html#handling-missing-values",
+    "title": "Spaceship Titanic - Introduction to Bayesian Models - Part 2",
+    "section": "Handling Missing Values",
+    "text": "Handling Missing Values\nIt turns out there are some missing values in the Age, VIP, and HomePlanet fields.\nThe easiest way for me to handle missing values for now is to impute them using the mice package.\nImputation helps us fill in these gaps with plausible values, ensuring that our analysis can proceed without dropping entire rows or columns which might lead to loss of valuable information.\nmice stands for Multivariate Imputation by Chained Equations, a technique that provides a more nuanced approach than simply filling in the missing entries with average values.\n\nimputed_sst &lt;- mice(sst_data_stan, m = 5, printFlag = FALSE)\nimputed_sst_data &lt;- complete(imputed_sst, 1)\n\nimputed_sst_data &lt;-\n  imputed_sst_data %&gt;% \n  mutate(HomePlanet = factor(HomePlanet, levels = unique(HomePlanet)),\n         VIP = factor(VIP, levels = unique(VIP)))"
   },
   {
-    "objectID": "food_review.html",
-    "href": "food_review.html",
-    "title": "Food Reviews",
-    "section": "",
-    "text": "On this page I will review restaurants and talk about the wide variety of food that is available in Chicago (and occasionally other cities!)\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nGalit (⭐)\n\n\nI ventured out to the Michelin Star restaurant named Galit in Lincoln Park to give chef Zach Engel’s take on Middle-Eastern cuisine a try.\n\n\n\n\n\n\nMar 7, 2024\n\n\n\n\n\n\n\n\nNo matching items"
+    "objectID": "professional_blog/2024-03-09-spaceship-titanic-part-2/index.html#fitting-the-initial-model",
+    "href": "professional_blog/2024-03-09-spaceship-titanic-part-2/index.html#fitting-the-initial-model",
+    "title": "Spaceship Titanic - Introduction to Bayesian Models - Part 2",
+    "section": "Fitting the Initial Model",
+    "text": "Fitting the Initial Model\nHere is what the first 10 rows of the design matrix (denoted as X in our Stan code) looks like:\n\nimputed_sst_data %&gt;% \n  model.matrix(`Transported` ~ `Age` + `VIP` + `HomePlanet`, data = .) %&gt;% \n  as.data.frame() %&gt;% \n  slice(1:10) %&gt;% \n  rj_custom_table()\n\n(Intercept)AgeVIPTRUEHomePlanetEarthHomePlanetMars139000124010158100133000116010144010126010128010135010114000\n\n\nFrom the design matrix and the Stan code we can see that this model will estimate 5 \\(\\beta\\) parameters, one for each column of the design matrix.\nI will fit the initial model using the stan(...) function from the rstan library.\nReferencing the data block in the Stan code, we see that we will need to provide the stan(...) function with a named list of parameters N, K, X, and y. Note that I am running a model with 4 chains of 2,000 iterations each (which will be split into 1,000 warm-up iterations and 1,000 sampling iterations per chain.)\n\nsst_design_matrix &lt;- \n  imputed_sst_data %&gt;% \n  model.matrix(`Transported` ~ `Age` + `VIP` + `HomePlanet`, data = .)\n\nsst_response &lt;- as.integer(imputed_sst_data$Transported)\n\nif (!file.exists(\"../../models/sst_model_1.rds\")){\n  sst_fit_1 &lt;- \n    stan(file = \"spaceship_titanic_2.stan\",\n         data = list(N = nrow(sst_design_matrix),\n                     K = ncol(sst_design_matrix),\n                     X = sst_design_matrix,\n                     y = sst_response),\n         chains = 4,\n         iter = 1000)\n  save(sst_fit_1, file = \"../../models/sst_model_1.rds\")\n  } else {\n    load(\"../../models/sst_model_1.rds\")\n  }"
   },
   {
-    "objectID": "music_review.html",
-    "href": "music_review.html",
-    "title": "Music Reviews",
-    "section": "",
-    "text": "Reserving this page for when I want to do some music reviews."
+    "objectID": "professional_blog/2024-03-09-spaceship-titanic-part-2/index.html#model-diagnostics",
+    "href": "professional_blog/2024-03-09-spaceship-titanic-part-2/index.html#model-diagnostics",
+    "title": "Spaceship Titanic - Introduction to Bayesian Models - Part 2",
+    "section": "Model Diagnostics",
+    "text": "Model Diagnostics\nThat model was easy enough to set up and run! Let’s see what the posterior distributions look like.\n\nmcmc_hist(as.array(sst_fit_1, pars = \"beta\"),\n          facet_args = list(labeller = ggplot2::label_parsed) +\n          facet_text(size = 16))\n\n\n\n\n\n\n\n\nInterestingly, it looks like our posterior distributions for the betas are looking approximately normal with reasonable standard errors, even though we didn’t even set any explicit prior distributions for them in the model block of the Stan code. Normally, the advantage of Bayesian models is incorporating expert opinion through prior distributions but it’s not completely necessary, you can use what is called a flat prior which basically indicates we have no prior information about what the distribution or mean of the \\(\\beta\\) parameters would be.\n\nextract(sst_fit_1)$beta %&gt;% \n  apply(2, mean) %&gt;% \n  round(4)\n\n[1]  1.3879 -0.0190 -0.9295 -1.2125 -0.7003\n\n\nAre these variable means what we expected?\n\nbeta[1] (Intercept)\n\nThis quantity represents the baseline, which corresponds to Age 0, not a VIP, and having a home planet of Europa.\nTo convert the quantity 1.3879 into a probability, we can undo the logit function manually.\n\\(p = \\frac{e^{\\beta_1}}{1 + e^{\\beta_1}}\\)\n\\(p = 80.0%\\)\n\nbeta[2] (Age)\n\nWe can see a decreasing effect in Age, where every increase of Age by 1 year decreases the log odds of Transportation by -0.01900.\n\nbeta[3] (VIP = TRUE)\n\nWe can see that being a VIP reduces the log odds of Transportation by -0.9295 compared to the baseline of not being a VIP.\n\nbeta[4] (Home Planet = Earth)\n\nHaving a home planet of Earth reduces the log odds of Transportation by -1.2125 compared to the baseline of Europa.\n\nbeta[5] (Home Planet = Mars)\n\nHaving a home planet of Mars reduces the log odds of Transportation by -0.7003 compared to the baseline of Europa.\n\n\nAnd how do the model’s predictions perform? Remember that roughly 50% of the travelers were Transported in the original data, so let’s see if we can identify who was Transported more accurately than randomly guessing by using a confusion matrix.\nSince we are testing the model on the same data we trained it on, this is also referred to as training error and not a true reflection of how the model might generalize to data it hasn’t been trained on.\n\ny_pred_means &lt;- apply(extract(sst_fit_1, \"y_pred\")$y_pred, 2, mean)\ny_pred_factor &lt;- factor(ifelse(y_pred_means &gt; 0.5, TRUE, FALSE))\nsst_response_factor &lt;- factor(ifelse(sst_response == 1, TRUE, FALSE))\n\nconfusionMatrix(y_pred_factor, sst_response_factor)\n\nConfusion Matrix and Statistics\n\n          Reference\nPrediction FALSE TRUE\n     FALSE  2885 2004\n     TRUE   1430 2374\n                                          \n               Accuracy : 0.605           \n                 95% CI : (0.5946, 0.6153)\n    No Information Rate : 0.5036          \n    P-Value [Acc &gt; NIR] : &lt; 2.2e-16       \n                                          \n                  Kappa : 0.2107          \n                                          \n Mcnemar's Test P-Value : &lt; 2.2e-16       \n                                          \n            Sensitivity : 0.6686          \n            Specificity : 0.5423          \n         Pos Pred Value : 0.5901          \n         Neg Pred Value : 0.6241          \n             Prevalence : 0.4964          \n         Detection Rate : 0.3319          \n   Detection Prevalence : 0.5624          \n      Balanced Accuracy : 0.6054          \n                                          \n       'Positive' Class : FALSE           \n                                          \n\n\nAccuracy is one of the most straightforward metrics derived from a confusion matrix. It represents the proportion of true results (both true positives and true negatives) among the total number of cases examined. With no information, we saw that we could randomly guess Transportation 50.4% correctly. Now, given a random traveler we can predict with this model who was transported or not correctly 60.5% of the time."
   },
   {
-    "objectID": "personal_blog.html",
-    "href": "personal_blog.html",
-    "title": "Personal Blog",
-    "section": "",
-    "text": "On this page I will talk about random personal topics that are interesting to me.\n\n\n\n\n\n\n\n\n\nNo matching items"
-  },
-  {
-    "objectID": "professional_blog/2024-03-08-spaceship-titanic-part-1/index.html#load-the-data",
-    "href": "professional_blog/2024-03-08-spaceship-titanic-part-1/index.html#load-the-data",
-    "title": "Spaceship Titanic - Introduction to Bayesian Models - Part 1",
-    "section": "Load the Data",
-    "text": "Load the Data\nThe first steps in any data analysis done in R will be loading the libraries you want to use and reading in the data to a data.frame or a data.table object. I load the rstan package because I will be writing the main part of the model in Stan, and set the options to use all of the cores on my computer and not recompile the model every time I run it (Stan models have to be compiled and that can be a slow process to repeat.)\n\n\nCode\nlibrary(rstan)\nlibrary(data.table)\nlibrary(dplyr)\nlibrary(ggplot2)\nlibrary(knitr)\nlibrary(plotly)\nlibrary(mgcv)\nlibrary(showtext)\nlibrary(flextable)\n\noptions(mc.cores = parallel::detectCores())\nrstan_options(auto_write = TRUE)\nshowtext_auto()\n\nsst_data &lt;- data.table::fread(\"../../data/train.csv\")\n\n\nFor reference, I will show the first few rows of the data set. For the sake of keeping the post shorter, you can refer to the Kaggle link for the definitions of each of the data fields.\n\n\nCode\nhead(sst_data) %&gt;% \n  flextable() %&gt;% \n  bold(part = \"header\") %&gt;% \n  align(align = \"center\", part = \"all\")\n\n\nPassengerIdHomePlanetCryoSleepCabinDestinationAgeVIPRoomServiceFoodCourtShoppingMallSpaVRDeckNameTransported0001_01EuropaFALSEB/0/PTRAPPIST-1e39FALSE00000Maham OfracculyFALSE0002_01EarthFALSEF/0/STRAPPIST-1e24FALSE10992554944Juanna VinesTRUE0003_01EuropaFALSEA/0/STRAPPIST-1e58TRUE4335760671549Altark SusentFALSE0003_02EuropaFALSEA/0/STRAPPIST-1e33FALSE012833713329193Solam SusentFALSE0004_01EarthFALSEF/1/STRAPPIST-1e16FALSE303701515652Willy SantantinesTRUE0005_01EarthFALSEF/0/PPSO J318.5-2244FALSE048302910Sandie HinetthewsTRUE"
-  },
-  {
-    "objectID": "professional_blog/2024-03-08-spaceship-titanic-part-1/index.html#modeling-approach",
-    "href": "professional_blog/2024-03-08-spaceship-titanic-part-1/index.html#modeling-approach",
-    "title": "Spaceship Titanic - Introduction to Bayesian Models - Part 1",
-    "section": "Modeling Approach",
-    "text": "Modeling Approach\nAfter looking at the predictive fields available in this data set, the first thing I try to do is come up with a plan to approach the modeling structure.\nI have a couple of initial thoughts here:\n\nWe are trying to predict the Transported field which is a boolean variable: either TRUE or FALSE.\nThis leads me to believe that logistic regression is probably the best and simplest modelling approach.\nIn statistical terms, this means we want a model with the following structure: \\[\n\\log\\left(\\frac{\\pi}{1-\\pi}\\right) = \\alpha + \\beta X\n\\]\nThis transformation (often called the logit function or log-odds) is useful, because it is a function that maps values between 0 and 1, like probabilities, to real numbers.\nIn this model, \\(\\pi\\) will represent our response (Probability % of being Transported) and the \\(\\beta\\) will represent our predictive variables, so let’s explore some of the possibilities for \\(\\beta\\)."
-  },
-  {
-    "objectID": "professional_blog/2024-03-08-spaceship-titanic-part-1/index.html#exploring-vip-status-age-and-home-planet-variables",
-    "href": "professional_blog/2024-03-08-spaceship-titanic-part-1/index.html#exploring-vip-status-age-and-home-planet-variables",
-    "title": "Spaceship Titanic - Introduction to Bayesian Models - Part 1",
-    "section": "Exploring VIP Status, Age, and Home Planet variables",
-    "text": "Exploring VIP Status, Age, and Home Planet variables\nI really want to start with a simple model and build from there, so I’ll start by just examining the relationship between a couple of the explanatory variables and the Transported response variable.\nFirst of all, let’s see how many people were Transported in total.\n\n\nCode\nsst_data %&gt;% \n  count(Transported) %&gt;% \n  mutate(Proportion = scales::percent_format()(n / sum(n))) %&gt;% \n  flextable() %&gt;% \n  bold(part = \"header\") %&gt;% \n  align(align = \"center\", part = \"all\")\n\n\nTransportednProportionFALSE431549.64%TRUE437850.36%\n\n\nLooks like a fairly even split, which is good. It might be harder to model a huge imbalance of response classes, especially if you don’t have a lot of observations in the first place.\nI’ve found visual analysis can be useful to see which of our variables might provide some information that explains a difference in categorizing who was transported and who was not transported.\n\nAge\n\n\nCode\nggplot(sst_data, aes(x = Age, y = as.numeric(Transported))) +\n  geom_point(alpha = 0.1) +\n  geom_smooth(method = \"loess\", formula = y ~ x, span = 0.5, se = FALSE, color = \"blue\") +\n  labs(title = \"Relationship between Age and Transported Status\",\n       x = \"Age\",\n       y = \"Probability of Being Transported\") +\n  rj_custom_theme()\n\n\n\n\n\n\n\n\n\n\n\nThere are 179 missing Age values in the dataset (which we will have to handle later.)\nIt looks like passengers from Age 0 to about Age 17 are much more likely to be transported, and then the effect kind of levels off after that.\n\n\nVIP Status\n\n\nCode\nggplot(sst_data, aes(x = VIP, fill = Transported)) + \n  geom_bar(position = \"fill\") +\n  scale_y_continuous(labels = scales::percent_format()) +\n  labs(title = \"Proportion of Transported by VIP Status\", x = \"VIP Status\", y = \"Proportion Transported\") +\n  rj_custom_theme()\n\n\n\n\n\n\n\n\n\n\n\nVIPs were transported at a 38.2% rate, while non-VIPs were transported at a 50.6% rate.\n\n\nHome Planet\n\n\nCode\nggplot(sst_data, aes(x = HomePlanet, fill = Transported)) + \n  geom_bar(position = \"fill\") +\n  scale_y_continuous(labels = scales::percent_format()) +\n  labs(title = \"Proportion of Transported by Home Planet\", x = \"Home Planet\", y = \"Proportion Transported\") +\n  rj_custom_theme()\n\n\n\n\n\n\n\n\n\n\n\nIt appears there are three possible Home Planets: Earth, Europa, and Mars.\nThey all have different Transportation proportions which makes it a great candidate for a categorical predictive variable.\nThe aliens really seem to have taken a liking to residents from Europa.\n\n\nSummary\nTo summarize, it looks like a non-VIP from Europa that is between Age 0 and 17 has the highest risk factors for being abducted.\n\nIt’s good to do sense checks on your exploration is saying, so let’s see if we can take a slice of the data (like a population that has two out of any three of these risk factors) and see how strong the effects we discovered are.\n\n\n\nCode\nsst_data %&gt;% \n  select(`VIP`, `Age`, `HomePlanet`, `Transported`) %&gt;% \n  filter((`VIP` == FALSE & `Age` &lt; 18) | (`VIP` == FALSE & `HomePlanet` == \"Europa\") | (`Age` &lt; 18 & `HomePlanet` == \"Europa\")) %&gt;% \n  count(Transported) %&gt;% \n  flextable() %&gt;% \n  bold(part = \"header\") %&gt;%\n  align(align = \"center\", part = \"all\")\n\n\nTransportednFALSE1180TRUE2119\n\n\nIt definitely seems like we have some potential predictive power if we use these variables since we were able to pull out twice as many TRUE as FALSE using this naive approach (not to be confused with a Naïve Bayes Classifier.)\nIn the next post I will explore how to take these three insights and formally build them into a probability model using Stan."
-  },
-  {
-    "objectID": "professional_blog/2024-03-08-spaceship-titanic-part-1/index.html#part-2-preview-building-the-model",
-    "href": "professional_blog/2024-03-08-spaceship-titanic-part-1/index.html#part-2-preview-building-the-model",
-    "title": "Spaceship Titanic - Introduction to Bayesian Models - Part 1",
-    "section": "Part 2 Preview: Building the Model",
-    "text": "Part 2 Preview: Building the Model\nThat’s enough data exploration content for one blog post - thanks for reading and my goal going forward will be to create short and digestible posts that are easy to casually read and understand without investing too much of your time.\nKeep these insights that I just discovered in mind, since those will be used in Part 2 to describe a Bayesian probability model on the odds our poor travelers were subjected to alien transportation."
+    "objectID": "professional_blog/2024-03-09-spaceship-titanic-part-2/index.html#summary-part-3-preview",
+    "href": "professional_blog/2024-03-09-spaceship-titanic-part-2/index.html#summary-part-3-preview",
+    "title": "Spaceship Titanic - Introduction to Bayesian Models - Part 2",
+    "section": "Summary + Part 3 Preview",
+    "text": "Summary + Part 3 Preview\nI’d say those are some promising results considering this is the first iteration of the model. I only included three basic factors without too much data exploration, and was able to improve the accuracy from 50.4% to 60.5%. I’d like to see if we can get our training accuracy to at least 80% by the end of this series, which may or may not be possible given the complexity of the data.\nThere are a couple of specific improvements I plan on making in Part 3:\n\nComparing a new model to this one to test for improvement using loo (leave one out) cross-validation.\nFitting Age using a non-linear fitted effect instead of a linear regression (possibly with the help of a generalized additive model or spline.)\nExploring the use of Cabin as a predictor variable using a hierarchical model (also called multilevel model) structure.\n\nStay tuned, and thanks again for reading Part 2 of this Spaceship Titanic adventure using Bayesian modeling."
   }
 ]
