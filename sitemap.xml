@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://sinisterrob.github.io/professional_blog.html</loc>
-    <lastmod>2024-03-10T17:29:59.777Z</lastmod>
+    <lastmod>2024-03-10T18:34:32.203Z</lastmod>
   </url>
   <url>
     <loc>https://sinisterrob.github.io/professional_blog/2024-03-08-spaceship-titanic-part-1/index.html</loc>
@@ -18,7 +18,7 @@
   </url>
   <url>
     <loc>https://sinisterrob.github.io/food_review.html</loc>
-    <lastmod>2024-03-10T18:03:09.711Z</lastmod>
+    <lastmod>2024-03-10T18:35:19.509Z</lastmod>
   </url>
   <url>
     <loc>https://sinisterrob.github.io/food_review/2024-03-07-galit/index.html</loc>
@@ -27,6 +27,10 @@
   <url>
     <loc>https://sinisterrob.github.io/book_review.html</loc>
     <lastmod>2024-03-09T02:59:10.220Z</lastmod>
+  </url>
+  <url>
+    <loc>https://sinisterrob.github.io/blog_subscribe.html</loc>
+    <lastmod>2024-03-10T18:41:05.672Z</lastmod>
   </url>
   <url>
     <loc>https://sinisterrob.github.io/about_me.html</loc>
@@ -50,6 +54,6 @@
   </url>
   <url>
     <loc>https://sinisterrob.github.io/professional_blog/2024-03-09-spaceship-titanic-part-2/index.html</loc>
-    <lastmod>2024-03-10T05:48:07.302Z</lastmod>
+    <lastmod>2024-03-10T18:39:51.757Z</lastmod>
   </url>
 </urlset>
