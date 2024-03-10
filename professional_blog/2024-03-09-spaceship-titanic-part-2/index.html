@@ -221,6 +221,13 @@ window.Quarto = {
 <span class="menu-text">Photography</span></a>
   </li>  
 </ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
           </div> <!-- /navcollapse -->
           <div class="quarto-navbar-tools">
 </div>
@@ -290,7 +297,7 @@ table {
 </style>
 </div>
 <div style="text-align: center;">
-<p><img src="./../../img/titanic-2.png" class="img-fluid" width="300"></p>
+<p><img src="./../../img/titanic-2.png" class="img-fluid" width="350"></p>
 </div>
 <section id="part-2-initial-modelling" class="level1">
 <h1>Part 2: Initial Modelling</h1>
@@ -309,26 +316,35 @@ table {
 <div style="text-align: center;">
 <p><img src="../../img/stan2.png" class="img-fluid"></p>
 </div>
-<p><strong><code>data</code></strong></p>
+<section id="data" class="level3">
+<h3 class="anchored" data-anchor-id="data">data</h3>
 <ul>
 <li><p>This section declares all of the data that will be used in the model.</p></li>
+<li><p>This is data that needs to be provided by the user to run a Stan model.</p></li>
 <li><p>I will be using an N x K <a href="https://www.statlect.com/glossary/design-matrix">design matrix</a> that has N distinct observations, and K predictive variables.</p></li>
 </ul>
-<p><strong><code>parameters</code></strong></p>
+</section>
+<section id="parameters" class="level3">
+<h3 class="anchored" data-anchor-id="parameters">parameters</h3>
 <ul>
 <li><p>This section defines all of the unknown parameters in your model that Stan will estimate using the data.</p></li>
 <li><p>In our model, we will be estimating the <span class="math inline">\(\beta\)</span> coefficients which are the corresponding linear effects of each of the K predictor variables.</p></li>
 </ul>
-<p><strong><code>model</code></strong></p>
+</section>
+<section id="model" class="level3">
+<h3 class="anchored" data-anchor-id="model">model</h3>
 <ul>
 <li><p>This section will define the statistical model (using a log-likelihood function), prior distributions, and provide the mathematical link between your parameters and observed data.</p></li>
 <li><p>In <a href="../../professional_blog/2024-03-08-spaceship-titanic-part-1/index.html">Part 1</a> I decided to use a logistic regression. This distribution is implemented in Stan using the <code>bernoulli_logit(...)</code> function.</p></li>
 <li><p>Note that Age is a continuous variable, so unless we make any modification to the predictive variable or the model structure, it will be modeled as a linear effect which we saw previously may not be completely accurate. We can still run the model without making any changes and see what the output tells us.</p></li>
 </ul>
-<p><strong><code>generated quantities</code></strong></p>
+</section>
+<section id="generated-quantities" class="level3">
+<h3 class="anchored" data-anchor-id="generated-quantities">generated quantities</h3>
 <ul>
 <li>After running a Stan model and having some fitted posterior distributions from the data, you may want to sample from these distributions (or even from some algebraically manipulated variation of the distributions). Sampling can be set up in the <code>generated quantities</code> block.</li>
 </ul>
+</section>
 </section>
 <section id="handling-missing-values" class="level2">
 <h2 class="anchored" data-anchor-id="handling-missing-values">Handling Missing Values</h2>
@@ -356,14 +372,14 @@ table {
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>) <span class="sc">%&gt;%</span> </span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rj_custom_table</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<div class="tabwid"><style>.cl-07237d66{}.cl-071b9f4c{font-family:'Iosevka';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-071b9f56{font-family:'Iosevka';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-071ec67c{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-071ed8ba{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 1.5pt solid rgba(190, 190, 190, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-071ed8c4{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-071ed8c5{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-07237d66"><thead><tr style="overflow-wrap:break-word;"><th class="cl-071ed8ba"><p class="cl-071ec67c"><span class="cl-071b9f4c">(Intercept)</span></p></th><th class="cl-071ed8ba"><p class="cl-071ec67c"><span class="cl-071b9f4c">Age</span></p></th><th class="cl-071ed8ba"><p class="cl-071ec67c"><span class="cl-071b9f4c">VIPTRUE</span></p></th><th class="cl-071ed8ba"><p class="cl-071ec67c"><span class="cl-071b9f4c">HomePlanetEarth</span></p></th><th class="cl-071ed8ba"><p class="cl-071ec67c"><span class="cl-071b9f4c">HomePlanetMars</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">1</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">39</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">0</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">0</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">1</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">24</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">0</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">1</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">1</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">58</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">1</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">0</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">1</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">33</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">0</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">0</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">1</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">16</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">0</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">1</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">1</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">44</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">0</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">1</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">1</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">26</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">0</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">1</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">1</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">28</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">0</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">1</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">1</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">35</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">0</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">1</span></p></td><td class="cl-071ed8c4"><p class="cl-071ec67c"><span class="cl-071b9f56">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-071ed8c5"><p class="cl-071ec67c"><span class="cl-071b9f56">1</span></p></td><td class="cl-071ed8c5"><p class="cl-071ec67c"><span class="cl-071b9f56">14</span></p></td><td class="cl-071ed8c5"><p class="cl-071ec67c"><span class="cl-071b9f56">0</span></p></td><td class="cl-071ed8c5"><p class="cl-071ec67c"><span class="cl-071b9f56">0</span></p></td><td class="cl-071ed8c5"><p class="cl-071ec67c"><span class="cl-071b9f56">0</span></p></td></tr></tbody></table></div>
+<div class="tabwid"><style>.cl-1ff19d6a{}.cl-1fe9c39c{font-family:'Iosevka';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-1fe9c3a6{font-family:'Iosevka';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-1feccd58{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-1fecdf64{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 1.5pt solid rgba(190, 190, 190, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-1fecdf6e{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-1fecdf6f{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-1ff19d6a"><thead><tr style="overflow-wrap:break-word;"><th class="cl-1fecdf64"><p class="cl-1feccd58"><span class="cl-1fe9c39c">(Intercept)</span></p></th><th class="cl-1fecdf64"><p class="cl-1feccd58"><span class="cl-1fe9c39c">Age</span></p></th><th class="cl-1fecdf64"><p class="cl-1feccd58"><span class="cl-1fe9c39c">VIPTRUE</span></p></th><th class="cl-1fecdf64"><p class="cl-1feccd58"><span class="cl-1fe9c39c">HomePlanetEarth</span></p></th><th class="cl-1fecdf64"><p class="cl-1feccd58"><span class="cl-1fe9c39c">HomePlanetMars</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">39</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">24</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">58</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">33</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">16</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">44</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">26</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">28</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">35</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-1fecdf6f"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6f"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">14</span></p></td><td class="cl-1fecdf6f"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td><td class="cl-1fecdf6f"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td><td class="cl-1fecdf6f"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td></tr></tbody></table></div>
 </div>
 </div>
-<p>From the design matrix and the Stan code we can see that this model will need to estimate 5 <span class="math inline">\(\beta\)</span> parameters, one for each column of the design matrix.</p>
+<p>From the design matrix and the Stan code we can see that this model will need to estimate five separate <span class="math inline">\(\beta\)</span> parameters, one for each column of the design matrix.</p>
 <p>I will now fit the initial model using the <code>stan(...)</code> function from the rstan library.</p>
-<p>Referencing the <code>data</code> block in the Stan code, we see that we will need to provide the <code>stan(...)</code> function with a named list of parameters N, K, X, and y. Note that I am running a model with 4 chains of 2,000 iterations each (which will be split into 1,000 warm-up iterations and 1,000 sampling iterations per chain.)</p>
-<p>Think of the model fitting as exploring a wild K-dimensional terrain across the parameter space and the log-likelihoods of observing the data at each point using that specific set of parameters. We start in 4 random locations on this terrain, and hope that these chains end up in the exact same spot of maximum likelihood and stabilize so that we can draw credible and usable posterior estimates.</p>
-<p>The exact method that Stan uses to explore this terrain is complex and definitely beyond the scope of this blog, but if you’re interested in learning more, you should read about <a href="https://mc-stan.org/docs/reference-manual/mcmc.html#hamiltonian-monte-carlo">Hamiltonian Monte Carlo</a> and the <a href="https://mc-stan.org/docs/reference-manual/mcmc.html#NUTS-and-its-configuration">no-U-turn sampler</a></p>
+<p>Referencing the parameters I defined in the <code>data</code> block in the Stan code above, we will need to provide the <code>stan(...)</code> function with a named list of parameters N, K, X, and y. Note that I am running a model with 4 chains of 2,000 iterations each (which will be split into 1,000 warm-up iterations and 1,000 sampling iterations per chain.)</p>
+<p>You can think of the model fitting as exploring a potentially jagged K-dimensional terrain across the parameter space and the log-likelihood of observing the data at each point using that specific set of parameters is the height. We start in 4 random locations on this terrain, and hope that these chains end up in the exact same spot of maximum likelihood and stabilize so that we can draw credible and usable posterior parameter estimates.</p>
+<p>The exact method that Stan uses to explore this terrain is complex and definitely beyond the scope of this blog, but if you’re interested in learning more, you should read about <a href="https://mc-stan.org/docs/reference-manual/mcmc.html#hamiltonian-monte-carlo">Hamiltonian Monte Carlo</a> and the <a href="https://mc-stan.org/docs/reference-manual/mcmc.html#nuts-and-its-configuration">no-U-turn sampler</a>.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>sst_design_matrix <span class="ot">&lt;-</span> </span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  imputed_sst_data <span class="sc">%&gt;%</span> </span>
@@ -379,7 +395,7 @@ table {
 <span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>                     <span class="at">X =</span> sst_design_matrix,</span>
 <span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>                     <span class="at">y =</span> sst_response),</span>
 <span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>         <span class="at">chains =</span> <span class="dv">4</span>,</span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>         <span class="at">iter =</span> <span class="dv">1000</span>)</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>         <span class="at">iter =</span> <span class="dv">2000</span>)</span>
 <span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">save</span>(sst_fit_1, <span class="at">file =</span> <span class="st">"../../models/sst_model_1.rds"</span>)</span>
 <span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
 <span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">load</span>(<span class="st">"../../models/sst_model_1.rds"</span>)</span>
@@ -391,8 +407,11 @@ table {
 <p>That model was easy enough to set up and run! Let’s examine what the resulting posterior distributions look like.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mcmc_hist</span>(<span class="fu">as.array</span>(sst_fit_1, <span class="at">pars =</span> <span class="st">"beta"</span>),</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>          <span class="at">facet_args =</span> <span class="fu">list</span>(<span class="at">labeller =</span> ggplot2<span class="sc">::</span>label_parsed) <span class="sc">+</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>          <span class="fu">facet_text</span>(<span class="at">size =</span> <span class="dv">24</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>          <span class="at">facet_args =</span> <span class="fu">list</span>(<span class="at">labeller =</span> ggplot2<span class="sc">::</span>label_parsed)) <span class="sc">+</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">text =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">24</span>),</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>        <span class="at">axis.text =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">18</span>), <span class="co"># Tick text size</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>        <span class="at">axis.title =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">24</span>), <span class="co"># Axis label size</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        <span class="at">strip.text =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">24</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -401,90 +420,108 @@ table {
 </div>
 </div>
 </div>
-<p>Interestingly, it looks like our posterior distributions for the betas are looking approximately normal with reasonably tight standard errors, even though we didn’t even set any explicit prior distributions at all in the <code>model</code> block of the Stan code. Normally, the advantage of Bayesian models is the ability to incorporate expert opinion through prior distributions but this is not necessary to do, since you can use what is called a flat prior which basically indicates we have no prior information about what the distribution or mean of the <span class="math inline">\(\beta\)</span> parameters would be.</p>
+<p>Interestingly, it looks like our posterior distributions for the <span class="math inline">\(\beta\)</span> parameters are looking approximately normal with reasonably tight standard errors, even though we didn’t even set any explicit prior distributions at all in the <code>model</code> block of the Stan code. Normally, the advantage of Bayesian models is the ability to incorporate expert opinion through prior distributions but this is not required. Instead you can use what is called a flat prior which basically indicates we have no prior information about what the distribution or mean of the <span class="math inline">\(\beta\)</span> parameters would be.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">extract</span>(sst_fit_1)<span class="sc">$</span>beta <span class="sc">%&gt;%</span> </span>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>rounded_betas <span class="ot">&lt;-</span> <span class="fu">extract</span>(sst_fit_1)<span class="sc">$</span>beta <span class="sc">%&gt;%</span> </span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">apply</span>(<span class="dv">2</span>, mean) <span class="sc">%&gt;%</span> </span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">round</span>(<span class="dv">4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1]  1.3879 -0.0190 -0.9295 -1.2125 -0.7003</code></pre>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">round</span>(<span class="dv">4</span>)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(rounded_betas) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"beta[1]"</span>, <span class="st">"beta[2]"</span>, <span class="st">"beta[3]"</span>, <span class="st">"beta[4]"</span>, <span class="st">"beta[5]"</span>)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>rounded_betas <span class="sc">%&gt;%</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">t</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.data.frame</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rj_custom_table</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="tabwid"><style>.cl-22597f32{}.cl-22526df0{font-family:'Iosevka';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-22526dfa{font-family:'Iosevka';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-22553418{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-225542d2{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 1.5pt solid rgba(190, 190, 190, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-225542dc{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-22597f32"><thead><tr style="overflow-wrap:break-word;"><th class="cl-225542d2"><p class="cl-22553418"><span class="cl-22526df0">beta[1]</span></p></th><th class="cl-225542d2"><p class="cl-22553418"><span class="cl-22526df0">beta[2]</span></p></th><th class="cl-225542d2"><p class="cl-22553418"><span class="cl-22526df0">beta[3]</span></p></th><th class="cl-225542d2"><p class="cl-22553418"><span class="cl-22526df0">beta[4]</span></p></th><th class="cl-225542d2"><p class="cl-22553418"><span class="cl-22526df0">beta[5]</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-225542dc"><p class="cl-22553418"><span class="cl-22526dfa">1.3716</span></p></td><td class="cl-225542dc"><p class="cl-22553418"><span class="cl-22526dfa">-0.0187</span></p></td><td class="cl-225542dc"><p class="cl-22553418"><span class="cl-22526dfa">-0.919</span></p></td><td class="cl-225542dc"><p class="cl-22553418"><span class="cl-22526dfa">-1.1987</span></p></td><td class="cl-225542dc"><p class="cl-22553418"><span class="cl-22526dfa">-0.6832</span></p></td></tr></tbody></table></div>
 </div>
 </div>
-<p>One final check: Are these variable means in the same direction of what we expected from the univariate analysis in <a href="../../professional_blog/2024-03-08-spaceship-titanic-part-1/index.html">Part 1</a>?</p>
-<p><strong>beta[1] (Intercept)</strong> - This quantity represents the baseline, which should correspond to a passenger who is Age 0, not a VIP, and having a home planet of Europa.</p>
+<p>One final check: Are these <span class="math inline">\(\beta\)</span> means in the same direction of what we expected from the univariate analysis in <a href="../../professional_blog/2024-03-08-spaceship-titanic-part-1/index.html">Part 1</a>?</p>
+<section id="beta1-intercept" class="level3">
+<h3 class="anchored" data-anchor-id="beta1-intercept">beta[1]: (Intercept)</h3>
 <ul>
-<li><p>To convert the quantity 1.3879 into a probability, we can undo the logit function manually.</p></li>
+<li><p>This quantity represents the baseline, which should correspond to a passenger who is Age 0, not a VIP, and having a home planet of Europa.</p></li>
+<li><p>To convert into a probability, we can undo the logit function manually.</p></li>
 <li><p><span class="math inline">\(p = \frac{e^{\beta_1}}{1 + e^{\beta_1}}\)</span></p></li>
-<li><p><span class="math inline">\(p = 80.0\%\)</span></p></li>
+<li><p><span class="math inline">\(p = 79.8\%\)</span></p></li>
 </ul>
-<p><strong>beta[2] (Age)</strong></p>
+</section>
+<section id="beta2-age" class="level3">
+<h3 class="anchored" data-anchor-id="beta2-age">beta[2]: (Age)</h3>
 <ul>
-<li><p>We can see a decreasing effect in Age, where every increase of Age by 1 year decreases the log odds of Transportation by -0.01900.</p></li>
+<li><p>We can see a decreasing effect in Age, where every increase of Age by 1 year decreases the log odds of Transportation by -0.0187.</p></li>
 <li><p>We did observe a decreasing effect with Age although it wasn’t exactly linear and mostly flat after Age 17.</p></li>
 </ul>
-<p><strong>beta[3] (VIP = TRUE)</strong></p>
+</section>
+<section id="beta3-vip-true" class="level3">
+<h3 class="anchored" data-anchor-id="beta3-vip-true">beta[3]: (VIP = TRUE)</h3>
 <ul>
-<li><p>Being a VIP reduces the log odds of Transportation by -0.9295 compared to the baseline of not being a VIP.</p></li>
+<li><p>Being a VIP reduces the log odds of Transportation by -0.9190 compared to the baseline of not being a VIP.</p></li>
 <li><p>We can demonstrate what that means in terms of probability by calculating the Transportation prediction to a passenger who is Age 0, a VIP, and having a home planet of Europa and comparing that to the baseline probability of 80%.</p></li>
 <li><p><span class="math inline">\(p = \frac{e^{\beta1 + \beta3}}{1 + e^{\beta1 + \beta3}}\)</span></p></li>
-<li><p><span class="math inline">\(p = 61.3\%\)</span></p></li>
+<li><p><span class="math inline">\(p = 61.1\%\)</span></p></li>
 </ul>
-<p><strong>beta[4] (Home Planet = Earth)</strong></p>
+</section>
+<section id="beta4-home-planet-earth" class="level3">
+<h3 class="anchored" data-anchor-id="beta4-home-planet-earth">beta[4]: (Home Planet = Earth)</h3>
 <ul>
 <li>Having a home planet of Earth reduces the log odds of Transportation by -1.2125 compared to the baseline of Europa.</li>
 </ul>
-<p><strong>beta[5] (Home Planet = Mars)</strong></p>
+</section>
+<section id="beta5-home-planet-mars" class="level3">
+<h3 class="anchored" data-anchor-id="beta5-home-planet-mars">beta[5]: (Home Planet = Mars)</h3>
 <ul>
 <li>Having a home planet of Mars reduces the log odds of Transportation by -0.7003 compared to the baseline of Europa.</li>
 </ul>
 <p>And finally, how do the new model’s predictions perform on the training data? Remember that roughly 50% of the travelers were Transported in the original data, so let’s see if we can identify who was Transported more accurately than randomly guessing by using a <a href="https://en.wikipedia.org/wiki/Confusion_matrix">confusion matrix</a>.</p>
-<p>Since we are testing the model on the same data we trained it on, these metrics are also referred to as training error and probably an overestimate of how the model would generalize to data it hasn’t been trained on before.</p>
+<p>Since we are testing the model on the same data we trained it on, these metrics are also referred to as training error and probably an optimistic estimate of how the model would generalize to data it hasn’t been trained on before.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>y_pred_means <span class="ot">&lt;-</span> <span class="fu">apply</span>(<span class="fu">extract</span>(sst_fit_1, <span class="st">"y_pred"</span>)<span class="sc">$</span>y_pred, <span class="dv">2</span>, mean)</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>y_pred_factor <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="fu">ifelse</span>(y_pred_means <span class="sc">&gt;</span> <span class="fl">0.5</span>, <span class="cn">TRUE</span>, <span class="cn">FALSE</span>))</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>sst_response_factor <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="fu">ifelse</span>(sst_response <span class="sc">==</span> <span class="dv">1</span>, <span class="cn">TRUE</span>, <span class="cn">FALSE</span>))</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="fu">confusionMatrix</span>(y_pred_factor, sst_response_factor)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>y_pred_means <span class="ot">&lt;-</span> <span class="fu">apply</span>(<span class="fu">extract</span>(sst_fit_1, <span class="st">"y_pred"</span>)<span class="sc">$</span>y_pred, <span class="dv">2</span>, mean)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>y_pred_factor <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="fu">ifelse</span>(y_pred_means <span class="sc">&gt;</span> <span class="fl">0.5</span>, <span class="cn">TRUE</span>, <span class="cn">FALSE</span>))</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>sst_response_factor <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="fu">ifelse</span>(sst_response <span class="sc">==</span> <span class="dv">1</span>, <span class="cn">TRUE</span>, <span class="cn">FALSE</span>))</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="fu">confusionMatrix</span>(y_pred_factor, sst_response_factor)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Confusion Matrix and Statistics
 
           Reference
 Prediction FALSE TRUE
-     FALSE  2885 2004
-     TRUE   1430 2374
-                                          
-               Accuracy : 0.605           
-                 95% CI : (0.5946, 0.6153)
-    No Information Rate : 0.5036          
-    P-Value [Acc &gt; NIR] : &lt; 2.2e-16       
-                                          
-                  Kappa : 0.2107          
-                                          
- Mcnemar's Test P-Value : &lt; 2.2e-16       
-                                          
-            Sensitivity : 0.6686          
-            Specificity : 0.5423          
-         Pos Pred Value : 0.5901          
-         Neg Pred Value : 0.6241          
-             Prevalence : 0.4964          
-         Detection Rate : 0.3319          
-   Detection Prevalence : 0.5624          
-      Balanced Accuracy : 0.6054          
-                                          
-       'Positive' Class : FALSE           
-                                          </code></pre>
+     FALSE  2886 2042
+     TRUE   1429 2336
+                                         
+               Accuracy : 0.6007         
+                 95% CI : (0.5903, 0.611)
+    No Information Rate : 0.5036         
+    P-Value [Acc &gt; NIR] : &lt; 2.2e-16      
+                                         
+                  Kappa : 0.2022         
+                                         
+ Mcnemar's Test P-Value : &lt; 2.2e-16      
+                                         
+            Sensitivity : 0.6688         
+            Specificity : 0.5336         
+         Pos Pred Value : 0.5856         
+         Neg Pred Value : 0.6205         
+             Prevalence : 0.4964         
+         Detection Rate : 0.3320         
+   Detection Prevalence : 0.5669         
+      Balanced Accuracy : 0.6012         
+                                         
+       'Positive' Class : FALSE          
+                                         </code></pre>
 </div>
 </div>
 <p>Accuracy is one of the most straightforward metrics derived from a confusion matrix. It represents the proportion of true results (both true positives and true negatives) among the total number of cases examined. With no information, we saw that we could randomly guess Transportation correctly 50.4% of the time. Now, given a random traveler we can predict if they were transported or not correctly 60.5% of the time.</p>
+</section>
 </section>
 <section id="summary-part-3-preview" class="level2">
 <h2 class="anchored" data-anchor-id="summary-part-3-preview">Summary + Part 3 Preview</h2>
 <p>I’d say those are some promising results considering this is the first iteration of the model. I only included three basic factors without too much data exploration, and was able to improve the accuracy from 50.4% to 60.5%. I’d like to see if we can get our training accuracy to at least 80% by the end of this series, which may or may not be possible given the complexity of the data.</p>
 <p>There are a couple of specific improvements I plan on making in Part 3:</p>
 <ul>
-<li><p>Comparing a new model to this one to test for improvement using <a href="https://mc-stan.org/loo/">leave one out</a> cross-validation.</p></li>
-<li><p>Fitting Age using a non-linear fitted effect instead of a linear regression (possibly with the help of a <a href="https://en.wikipedia.org/wiki/Generalized_additive_model">generalized additive model</a> or spline.)</p></li>
-<li><p>Exploring the use of Cabin as a predictor variable using a hierarchical model (also called <a href="https://www.stata.com/features/overview/bayesian-multilevel-models/">multilevel</a> model) structure.</p></li>
+<li><p>Comparing a new model to this one to test for improvement using <a href="https://mc-stan.org/loo/">leave one out</a> cross-validation or an <a href="https://en.wikipedia.org/wiki/Receiver_operating_characteristic">ROC curve</a>.</p></li>
+<li><p>Fitting Age using a non-linear fitted effect instead of a linear effect term (possibly with the help of a <a href="https://en.wikipedia.org/wiki/Generalized_additive_model">generalized additive model</a> or spline.)</p></li>
+<li><p>Exploring the use of Cabin as a predictor variable using a hierarchical model (also called <a href="https://en.wikipedia.org/wiki/Bayesian_hierarchical_modeling">multilevel</a> model) structure.</p></li>
 </ul>
 <p>Stay tuned for Part 3, and thanks again for reading Part 2 of the Spaceship Titanic series using Bayesian modeling.</p>
 

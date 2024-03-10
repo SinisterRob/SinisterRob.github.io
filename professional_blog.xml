@@ -1,0 +1,1149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss  xmlns:atom="http://www.w3.org/2005/Atom" 
+      xmlns:media="http://search.yahoo.com/mrss/" 
+      xmlns:content="http://purl.org/rss/1.0/modules/content/" 
+      xmlns:dc="http://purl.org/dc/elements/1.1/" 
+      version="2.0">
+<channel>
+<title>bites | brews | paws</title>
+<link>https://sinisterrob.github.io/professional_blog.html</link>
+<atom:link href="https://sinisterrob.github.io/professional_blog.xml" rel="self" type="application/rss+xml"/>
+<description>A personal take on Chicago food, music, photography, and other topics.</description>
+<image>
+<url>https://sinisterrob.github.io/img/titanic-main.png</url>
+<title>bites | brews | paws</title>
+<link>https://sinisterrob.github.io/professional_blog.html</link>
+</image>
+<generator>quarto-1.4.550</generator>
+<lastBuildDate>Sat, 09 Mar 2024 06:00:00 GMT</lastBuildDate>
+<item>
+  <title>Spaceship Titanic - Introduction to Bayesian Models - Part 2</title>
+  <link>https://sinisterrob.github.io/professional_blog/2024-03-09-spaceship-titanic-part-2/</link>
+  <description><![CDATA[ 
+
+
+
+
+<div class="cell">
+<style type="text/css">
+table {
+  width: 50%;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+</div>
+<div style="text-align: center;">
+<p><img src="https://sinisterrob.github.io/img/titanic-2.png" class="img-fluid" width="350"></p>
+</div>
+<section id="part-2-initial-modelling" class="level1">
+<h1>Part 2: Initial Modelling</h1>
+<p>Welcome to Part 2 of my Introduction to Bayesian Models series.</p>
+<p>Before I begin building the model, recall the three insights we found in <a href="../../professional_blog/2024-03-08-spaceship-titanic-part-1/index.html">Part 1</a>:</p>
+<ul>
+<li><p><span style="color: #BF5700;">Passengers from Age 0-17</span> were more likely to be transported.</p></li>
+<li><p><span style="color: #BF5700;">Non-VIP passengers</span> were more likely to be transported.</p></li>
+<li><p><span style="color: #BF5700;">Passengers with a Home Planet of Europa</span> were more likely to be transported.</p></li>
+</ul>
+<p>I’m sure this is a small subset of the available insights of our data, but I don’t want to make the model too complicated before even starting so we will stick with implementing these three factors in Part 2.</p>
+<section id="starting-with-stan" class="level2">
+<h2 class="anchored" data-anchor-id="starting-with-stan">Starting with Stan</h2>
+<p><a href="https://en.wikipedia.org/wiki/Stan_(software)">Stan</a> is a probabilistic programming language for statistical inference. To write a Stan model, I will create a .stan file using the Stan programming language, and then compile and run this model in R using the rstan package.</p>
+<p>I will first show the basic Stan code for the model, and explain each of the blocks:</p>
+<div style="text-align: center;">
+<p><img src="https://sinisterrob.github.io/img/stan2.png" class="img-fluid"></p>
+</div>
+<section id="data" class="level3">
+<h3 class="anchored" data-anchor-id="data">data</h3>
+<ul>
+<li><p>This section declares all of the data that will be used in the model.</p></li>
+<li><p>This is data that needs to be provided by the user to run a Stan model.</p></li>
+<li><p>I will be using an N x K <a href="https://www.statlect.com/glossary/design-matrix">design matrix</a> that has N distinct observations, and K predictive variables.</p></li>
+</ul>
+</section>
+<section id="parameters" class="level3">
+<h3 class="anchored" data-anchor-id="parameters">parameters</h3>
+<ul>
+<li><p>This section defines all of the unknown parameters in your model that Stan will estimate using the data.</p></li>
+<li><p>In our model, we will be estimating the <img src="https://latex.codecogs.com/png.latex?%5Cbeta"> coefficients which are the corresponding linear effects of each of the K predictor variables.</p></li>
+</ul>
+</section>
+<section id="model" class="level3">
+<h3 class="anchored" data-anchor-id="model">model</h3>
+<ul>
+<li><p>This section will define the statistical model (using a log-likelihood function), prior distributions, and provide the mathematical link between your parameters and observed data.</p></li>
+<li><p>In <a href="../../professional_blog/2024-03-08-spaceship-titanic-part-1/index.html">Part 1</a> I decided to use a logistic regression. This distribution is implemented in Stan using the <code>bernoulli_logit(...)</code> function.</p></li>
+<li><p>Note that Age is a continuous variable, so unless we make any modification to the predictive variable or the model structure, it will be modeled as a linear effect which we saw previously may not be completely accurate. We can still run the model without making any changes and see what the output tells us.</p></li>
+</ul>
+</section>
+<section id="generated-quantities" class="level3">
+<h3 class="anchored" data-anchor-id="generated-quantities">generated quantities</h3>
+<ul>
+<li>After running a Stan model and having some fitted posterior distributions from the data, you may want to sample from these distributions (or even from some algebraically manipulated variation of the distributions). Sampling can be set up in the <code>generated quantities</code> block.</li>
+</ul>
+</section>
+</section>
+<section id="handling-missing-values" class="level2">
+<h2 class="anchored" data-anchor-id="handling-missing-values">Handling Missing Values</h2>
+<p>It turns out there are some missing values in the Age, VIP, and HomePlanet fields.</p>
+<p>The easiest way to handle missing values is to <a href="https://en.wikipedia.org/wiki/Imputation_(statistics)">impute</a> them using the <strong><code>mice</code></strong> package in R.</p>
+<p>Imputation helps us fill in these gaps with plausible values, ensuring that our analysis can proceed without dropping entire rows or columns which might lead to loss of valuable information.</p>
+<p><strong><code>mice</code></strong> stands for <strong>Multivariate Imputation by Chained Equations</strong>, a technique that provides a more nuanced approach than simply filling in the missing entries with average values. You could think of it as an iterative regression on the NA values using the non-NA values for that observation.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1">imputed_sst <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mice</span>(sst_data_stan, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">m =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">printFlag =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>)</span>
+<span id="cb1-2">imputed_sst_data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">complete</span>(imputed_sst, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span>
+<span id="cb1-3"></span>
+<span id="cb1-4">imputed_sst_data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span></span>
+<span id="cb1-5">  imputed_sst_data <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb1-6">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">HomePlanet =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">factor</span>(HomePlanet, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">levels =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">unique</span>(HomePlanet)),</span>
+<span id="cb1-7">         <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">VIP =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">factor</span>(VIP, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">levels =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">unique</span>(VIP)))</span></code></pre></div>
+</div>
+</section>
+<section id="fitting-the-initial-model" class="level2">
+<h2 class="anchored" data-anchor-id="fitting-the-initial-model">Fitting the Initial Model</h2>
+<p>Here is what the first 10 rows of the design matrix (denoted as <code>X</code> in our Stan code) looks like:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1">imputed_sst_data <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb2-2">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">model.matrix</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Transported</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Age</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">VIP</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">HomePlanet</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> .) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb2-3">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.data.frame</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb2-4">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">slice</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb2-5">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rj_custom_table</span>()</span></code></pre></div>
+<div class="cell-output-display">
+<div class="tabwid"><style>.cl-1ff19d6a{}.cl-1fe9c39c{font-family:'Iosevka';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-1fe9c3a6{font-family:'Iosevka';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-1feccd58{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-1fecdf64{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 1.5pt solid rgba(190, 190, 190, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-1fecdf6e{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-1fecdf6f{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-1ff19d6a"><thead><tr style="overflow-wrap:break-word;"><th class="cl-1fecdf64"><p class="cl-1feccd58"><span class="cl-1fe9c39c">(Intercept)</span></p></th><th class="cl-1fecdf64"><p class="cl-1feccd58"><span class="cl-1fe9c39c">Age</span></p></th><th class="cl-1fecdf64"><p class="cl-1feccd58"><span class="cl-1fe9c39c">VIPTRUE</span></p></th><th class="cl-1fecdf64"><p class="cl-1feccd58"><span class="cl-1fe9c39c">HomePlanetEarth</span></p></th><th class="cl-1fecdf64"><p class="cl-1feccd58"><span class="cl-1fe9c39c">HomePlanetMars</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">39</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">24</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">58</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">33</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">16</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">44</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">26</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">28</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">35</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6e"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-1fecdf6f"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">1</span></p></td><td class="cl-1fecdf6f"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">14</span></p></td><td class="cl-1fecdf6f"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td><td class="cl-1fecdf6f"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td><td class="cl-1fecdf6f"><p class="cl-1feccd58"><span class="cl-1fe9c3a6">0</span></p></td></tr></tbody></table></div>
+</div>
+</div>
+<p>From the design matrix and the Stan code we can see that this model will need to estimate five separate <img src="https://latex.codecogs.com/png.latex?%5Cbeta"> parameters, one for each column of the design matrix.</p>
+<p>I will now fit the initial model using the <code>stan(...)</code> function from the rstan library.</p>
+<p>Referencing the parameters I defined in the <code>data</code> block in the Stan code above, we will need to provide the <code>stan(...)</code> function with a named list of parameters N, K, X, and y. Note that I am running a model with 4 chains of 2,000 iterations each (which will be split into 1,000 warm-up iterations and 1,000 sampling iterations per chain.)</p>
+<p>You can think of the model fitting as exploring a potentially jagged K-dimensional terrain across the parameter space and the log-likelihood of observing the data at each point using that specific set of parameters is the height. We start in 4 random locations on this terrain, and hope that these chains end up in the exact same spot of maximum likelihood and stabilize so that we can draw credible and usable posterior parameter estimates.</p>
+<p>The exact method that Stan uses to explore this terrain is complex and definitely beyond the scope of this blog, but if you’re interested in learning more, you should read about <a href="https://mc-stan.org/docs/reference-manual/mcmc.html#hamiltonian-monte-carlo">Hamiltonian Monte Carlo</a> and the <a href="https://mc-stan.org/docs/reference-manual/mcmc.html#nuts-and-its-configuration">no-U-turn sampler</a>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1">sst_design_matrix <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> </span>
+<span id="cb3-2">  imputed_sst_data <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb3-3">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">model.matrix</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Transported</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Age</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">VIP</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">HomePlanet</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> .)</span>
+<span id="cb3-4"></span>
+<span id="cb3-5">sst_response <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.integer</span>(imputed_sst_data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Transported)</span>
+<span id="cb3-6"></span>
+<span id="cb3-7"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">if</span> (<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">!</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">file.exists</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"../../models/sst_model_1.rds"</span>)){</span>
+<span id="cb3-8">  sst_fit_1 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> </span>
+<span id="cb3-9">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">stan</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">file =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"spaceship_titanic_2.stan"</span>,</span>
+<span id="cb3-10">         <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">N =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(sst_design_matrix),</span>
+<span id="cb3-11">                     <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">K =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ncol</span>(sst_design_matrix),</span>
+<span id="cb3-12">                     <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">X =</span> sst_design_matrix,</span>
+<span id="cb3-13">                     <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> sst_response),</span>
+<span id="cb3-14">         <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">chains =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span>,</span>
+<span id="cb3-15">         <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">iter =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2000</span>)</span>
+<span id="cb3-16">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">save</span>(sst_fit_1, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">file =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"../../models/sst_model_1.rds"</span>)</span>
+<span id="cb3-17">  } <span class="cf" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">else</span> {</span>
+<span id="cb3-18">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">load</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"../../models/sst_model_1.rds"</span>)</span>
+<span id="cb3-19">  }</span></code></pre></div>
+</div>
+</section>
+<section id="model-diagnostics" class="level2">
+<h2 class="anchored" data-anchor-id="model-diagnostics">Model Diagnostics</h2>
+<p>That model was easy enough to set up and run! Let’s examine what the resulting posterior distributions look like.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mcmc_hist</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.array</span>(sst_fit_1, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">pars =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"beta"</span>),</span>
+<span id="cb4-2">          <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">facet_args =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">labeller =</span> ggplot2<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span>label_parsed)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb4-3">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">theme</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">text =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">element_text</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">size =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">24</span>),</span>
+<span id="cb4-4">        <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">axis.text =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">element_text</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">size =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">18</span>), <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Tick text size</span></span>
+<span id="cb4-5">        <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">axis.title =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">element_text</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">size =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">24</span>), <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Axis label size</span></span>
+<span id="cb4-6">        <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">strip.text =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">element_text</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">size =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">24</span>))</span></code></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://sinisterrob.github.io/professional_blog/2024-03-09-spaceship-titanic-part-2/index_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Interestingly, it looks like our posterior distributions for the <img src="https://latex.codecogs.com/png.latex?%5Cbeta"> parameters are looking approximately normal with reasonably tight standard errors, even though we didn’t even set any explicit prior distributions at all in the <code>model</code> block of the Stan code. Normally, the advantage of Bayesian models is the ability to incorporate expert opinion through prior distributions but this is not required. Instead you can use what is called a flat prior which basically indicates we have no prior information about what the distribution or mean of the <img src="https://latex.codecogs.com/png.latex?%5Cbeta"> parameters would be.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1">rounded_betas <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">extract</span>(sst_fit_1)<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>beta <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb5-2">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">apply</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, mean) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb5-3">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span>)</span>
+<span id="cb5-4"></span>
+<span id="cb5-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">names</span>(rounded_betas) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"beta[1]"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"beta[2]"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"beta[3]"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"beta[4]"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"beta[5]"</span>)</span>
+<span id="cb5-6"></span>
+<span id="cb5-7">rounded_betas <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span></span>
+<span id="cb5-8">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">t</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb5-9">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.data.frame</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb5-10">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rj_custom_table</span>()</span></code></pre></div>
+<div class="cell-output-display">
+<div class="tabwid"><style>.cl-22597f32{}.cl-22526df0{font-family:'Iosevka';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-22526dfa{font-family:'Iosevka';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-22553418{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-225542d2{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 1.5pt solid rgba(190, 190, 190, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-225542dc{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-22597f32"><thead><tr style="overflow-wrap:break-word;"><th class="cl-225542d2"><p class="cl-22553418"><span class="cl-22526df0">beta[1]</span></p></th><th class="cl-225542d2"><p class="cl-22553418"><span class="cl-22526df0">beta[2]</span></p></th><th class="cl-225542d2"><p class="cl-22553418"><span class="cl-22526df0">beta[3]</span></p></th><th class="cl-225542d2"><p class="cl-22553418"><span class="cl-22526df0">beta[4]</span></p></th><th class="cl-225542d2"><p class="cl-22553418"><span class="cl-22526df0">beta[5]</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-225542dc"><p class="cl-22553418"><span class="cl-22526dfa">1.3716</span></p></td><td class="cl-225542dc"><p class="cl-22553418"><span class="cl-22526dfa">-0.0187</span></p></td><td class="cl-225542dc"><p class="cl-22553418"><span class="cl-22526dfa">-0.919</span></p></td><td class="cl-225542dc"><p class="cl-22553418"><span class="cl-22526dfa">-1.1987</span></p></td><td class="cl-225542dc"><p class="cl-22553418"><span class="cl-22526dfa">-0.6832</span></p></td></tr></tbody></table></div>
+</div>
+</div>
+<p>One final check: Are these <img src="https://latex.codecogs.com/png.latex?%5Cbeta"> means in the same direction of what we expected from the univariate analysis in <a href="../../professional_blog/2024-03-08-spaceship-titanic-part-1/index.html">Part 1</a>?</p>
+<section id="beta1-intercept" class="level3">
+<h3 class="anchored" data-anchor-id="beta1-intercept">beta[1]: (Intercept)</h3>
+<ul>
+<li><p>This quantity represents the baseline, which should correspond to a passenger who is Age 0, not a VIP, and having a home planet of Europa.</p></li>
+<li><p>To convert into a probability, we can undo the logit function manually.</p></li>
+<li><p><img src="https://latex.codecogs.com/png.latex?p%20=%20%5Cfrac%7Be%5E%7B%5Cbeta_1%7D%7D%7B1%20+%20e%5E%7B%5Cbeta_1%7D%7D"></p></li>
+<li><p><img src="https://latex.codecogs.com/png.latex?p%20=%2079.8%5C%25"></p></li>
+</ul>
+</section>
+<section id="beta2-age" class="level3">
+<h3 class="anchored" data-anchor-id="beta2-age">beta[2]: (Age)</h3>
+<ul>
+<li><p>We can see a decreasing effect in Age, where every increase of Age by 1 year decreases the log odds of Transportation by -0.0187.</p></li>
+<li><p>We did observe a decreasing effect with Age although it wasn’t exactly linear and mostly flat after Age 17.</p></li>
+</ul>
+</section>
+<section id="beta3-vip-true" class="level3">
+<h3 class="anchored" data-anchor-id="beta3-vip-true">beta[3]: (VIP = TRUE)</h3>
+<ul>
+<li><p>Being a VIP reduces the log odds of Transportation by -0.9190 compared to the baseline of not being a VIP.</p></li>
+<li><p>We can demonstrate what that means in terms of probability by calculating the Transportation prediction to a passenger who is Age 0, a VIP, and having a home planet of Europa and comparing that to the baseline probability of 80%.</p></li>
+<li><p><img src="https://latex.codecogs.com/png.latex?p%20=%20%5Cfrac%7Be%5E%7B%5Cbeta1%20+%20%5Cbeta3%7D%7D%7B1%20+%20e%5E%7B%5Cbeta1%20+%20%5Cbeta3%7D%7D"></p></li>
+<li><p><img src="https://latex.codecogs.com/png.latex?p%20=%2061.1%5C%25"></p></li>
+</ul>
+</section>
+<section id="beta4-home-planet-earth" class="level3">
+<h3 class="anchored" data-anchor-id="beta4-home-planet-earth">beta[4]: (Home Planet = Earth)</h3>
+<ul>
+<li>Having a home planet of Earth reduces the log odds of Transportation by -1.2125 compared to the baseline of Europa.</li>
+</ul>
+</section>
+<section id="beta5-home-planet-mars" class="level3">
+<h3 class="anchored" data-anchor-id="beta5-home-planet-mars">beta[5]: (Home Planet = Mars)</h3>
+<ul>
+<li>Having a home planet of Mars reduces the log odds of Transportation by -0.7003 compared to the baseline of Europa.</li>
+</ul>
+<p>And finally, how do the new model’s predictions perform on the training data? Remember that roughly 50% of the travelers were Transported in the original data, so let’s see if we can identify who was Transported more accurately than randomly guessing by using a <a href="https://en.wikipedia.org/wiki/Confusion_matrix">confusion matrix</a>.</p>
+<p>Since we are testing the model on the same data we trained it on, these metrics are also referred to as training error and probably an optimistic estimate of how the model would generalize to data it hasn’t been trained on before.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1">y_pred_means <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">apply</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">extract</span>(sst_fit_1, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"y_pred"</span>)<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>y_pred, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, mean)</span>
+<span id="cb6-2">y_pred_factor <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">factor</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ifelse</span>(y_pred_means <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.5</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>))</span>
+<span id="cb6-3">sst_response_factor <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">factor</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ifelse</span>(sst_response <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>))</span>
+<span id="cb6-4"></span>
+<span id="cb6-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">confusionMatrix</span>(y_pred_factor, sst_response_factor)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Confusion Matrix and Statistics
+
+          Reference
+Prediction FALSE TRUE
+     FALSE  2886 2042
+     TRUE   1429 2336
+                                         
+               Accuracy : 0.6007         
+                 95% CI : (0.5903, 0.611)
+    No Information Rate : 0.5036         
+    P-Value [Acc &gt; NIR] : &lt; 2.2e-16      
+                                         
+                  Kappa : 0.2022         
+                                         
+ Mcnemar's Test P-Value : &lt; 2.2e-16      
+                                         
+            Sensitivity : 0.6688         
+            Specificity : 0.5336         
+         Pos Pred Value : 0.5856         
+         Neg Pred Value : 0.6205         
+             Prevalence : 0.4964         
+         Detection Rate : 0.3320         
+   Detection Prevalence : 0.5669         
+      Balanced Accuracy : 0.6012         
+                                         
+       'Positive' Class : FALSE          
+                                         </code></pre>
+</div>
+</div>
+<p>Accuracy is one of the most straightforward metrics derived from a confusion matrix. It represents the proportion of true results (both true positives and true negatives) among the total number of cases examined. With no information, we saw that we could randomly guess Transportation correctly 50.4% of the time. Now, given a random traveler we can predict if they were transported or not correctly 60.5% of the time.</p>
+</section>
+</section>
+<section id="summary-part-3-preview" class="level2">
+<h2 class="anchored" data-anchor-id="summary-part-3-preview">Summary + Part 3 Preview</h2>
+<p>I’d say those are some promising results considering this is the first iteration of the model. I only included three basic factors without too much data exploration, and was able to improve the accuracy from 50.4% to 60.5%. I’d like to see if we can get our training accuracy to at least 80% by the end of this series, which may or may not be possible given the complexity of the data.</p>
+<p>There are a couple of specific improvements I plan on making in Part 3:</p>
+<ul>
+<li><p>Comparing a new model to this one to test for improvement using <a href="https://mc-stan.org/loo/">leave one out</a> cross-validation or an <a href="https://en.wikipedia.org/wiki/Receiver_operating_characteristic">ROC curve</a>.</p></li>
+<li><p>Fitting Age using a non-linear fitted effect instead of a linear effect term (possibly with the help of a <a href="https://en.wikipedia.org/wiki/Generalized_additive_model">generalized additive model</a> or spline.)</p></li>
+<li><p>Exploring the use of Cabin as a predictor variable using a hierarchical model (also called <a href="https://en.wikipedia.org/wiki/Bayesian_hierarchical_modeling">multilevel</a> model) structure.</p></li>
+</ul>
+<p>Stay tuned for Part 3, and thanks again for reading Part 2 of the Spaceship Titanic series using Bayesian modeling.</p>
+
+
+</section>
+</section>
+
+ ]]></description>
+  <guid>https://sinisterrob.github.io/professional_blog/2024-03-09-spaceship-titanic-part-2/</guid>
+  <pubDate>Sat, 09 Mar 2024 06:00:00 GMT</pubDate>
+  <media:content url="https://sinisterrob.github.io/../../img/titanic-2.png" medium="image" type="image/png"/>
+</item>
+<item>
+  <title>Spaceship Titanic - Introduction to Bayesian Models - Part 1</title>
+  <link>https://sinisterrob.github.io/professional_blog/2024-03-08-spaceship-titanic-part-1/</link>
+  <description><![CDATA[ 
+
+
+
+
+<div class="cell">
+<style type="text/css">
+table {
+  width: 50%;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+</div>
+<div style="text-align: center;">
+<p><img src="https://sinisterrob.github.io/img/titanic.png" class="img-fluid" width="350"></p>
+</div>
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>This blog series is going to be an explanation on how to use Stan to write a simple Bayesian (probabilistic) model.</p>
+<p>The analysis is broken into parts to be more digestible and beginner-friendly, so that I am able to document the entire model building process from start to finish including data exploration, writing Stan code, and model validation.</p>
+<p>I will be working with the data from the <a href="https://www.kaggle.com/competitions/spaceship-titanic">Spaceship Titanic</a> competition, which is a beginner friendly spin-off of the original <a href="https://www.kaggle.com/competitions/titanic">Titanic</a> competition where the goal is to predict who on the Titanic lived and died after it crashed.</p>
+<p>In this challenge, I will be walking through the steps to create a Bayesian model that predicts whether passengers are transported to an alternate dimension or not.</p>
+</section>
+<section id="part-1-data-intake-and-exploration" class="level1">
+<h1>Part 1: Data Intake and Exploration</h1>
+<section id="load-the-data" class="level2">
+<h2 class="anchored" data-anchor-id="load-the-data">Load the Data</h2>
+<p>The first steps in any data analysis done in R will be loading the libraries you want to use and reading in the data to a data.frame or a data.table object. I load the <a href="https://mc-stan.org/rstan/">rstan</a> package because I will be writing the main part of the model in Stan, and set the options to use all of the cores on my computer and not recompile the model every time I run it.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(rstan)</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(data.table)</span>
+<span id="cb1-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(dplyr)</span>
+<span id="cb1-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(ggplot2)</span>
+<span id="cb1-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(knitr)</span>
+<span id="cb1-6"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(plotly)</span>
+<span id="cb1-7"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(mgcv)</span>
+<span id="cb1-8"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(showtext)</span>
+<span id="cb1-9"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(flextable)</span>
+<span id="cb1-10"></span>
+<span id="cb1-11"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">options</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">mc.cores =</span> parallel<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">detectCores</span>())</span>
+<span id="cb1-12"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rstan_options</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">auto_write =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)</span>
+<span id="cb1-13"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">showtext_auto</span>()</span>
+<span id="cb1-14"></span>
+<span id="cb1-15">sst_data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> data.table<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fread</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"../../data/train.csv"</span>)</span></code></pre></div>
+</details>
+</div>
+<p>For reference, I will show the first few rows of the data set. For the sake of keeping the post shorter, you can refer to the <a href="https://www.kaggle.com/competitions/spaceship-titanic">Kaggle link</a> for the definitions of each of the data fields.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">head</span>(sst_data) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb2-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rj_custom_table</span>()</span></code></pre></div>
+</details>
+<div class="cell-output-display">
+<div class="tabwid"><style>.cl-174b451c{}.cl-1742cda6{font-family:'Iosevka';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-1742ce0a{font-family:'Iosevka';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-1746212c{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-17463360{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 1.5pt solid rgba(190, 190, 190, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-1746336a{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-1746336b{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-174b451c"><thead><tr style="overflow-wrap:break-word;"><th class="cl-17463360"><p class="cl-1746212c"><span class="cl-1742cda6">PassengerId</span></p></th><th class="cl-17463360"><p class="cl-1746212c"><span class="cl-1742cda6">HomePlanet</span></p></th><th class="cl-17463360"><p class="cl-1746212c"><span class="cl-1742cda6">CryoSleep</span></p></th><th class="cl-17463360"><p class="cl-1746212c"><span class="cl-1742cda6">Cabin</span></p></th><th class="cl-17463360"><p class="cl-1746212c"><span class="cl-1742cda6">Destination</span></p></th><th class="cl-17463360"><p class="cl-1746212c"><span class="cl-1742cda6">Age</span></p></th><th class="cl-17463360"><p class="cl-1746212c"><span class="cl-1742cda6">VIP</span></p></th><th class="cl-17463360"><p class="cl-1746212c"><span class="cl-1742cda6">RoomService</span></p></th><th class="cl-17463360"><p class="cl-1746212c"><span class="cl-1742cda6">FoodCourt</span></p></th><th class="cl-17463360"><p class="cl-1746212c"><span class="cl-1742cda6">ShoppingMall</span></p></th><th class="cl-17463360"><p class="cl-1746212c"><span class="cl-1742cda6">Spa</span></p></th><th class="cl-17463360"><p class="cl-1746212c"><span class="cl-1742cda6">VRDeck</span></p></th><th class="cl-17463360"><p class="cl-1746212c"><span class="cl-1742cda6">Name</span></p></th><th class="cl-17463360"><p class="cl-1746212c"><span class="cl-1742cda6">Transported</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">0001_01</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">Europa</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">FALSE</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">B/0/P</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">TRAPPIST-1e</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">39</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">FALSE</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">0</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">0</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">0</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">0</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">0</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">Maham Ofracculy</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">FALSE</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">0002_01</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">Earth</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">FALSE</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">F/0/S</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">TRAPPIST-1e</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">24</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">FALSE</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">109</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">9</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">25</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">549</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">44</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">Juanna Vines</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">TRUE</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">0003_01</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">Europa</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">FALSE</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">A/0/S</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">TRAPPIST-1e</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">58</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">TRUE</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">43</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">3576</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">0</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">6715</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">49</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">Altark Susent</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">FALSE</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">0003_02</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">Europa</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">FALSE</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">A/0/S</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">TRAPPIST-1e</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">33</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">FALSE</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">0</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">1283</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">371</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">3329</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">193</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">Solam Susent</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">FALSE</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">0004_01</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">Earth</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">FALSE</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">F/1/S</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">TRAPPIST-1e</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">16</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">FALSE</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">303</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">70</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">151</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">565</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">2</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">Willy Santantines</span></p></td><td class="cl-1746336a"><p class="cl-1746212c"><span class="cl-1742ce0a">TRUE</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-1746336b"><p class="cl-1746212c"><span class="cl-1742ce0a">0005_01</span></p></td><td class="cl-1746336b"><p class="cl-1746212c"><span class="cl-1742ce0a">Earth</span></p></td><td class="cl-1746336b"><p class="cl-1746212c"><span class="cl-1742ce0a">FALSE</span></p></td><td class="cl-1746336b"><p class="cl-1746212c"><span class="cl-1742ce0a">F/0/P</span></p></td><td class="cl-1746336b"><p class="cl-1746212c"><span class="cl-1742ce0a">PSO J318.5-22</span></p></td><td class="cl-1746336b"><p class="cl-1746212c"><span class="cl-1742ce0a">44</span></p></td><td class="cl-1746336b"><p class="cl-1746212c"><span class="cl-1742ce0a">FALSE</span></p></td><td class="cl-1746336b"><p class="cl-1746212c"><span class="cl-1742ce0a">0</span></p></td><td class="cl-1746336b"><p class="cl-1746212c"><span class="cl-1742ce0a">483</span></p></td><td class="cl-1746336b"><p class="cl-1746212c"><span class="cl-1742ce0a">0</span></p></td><td class="cl-1746336b"><p class="cl-1746212c"><span class="cl-1742ce0a">291</span></p></td><td class="cl-1746336b"><p class="cl-1746212c"><span class="cl-1742ce0a">0</span></p></td><td class="cl-1746336b"><p class="cl-1746212c"><span class="cl-1742ce0a">Sandie Hinetthews</span></p></td><td class="cl-1746336b"><p class="cl-1746212c"><span class="cl-1742ce0a">TRUE</span></p></td></tr></tbody></table></div>
+</div>
+</div>
+</section>
+<section id="modeling-approach" class="level2">
+<h2 class="anchored" data-anchor-id="modeling-approach">Modeling Approach</h2>
+<p>After looking at the predictive fields available in this data set, the first thing I try to do is come up with a plan to approach the modeling structure.</p>
+<p>I have a couple of initial thoughts here:</p>
+<ul>
+<li><p>We are trying to predict the <strong>Transported</strong> field which is represented as either TRUE or FALSE in our data.</p></li>
+<li><p>This leads me to believe that <a href="https://en.wikipedia.org/wiki/Logistic_regression">logistic regression</a> is probably the best and simplest modelling approach.</p></li>
+<li><p>In statistical terms, this means we want a model with the following structure: <img src="https://latex.codecogs.com/png.latex?%0A%5Clog%5Cleft(%5Cfrac%7B%5Cpi%7D%7B1-%5Cpi%7D%5Cright)%20=%20%5Calpha%20+%20%5Cbeta%20X%0A"></p></li>
+<li><p>This transformation (often called the logit function or <a href="https://en.wikipedia.org/wiki/Logit">log-odds</a>) is useful, because it is a function that maps values between 0 and 1, like probabilities, to real numbers.</p></li>
+<li><p>In this model, <img src="https://latex.codecogs.com/png.latex?%5Cpi"> will represent our response (Probability % of being Transported) and the <img src="https://latex.codecogs.com/png.latex?%5Cbeta"> will represent our predictive variables, so let’s explore some of the possibilities for <img src="https://latex.codecogs.com/png.latex?%5Cbeta">.</p></li>
+</ul>
+</section>
+<section id="exploring-vip-status-age-and-home-planet-variables" class="level2">
+<h2 class="anchored" data-anchor-id="exploring-vip-status-age-and-home-planet-variables">Exploring VIP Status, Age, and Home Planet variables</h2>
+<p>I want to start with a simple working model and build from there, so I’ll start by just examining the relationship between a few of the explanatory variables and the <strong><code>Transported</code></strong> response variable.</p>
+<p>First of all, let’s see how many people were transported in total.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1">sst_data <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb3-2">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">count</span>(Transported) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb3-3">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Proportion =</span> scales<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">percent_format</span>()(n <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sum</span>(n))) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb3-4">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rj_custom_table</span>()</span></code></pre></div>
+</details>
+<div class="cell-output-display">
+<div class="tabwid"><style>.cl-176494ea{}.cl-175cc814{font-family:'Iosevka';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-175cc81e{font-family:'Iosevka';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-175f9e0e{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-175fac6e{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 1.5pt solid rgba(190, 190, 190, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-175fac6f{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-175fac78{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-176494ea"><thead><tr style="overflow-wrap:break-word;"><th class="cl-175fac6e"><p class="cl-175f9e0e"><span class="cl-175cc814">Transported</span></p></th><th class="cl-175fac6e"><p class="cl-175f9e0e"><span class="cl-175cc814">n</span></p></th><th class="cl-175fac6e"><p class="cl-175f9e0e"><span class="cl-175cc814">Proportion</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-175fac6f"><p class="cl-175f9e0e"><span class="cl-175cc81e">FALSE</span></p></td><td class="cl-175fac6f"><p class="cl-175f9e0e"><span class="cl-175cc81e">4315</span></p></td><td class="cl-175fac6f"><p class="cl-175f9e0e"><span class="cl-175cc81e">49.64%</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-175fac78"><p class="cl-175f9e0e"><span class="cl-175cc81e">TRUE</span></p></td><td class="cl-175fac78"><p class="cl-175f9e0e"><span class="cl-175cc81e">4378</span></p></td><td class="cl-175fac78"><p class="cl-175f9e0e"><span class="cl-175cc81e">50.36%</span></p></td></tr></tbody></table></div>
+</div>
+</div>
+<p>That looks like a fairly even split, which is good. It could be harder to model a huge imbalance of response classes, especially if you don’t have a lot of observations in the first place.</p>
+<p>I’ve found visual data analysis can be useful to see which of our variables might provide some information that explains a difference in categorizing who was transported and who was not transported.</p>
+<section id="age" class="level3" style="text-align: center;">
+<h3 class="anchored" data-anchor-id="age"><strong>Age</strong></h3>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ggplot</span>(sst_data, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> Age, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.numeric</span>(Transported))) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb4-2">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_point</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">alpha =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.1</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb4-3">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_smooth</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">method =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"loess"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">formula =</span> y <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> x, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">span =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.5</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">se =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"blue"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb4-4">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">labs</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Relationship between Age and Transported Status"</span>,</span>
+<span id="cb4-5">       <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Age"</span>,</span>
+<span id="cb4-6">       <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Probability of Being Transported"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb4-7">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rj_custom_theme</span>()</span></code></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://sinisterrob.github.io/professional_blog/2024-03-08-spaceship-titanic-part-1/index_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<ul>
+<li><p>There are 179 missing Age values in the dataset (which we will have to handle later.)</p></li>
+<li><p>It looks like passengers from Age 0 to about Age 17 are much more likely to be transported, and then the effect kind of levels off after that.</p></li>
+</ul>
+<section id="vip-status" class="level3" style="text-align: center;">
+<h3 class="anchored" data-anchor-id="vip-status"><strong>VIP Status</strong></h3>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ggplot</span>(sst_data, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> VIP, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fill =</span> Transported)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> </span>
+<span id="cb5-2">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_bar</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">position =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"fill"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb5-3">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">scale_y_continuous</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">labels =</span> scales<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">percent_format</span>()) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb5-4">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">labs</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Proportion of Transported by VIP Status"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"VIP Status"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Proportion Transported"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb5-5">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rj_custom_theme</span>()</span></code></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://sinisterrob.github.io/professional_blog/2024-03-08-spaceship-titanic-part-1/index_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid figure-img" width="480"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<ul>
+<li>VIPs were transported at a 38.2% rate, while non-VIPs were transported at a 50.6% rate.</li>
+</ul>
+<section id="home-planet" class="level3" style="text-align: center;">
+<h3 class="anchored" data-anchor-id="home-planet"><strong>Home Planet</strong></h3>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ggplot</span>(sst_data, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> HomePlanet, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fill =</span> Transported)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> </span>
+<span id="cb6-2">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_bar</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">position =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"fill"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb6-3">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">scale_y_continuous</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">labels =</span> scales<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">percent_format</span>()) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb6-4">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">labs</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Proportion of Transported by Home Planet"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Home Planet"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Proportion Transported"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb6-5">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rj_custom_theme</span>()</span></code></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://sinisterrob.github.io/professional_blog/2024-03-08-spaceship-titanic-part-1/index_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid figure-img" width="480"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<ul>
+<li><p>It appears there are three possible Home Planets: Earth, Europa, and Mars.</p></li>
+<li><p>They all have different Transportation proportions which makes it a great candidate for a categorical predictive variable.</p></li>
+<li><p>The aliens really seem to have taken a liking to residents from Europa.</p></li>
+</ul>
+<section id="summary" class="level3">
+<h3 class="anchored" data-anchor-id="summary">Summary</h3>
+<p>To summarize, it looks like a <span style="color: #BF5700;">non-VIP</span> from <span style="color: #BF5700;">Europa</span> that is <span style="color: #BF5700;">between Age 0 and 17</span> has the highest risk factors for being abducted.</p>
+<ul>
+<li>It’s good to do sense checks on your exploration is saying, so let’s see if we can take a slice of the data (like a population that has two out of any three of these risk factors) and see how strong the effects we discovered are.</li>
+</ul>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1">sst_data <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb7-2">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">select</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">VIP</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Age</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">HomePlanet</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Transported</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb7-3">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">filter</span>((<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">VIP</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&amp;</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Age</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&lt;</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">18</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|</span> (<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">VIP</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&amp;</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">HomePlanet</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Europa"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|</span> (<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Age</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&lt;</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">18</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&amp;</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">HomePlanet</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Europa"</span>)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb7-4">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">count</span>(Transported) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb7-5">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rj_custom_table</span>()</span></code></pre></div>
+</details>
+<div class="cell-output-display">
+<div class="tabwid"><style>.cl-1888918c{}.cl-188015b6{font-family:'Iosevka';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-188015ca{font-family:'Iosevka';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-1883d78c{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-1883e6dc{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 1.5pt solid rgba(190, 190, 190, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-1883e6dd{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-1883e6e6{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-1888918c"><thead><tr style="overflow-wrap:break-word;"><th class="cl-1883e6dc"><p class="cl-1883d78c"><span class="cl-188015b6">Transported</span></p></th><th class="cl-1883e6dc"><p class="cl-1883d78c"><span class="cl-188015b6">n</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-1883e6dd"><p class="cl-1883d78c"><span class="cl-188015ca">FALSE</span></p></td><td class="cl-1883e6dd"><p class="cl-1883d78c"><span class="cl-188015ca">1180</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-1883e6e6"><p class="cl-1883d78c"><span class="cl-188015ca">TRUE</span></p></td><td class="cl-1883e6e6"><p class="cl-1883d78c"><span class="cl-188015ca">2119</span></p></td></tr></tbody></table></div>
+</div>
+</div>
+<p>It definitely seems like we have some potential predictive power if we use these variables since we were able to pull out twice as many TRUE as FALSE using this naive approach (not to be confused with a <a href="https://uc-r.github.io/naive_bayes">Naïve Bayes Classifier</a> which relies on a similar concept.)</p>
+<p>In the next post I will explore how to take these three insights and formally build them into a probability model using Stan.</p>
+</section>
+</section>
+<section id="part-2-preview-building-the-model" class="level2">
+<h2 class="anchored" data-anchor-id="part-2-preview-building-the-model">Part 2 Preview: Building the Model</h2>
+<p>That’s enough data exploration content for one blog post - thanks for reading and my goal going forward will be to create short and digestible posts that are easy to casually read and understand without investing too much of your time.</p>
+<p>Keep these insights that I just discovered in mind, since those will be used in Part 2 to describe a Bayesian probability model on the odds our poor travelers were subjected to alien transportation.</p>
+<p><span style="color: #FF0000;"><strong>UPDATE:</strong></span> Part 2 is out! You can read it <a href="../../professional_blog/2024-03-09-spaceship-titanic-part-2/index.html">here</a>.</p>
+
+
+</section>
+</section>
+
+ ]]></description>
+  <guid>https://sinisterrob.github.io/professional_blog/2024-03-08-spaceship-titanic-part-1/</guid>
+  <pubDate>Fri, 08 Mar 2024 06:00:00 GMT</pubDate>
+  <media:content url="https://sinisterrob.github.io/../../img/titanic.png" medium="image" type="image/png"/>
+</item>
+</channel>
+</rss>
