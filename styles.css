@@ -12,6 +12,11 @@ figcaption {
     font-weight: bold;
 }
 
+.navbar-title {
+    color: #BF5700; /* UT Burnt Orange */
+}
+
+
 /* Base styles for the navbar - adjust these as needed */
 .navbar {
     padding: 5px;
