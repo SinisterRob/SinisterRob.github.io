@@ -1,6 +1,10 @@
 /* css styles */
 body {
-  font-family: 'Iosevka', monospace;
+  font-family: 'Iosevka', monospace; !important
+}
+
+p {
+  font-family: 'Iosevka', monospace; !important
 }
 
 figcaption {
