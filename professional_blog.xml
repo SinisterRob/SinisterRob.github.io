@@ -595,6 +595,9 @@ Prediction FALSE TRUE
 <li><p>Exploring the use of Cabin as a predictor variable using a hierarchical model (also called <a href="https://en.wikipedia.org/wiki/Bayesian_hierarchical_modeling">multilevel</a> model) structure.</p></li>
 </ul>
 <p>Stay tuned for Part 3, and thanks again for reading Part 2 of the Spaceship Titanic series using Bayesian modeling.</p>
+<div style="text-align: center;">
+<p><script>window.onload = function() { var elevator = new Elevator({ element: document.querySelector(".elevator-button"),  mainAudio: "", endAudio: "ding.mp3" }); }</script><button class="btn btn-outline-primary elevator-button" type="submit">Return to the top!</button></p>
+</div>
 
 
 </section>
@@ -1135,6 +1138,9 @@ font-style: inherit;">rj_custom_table</span>()</span></code></pre></div>
 <p>That’s enough data exploration content for one blog post - thanks for reading and my goal going forward will be to create short and digestible posts that are easy to casually read and understand without investing too much of your time.</p>
 <p>Keep these insights that I just discovered in mind, since those will be used in Part 2 to describe a Bayesian probability model on the odds our poor travelers were subjected to alien transportation.</p>
 <p><span style="color: #FF0000;"><strong>UPDATE:</strong></span> Part 2 is out! You can read it <a href="../../professional_blog/2024-03-09-spaceship-titanic-part-2/index.html">here</a>.</p>
+<div style="text-align: center;">
+<p><script>window.onload = function() { var elevator = new Elevator({ element: document.querySelector(".elevator-button"),  mainAudio: "", endAudio: "ding.mp3" }); }</script><button class="btn btn-outline-primary elevator-button" type="submit">Return to the top!</button></p>
+</div>
 
 
 </section>
