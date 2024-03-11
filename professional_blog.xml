@@ -10,12 +10,1074 @@
 <atom:link href="https://sinisterrob.github.io/professional_blog.xml" rel="self" type="application/rss+xml"/>
 <description>A personal take on Chicago food, music, photography, and other topics.</description>
 <image>
-<url>https://sinisterrob.github.io/img/titanic-main.png</url>
+<url>https://sinisterrob.github.io/img/bites_brews_paws_logo.png</url>
 <title>bites | brews | paws</title>
 <link>https://sinisterrob.github.io/professional_blog.html</link>
 </image>
 <generator>quarto-1.4.550</generator>
-<lastBuildDate>Sat, 09 Mar 2024 06:00:00 GMT</lastBuildDate>
+<lastBuildDate>Sun, 10 Mar 2024 06:00:00 GMT</lastBuildDate>
+<item>
+  <title>Spaceship Titanic - Introduction to Bayesian Models - Part 3</title>
+  <link>https://sinisterrob.github.io/professional_blog/2024-03-10-spaceship-titanic-part-3/</link>
+  <description><![CDATA[ 
+
+
+
+
+<div class="cell">
+<style type="text/css">
+table {
+  width: 50%;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+</div>
+<div style="text-align: center;">
+<p><img src="https://sinisterrob.github.io/assets/img/titanic-3.png" class="img-fluid" width="350"></p>
+</div>
+<section id="part-3-further-refinement" class="level1">
+<h1>Part 3: Further Refinement</h1>
+<p>Welcome to Part 3 of my Introduction to Bayesian Models series.</p>
+<p>If you haven’t read Part 1 or Part 2 yet, I really suggest reading those first so that you don’t think I’m rambling about aliens for no reason.</p>
+<ul>
+<li><p><a href="../../professional_blog/2024-03-08-spaceship-titanic-part-1/index.html">Part 1 Link</a></p></li>
+<li><p><a href="../../professional_blog/2024-03-09-spaceship-titanic-part-2/index.html">Part 2 Link</a></p></li>
+</ul>
+<p>In Part 3 we will try to improve the accuracy of our model by exploring generalized additive models (GAMs), and also examine the ROC curves of the model.</p>
+<section id="age-is-non-linear" class="level2">
+<h2 class="anchored" data-anchor-id="age-is-non-linear">Age is Non-Linear</h2>
+<p>The first thing I want to address in our model is the Age variable.</p>
+<p>Including Age as a linear predictor probably captured some of the effects that it has, but in our univariate analysis we showed that the relationship Age has with Transported Status is not necessarily linear.</p>
+<div style="text-align: center;">
+<p><img src="https://sinisterrob.github.io/assets/img/age_transport.png" class="img-fluid"></p>
+</div>
+<p>In fact, it’s hard to even visualize a continuous variable against a TRUE/FALSE response variable, and you might even be wondering what that blue line means, since it’s not the Age variable and it’s not the Transported variable.</p>
+<p>When I originally plotted this line in <a href="../../professional_blog/2024-03-08-spaceship-titanic-part-1/index.html">Part 1</a>, I used a technique called <code>loess</code> which is a method for smoothing a relationship between two variables, for example <code>Transportation ~ Age</code>.</p>
+<p>My idea for a more effective use of Age in the model is this:</p>
+<ul>
+<li><p>What if instead of using the Age variable directly, we applied some mapping from Age to a quantity close to the blue line in the graph, and then used that newly fitted value as our predictive variable instead of Age?</p></li>
+<li><p>This should capture the relationship between Age and Transported more effectively than a linear relationship, with the drawback that the model coefficients aren’t as easily interpretable, and we run the risk of over-fitting. Ideally we should produce a somewhat generalized fit without jagged points to reduce the over-fitting risk.</p></li>
+<li><p>Similar idea to the blue line: We can use a <a href="https://en.wikipedia.org/wiki/Generalized_additive_model">generalized additive model</a> (GAM) to fit the univariate model <code>Transportation ~ Age</code>, and then replace the Age column with the fit from this model.</p></li>
+</ul>
+<section id="fitting-the-gam-model." class="level4">
+<h4 class="anchored" data-anchor-id="fitting-the-gam-model.">Fitting the GAM model.</h4>
+<p>Let’s fit a GAM model between Transportation and Age using the <code>mcgv</code> package.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(mgcv)</span>
+<span id="cb1-2">age_model <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">gam</span>(Transported <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">s</span>(Age), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> imputed_sst_data, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">family =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">binomial</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">link =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"logit"</span>))</span>
+<span id="cb1-3"></span>
+<span id="cb1-4">age_grid <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">with</span>(imputed_sst_data, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Age =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">seq</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">min</span>(Age, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">na.rm =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>), <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">max</span>(Age, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">na.rm =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">length.out =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>)))</span>
+<span id="cb1-5">age_grid<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Predicted <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">predict</span>(age_model, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">newdata =</span> age_grid, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"response"</span>)</span>
+<span id="cb1-6"></span>
+<span id="cb1-7"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ggplot</span>(age_grid, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> Age, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> Predicted)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> </span>
+<span id="cb1-8">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_line</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"#2C3E50"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb1-9">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_ribbon</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ymin =</span> Predicted <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sqrt</span>(Predicted <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> (<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> Predicted) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(age_grid)),</span>
+<span id="cb1-10">                  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ymax =</span> Predicted <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sqrt</span>(Predicted <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> (<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> Predicted) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(age_grid))),</span>
+<span id="cb1-11">              <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fill =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"blue"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">alpha =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.2</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb1-12">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rj_custom_theme</span>()</span></code></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://sinisterrob.github.io/professional_blog/2024-03-10-spaceship-titanic-part-3/index_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>That definitely looks line an interesting and non-linear relationship. I will append the predictions back to my original data set and call the new column Age_Pred.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1">imputed_sst_data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Age_Pred <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">predict</span>(age_model, imputed_sst_data, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"response"</span>)</span></code></pre></div>
+</details>
+</div>
+</section>
+</section>
+<section id="breaking-down-the-cabin-field" class="level2">
+<h2 class="anchored" data-anchor-id="breaking-down-the-cabin-field">Breaking Down the Cabin Field</h2>
+<p>The other variable I wanted to add to our next model iteration was Cabin.</p>
+<p>The cabin number where the passenger is staying. It takes the form <code>deck/num/side</code>, where side can be either P for Port or S for Starboard.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1">imputed_sst_data <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb3-2">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">select</span>(Cabin) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb3-3">  head <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb3-4">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rj_custom_table</span>()</span></code></pre></div>
+</details>
+<div class="cell-output-display">
+<div class="tabwid"><style>.cl-c5db4c66{}.cl-c5d1bb6a{font-family:'Iosevka Web';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-c5d1bb74{font-family:'Iosevka Web';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-c5d50f22{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-c5d523d6{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 1.5pt solid rgba(190, 190, 190, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-c5d523e0{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-c5d523ea{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-c5db4c66"><thead><tr style="overflow-wrap:break-word;"><th class="cl-c5d523d6"><p class="cl-c5d50f22"><span class="cl-c5d1bb6a">Cabin</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-c5d523e0"><p class="cl-c5d50f22"><span class="cl-c5d1bb74">B/0/P</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-c5d523e0"><p class="cl-c5d50f22"><span class="cl-c5d1bb74">F/0/S</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-c5d523e0"><p class="cl-c5d50f22"><span class="cl-c5d1bb74">A/0/S</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-c5d523e0"><p class="cl-c5d50f22"><span class="cl-c5d1bb74">A/0/S</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-c5d523e0"><p class="cl-c5d50f22"><span class="cl-c5d1bb74">F/1/S</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-c5d523ea"><p class="cl-c5d50f22"><span class="cl-c5d1bb74">F/0/P</span></p></td></tr></tbody></table></div>
+</div>
+</div>
+<p>Implementing the information from the Cabin variable takes a little more complex data manipulation:</p>
+<ul>
+<li><p>Split <code>Cabin</code> into three variables called <code>deck</code>, <code>num</code>, and <code>side</code>.</p></li>
+<li><p>Impute <code>deck</code>, <code>num</code>, or <code>side</code> values.</p></li>
+<li><p>Use the same GAM strategy on <code>num</code> also, which is to fit a GAM model <code>Transportation ~ num</code> so that we can capture the non-linear effect.</p></li>
+<li><p>We can also create an indicator variable from the <code>Cabin</code> field. If multiple people are staying in the same Cabin then we can set a new variable called <code>CabinMult</code> to TRUE, and FALSE otherwise.</p>
+<ul>
+<li>I’ll do this before imputing any of the missing variables to avoid creating it using imputed data.</li>
+</ul></li>
+<li><p>Later, when I do the full model fit and submission to Kaggle, I’ll probably impute all missing variables at once (and also on the test set as well) instead of imputing one at a time.</p></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1">cabin_sst_data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> imputed_sst_data <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb4-2">  tidyr<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">separate</span>(Cabin, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">into =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"deck"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"num"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"side"</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sep =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"/"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">remove =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fill =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"right"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb4-3">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">deck =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ifelse</span>(deck <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">""</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>, deck)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb4-4">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">group_by</span>(deck, num, side) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb4-5">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">people_in_room =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">n</span>(),</span>
+<span id="cb4-6">         <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">CabinMult =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ifelse</span>(people_in_room <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&amp;</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">!</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">is.na</span>(deck), <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb4-7">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">select</span>(<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(Cabin, people_in_room)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb4-8">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ungroup</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb4-9">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">deck =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">factor</span>(deck),</span>
+<span id="cb4-10">         <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">num =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.numeric</span>(num),</span>
+<span id="cb4-11">         <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">side =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">factor</span>(side))</span>
+<span id="cb4-12"></span>
+<span id="cb4-13">cabin_no_transport <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> cabin_sst_data <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">select</span>(<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Transported"</span>)</span>
+<span id="cb4-14">cabin_transport <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> cabin_sst_data <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pull</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Transported"</span>)</span>
+<span id="cb4-15"></span>
+<span id="cb4-16">imputed_cabin <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mice</span>(cabin_no_transport, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">m =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">printFlag =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>)</span>
+<span id="cb4-17">imputed_cabin_data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">complete</span>(imputed_cabin, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span>
+<span id="cb4-18">imputed_cabin_data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Transported <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> cabin_transport</span>
+<span id="cb4-19">imputed_cabin_data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span></span>
+<span id="cb4-20">  imputed_cabin_data <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb4-21">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">HomePlanet =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">factor</span>(HomePlanet, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">levels =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">unique</span>(HomePlanet)),</span>
+<span id="cb4-22">         <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">VIP =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">factor</span>(VIP, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">levels =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">unique</span>(VIP)),</span>
+<span id="cb4-23">         <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">deck =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">factor</span>(deck, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">levels =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">unique</span>(deck)),</span>
+<span id="cb4-24">         <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">side =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">factor</span>(side, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">levels =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">unique</span>(side)))</span>
+<span id="cb4-25"></span>
+<span id="cb4-26">num_model <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">gam</span>(Transported <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">s</span>(num), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> imputed_cabin_data, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">family =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">binomial</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">link =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"logit"</span>))</span>
+<span id="cb4-27">imputed_cabin_data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>num_Pred <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">predict</span>(num_model, imputed_cabin_data, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"response"</span>)</span></code></pre></div>
+</div>
+<p>Now that we have the <code>Cabin</code> field broken out into <code>deck</code>, <code>num</code>, and <code>side</code>, we can create the design matrix, update the Stan code, and fit the model.</p>
+<p>Notice that currently we will be estimating a <img src="https://latex.codecogs.com/png.latex?%5Cbeta"> parameter for every deck on the ship, which is called a <a href="https://en.wikipedia.org/wiki/Fixed_effects_model">fixed effects</a> model. But what if each deck is not that different from each other? If that is the case, we could set up a different structure for this effect, where each <img src="https://latex.codecogs.com/png.latex?%5Cbeta_%7Bdeck%7D"> was drawn from a common distribution, and the parameters of that distribution were estimated instead of the <img src="https://latex.codecogs.com/png.latex?%5Cbeta_%7Bdeck%7D"> themselves?</p>
+<p>That describes a <a href="https://en.wikipedia.org/wiki/Random_effects_model">random effects</a> model, and it might be a better fit in the future when I have time to properly implement it in Stan. The benefits of this approach would be we only need to estimate <strong>one</strong> effect <img src="https://latex.codecogs.com/png.latex?%5Cbeta"> and standard deviation <img src="https://latex.codecogs.com/png.latex?%5Csigma">, instead of estimating a separate <img src="https://latex.codecogs.com/png.latex?%5Cbeta"> for every deck on the ship. It would also mean that for the decks where we don’t have a lot of data, more natural credibility would have to be given to the overall mean since the prior and posterior have to be close to each other when you don’t have much data.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1">imputed_cabin_data <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb5-2">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">model.matrix</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Transported</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Age_Pred</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">VIP</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">HomePlanet</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> deck <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> num <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> side <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> CabinMult <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> num_Pred, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> .) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb5-3">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">head</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb5-4">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.data.frame</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb5-5">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rj_custom_table</span>()</span></code></pre></div>
+</details>
+<div class="cell-output-display">
+<div class="tabwid"><style>.cl-c9cd9e78{}.cl-c9c61fea{font-family:'Iosevka Web';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-c9c61ff4{font-family:'Iosevka Web';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-c9c8f864{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-c9c90890{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 1.5pt solid rgba(190, 190, 190, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-c9c9089a{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-c9c908a4{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-c9cd9e78"><thead><tr style="overflow-wrap:break-word;"><th class="cl-c9c90890"><p class="cl-c9c8f864"><span class="cl-c9c61fea">(Intercept)</span></p></th><th class="cl-c9c90890"><p class="cl-c9c8f864"><span class="cl-c9c61fea">Age_Pred</span></p></th><th class="cl-c9c90890"><p class="cl-c9c8f864"><span class="cl-c9c61fea">VIPTRUE</span></p></th><th class="cl-c9c90890"><p class="cl-c9c8f864"><span class="cl-c9c61fea">HomePlanetEarth</span></p></th><th class="cl-c9c90890"><p class="cl-c9c8f864"><span class="cl-c9c61fea">HomePlanetMars</span></p></th><th class="cl-c9c90890"><p class="cl-c9c8f864"><span class="cl-c9c61fea">deckF</span></p></th><th class="cl-c9c90890"><p class="cl-c9c8f864"><span class="cl-c9c61fea">deckA</span></p></th><th class="cl-c9c90890"><p class="cl-c9c8f864"><span class="cl-c9c61fea">deckG</span></p></th><th class="cl-c9c90890"><p class="cl-c9c8f864"><span class="cl-c9c61fea">deckE</span></p></th><th class="cl-c9c90890"><p class="cl-c9c8f864"><span class="cl-c9c61fea">deckD</span></p></th><th class="cl-c9c90890"><p class="cl-c9c8f864"><span class="cl-c9c61fea">deckC</span></p></th><th class="cl-c9c90890"><p class="cl-c9c8f864"><span class="cl-c9c61fea">deckT</span></p></th><th class="cl-c9c90890"><p class="cl-c9c8f864"><span class="cl-c9c61fea">num</span></p></th><th class="cl-c9c90890"><p class="cl-c9c8f864"><span class="cl-c9c61fea">sideS</span></p></th><th class="cl-c9c90890"><p class="cl-c9c8f864"><span class="cl-c9c61fea">CabinMultTRUE</span></p></th><th class="cl-c9c90890"><p class="cl-c9c8f864"><span class="cl-c9c61fea">num_Pred</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">1</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0.4858846</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0.5123487</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">1</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0.4669895</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">1</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">1</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">1</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0.5123487</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">1</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0.4939645</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">1</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">1</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">1</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">1</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0.5123487</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">1</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0.4759595</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">1</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">1</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">1</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0.5123487</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">1</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0.5160419</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">1</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">1</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">1</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">1</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c9089a"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0.5127440</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-c9c908a4"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">1</span></p></td><td class="cl-c9c908a4"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0.4902989</span></p></td><td class="cl-c9c908a4"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c908a4"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">1</span></p></td><td class="cl-c9c908a4"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c908a4"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">1</span></p></td><td class="cl-c9c908a4"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c908a4"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c908a4"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c908a4"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c908a4"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c908a4"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c908a4"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c908a4"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c908a4"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0</span></p></td><td class="cl-c9c908a4"><p class="cl-c9c8f864"><span class="cl-c9c61ff4">0.5123487</span></p></td></tr></tbody></table></div>
+</div>
+</div>
+<p>I have shown a sample of the new design matrix above, so finally, it’s time to fit the model.</p>
+</section>
+<section id="second-model-run" class="level2">
+<h2 class="anchored" data-anchor-id="second-model-run">Second Model Run</h2>
+<p><span style="color: #FF0000;"><strong>To summarize, we added the following parameters to the second iteration of the model:</strong></span></p>
+<ul>
+<li><p>A GAM fit to the <code>Age</code> variable.</p></li>
+<li><p>Split <code>Cabin</code> into <code>deck</code>, <code>num</code>, and <code>side</code>.</p></li>
+<li><p>A GAM fit to the <code>num</code> variable.</p></li>
+<li><p>A variable called <code>CabinMult</code> that is true if multiple people shared the same cabin (that we know about.)</p></li>
+</ul>
+<p>Let’s go ahead and fit the Stan model using the exact same Stan code as last time without modifications, which is definitely a benefit of setting models up as a design matrix and response vector structure.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1">cabin_design_matrix <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> </span>
+<span id="cb6-2">  imputed_cabin_data <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb6-3">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">model.matrix</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Transported</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Age_Pred</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">VIP</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">HomePlanet</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> deck <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> num <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> side <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> CabinMult <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> num_Pred, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> .)</span>
+<span id="cb6-4"></span>
+<span id="cb6-5">cabin_response <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.integer</span>(imputed_cabin_data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Transported)</span>
+<span id="cb6-6"></span>
+<span id="cb6-7"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">if</span> (<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">!</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">file.exists</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"../../assets/models/sst_model_2.rds"</span>)){</span>
+<span id="cb6-8">  sst_fit_2 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> </span>
+<span id="cb6-9">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">stan</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">file =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"../../assets/stan/spaceship_titanic_2.stan"</span>,</span>
+<span id="cb6-10">         <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">N =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(cabin_design_matrix),</span>
+<span id="cb6-11">                     <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">K =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ncol</span>(cabin_design_matrix),</span>
+<span id="cb6-12">                     <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">X =</span> cabin_design_matrix,</span>
+<span id="cb6-13">                     <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> cabin_response),</span>
+<span id="cb6-14">         <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">chains =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>,</span>
+<span id="cb6-15">         <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">iter =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2000</span>)</span>
+<span id="cb6-16">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">save</span>(sst_fit_2, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">file =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"../../assets/models/sst_model_2.rds"</span>)</span>
+<span id="cb6-17">  } <span class="cf" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">else</span> {</span>
+<span id="cb6-18">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">load</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"../../assets/models/sst_model_2.rds"</span>)</span>
+<span id="cb6-19">  }</span></code></pre></div>
+</div>
+</section>
+<section id="roc---we-have-two-models-which-is-better" class="level2">
+<h2 class="anchored" data-anchor-id="roc---we-have-two-models-which-is-better">ROC - We have two models, which is better?</h2>
+<p>Let’s look at the accuracy of this new model compared to the first one using a confusion matrix.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1">y_pred_means <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">apply</span>(rstan<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">extract</span>(sst_fit_2, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"y_pred"</span>)<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>y_pred, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, mean)</span>
+<span id="cb7-2">y_pred_factor <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">factor</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ifelse</span>(y_pred_means <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.5</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>))</span>
+<span id="cb7-3">cabin_response_factor <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">factor</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ifelse</span>(cabin_response <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>))</span>
+<span id="cb7-4"></span>
+<span id="cb7-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">confusionMatrix</span>(y_pred_factor, cabin_response_factor)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Confusion Matrix and Statistics
+
+          Reference
+Prediction FALSE TRUE
+     FALSE  2871 1649
+     TRUE   1444 2729
+                                         
+               Accuracy : 0.6442         
+                 95% CI : (0.634, 0.6543)
+    No Information Rate : 0.5036         
+    P-Value [Acc &gt; NIR] : &lt; 2.2e-16      
+                                         
+                  Kappa : 0.2886         
+                                         
+ Mcnemar's Test P-Value : 0.0002444      
+                                         
+            Sensitivity : 0.6654         
+            Specificity : 0.6233         
+         Pos Pred Value : 0.6352         
+         Neg Pred Value : 0.6540         
+             Prevalence : 0.4964         
+         Detection Rate : 0.3303         
+   Detection Prevalence : 0.5200         
+      Balanced Accuracy : 0.6443         
+                                         
+       'Positive' Class : FALSE          
+                                         </code></pre>
+</div>
+</div>
+<p>Not bad, we’re up to over 64% accuracy!</p>
+<p>Finally, we will take a look at the <a href="https://en.wikipedia.org/wiki/Receiver_operating_characteristic">ROC curve</a>, which looks at how the model performs by letting the TRUE/FALSE threshold vary.</p>
+<p>The more area that is under this curve (which is a statistic called AUC, or area under the curve), the better the model performs at classification.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(pROC)</span>
+<span id="cb9-2"></span>
+<span id="cb9-3">roc1 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">roc</span>(cabin_response_factor, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">apply</span>(rstan<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">extract</span>(sst_fit_1, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"y_pred"</span>)<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>y_pred, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, mean))</span>
+<span id="cb9-4">roc2 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">roc</span>(cabin_response_factor, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">apply</span>(rstan<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">extract</span>(sst_fit_2, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"y_pred"</span>)<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>y_pred, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, mean))</span>
+<span id="cb9-5"></span>
+<span id="cb9-6">auc1 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">auc</span>(roc1)</span>
+<span id="cb9-7">auc2 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">auc</span>(roc2)</span>
+<span id="cb9-8"></span>
+<span id="cb9-9">roc1_df <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">tpr=</span>roc1<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>sensitivities, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fpr=</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> roc1<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>specificities, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">model=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'Model 1'</span>)</span>
+<span id="cb9-10">roc2_df <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">tpr=</span>roc2<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>sensitivities, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fpr=</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> roc2<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>specificities, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">model=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'Model 2'</span>)</span>
+<span id="cb9-11"></span>
+<span id="cb9-12"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Combine the data frames</span></span>
+<span id="cb9-13">roc_df <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rbind</span>(roc1_df, roc2_df)</span>
+<span id="cb9-14"></span>
+<span id="cb9-15"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Plot with ggplot</span></span>
+<span id="cb9-16"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ggplot</span>(roc_df, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x=</span>fpr, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y=</span>tpr, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color=</span>model)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> </span>
+<span id="cb9-17">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_line</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> </span>
+<span id="cb9-18">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_abline</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">linetype=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"dashed"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb9-19">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">scale_color_manual</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">values=</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Model 1"</span><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"red"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Model 2"</span><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"blue"</span>)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb9-20">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">labs</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"False Positive Rate"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"True Positive Rate"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">title=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"ROC Curve Comparison"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb9-21">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">annotate</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"text"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x=</span><span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.6</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y=</span><span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.25</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">label=</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">paste</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Model 1 AUC ="</span>, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(auc1, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>)), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"red"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">size =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">8</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb9-22">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">annotate</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"text"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x=</span><span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.6</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y=</span><span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.15</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">label=</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">paste</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Model 2 AUC ="</span>, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(auc2, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>)), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"blue"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">size =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">8</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb9-23">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rj_custom_theme</span>()</span></code></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://sinisterrob.github.io/professional_blog/2024-03-10-spaceship-titanic-part-3/index_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>We can see from the ROC Curve that Model 2 has a higher True Positive rate for every possible threshold (which is denoted by moving from left to right on the x-axis) and has a larger AUC, meaning it should perform better at classification than Model 1.</p>
+<p>I would hope so, since I put a lot of effort into improving it. 😉</p>
+</section>
+<section id="summary-part-4-preview" class="level2">
+<h2 class="anchored" data-anchor-id="summary-part-4-preview">Summary + Part 4 Preview</h2>
+<p>Phew, that was a lot of content to get through! Thanks for sticking through it - I probably won’t try to cram much into Part 4 so that we can do a deeper dive on how the model is really performing so far.</p>
+<p>Thanks again, and please <a href="../../blog_subscribe.html">subscribe to the blog</a> if you haven’t already. A lot of effort and research goes into creating this type of material, and it will make me glad if people actually subscribed and read what I enjoy writing about.</p>
+<p>In Part 4, I will explore one or two more predictive variables from our data, setting priors on variables for more efficient model fitting, residual plots, and possibly <a href="https://mc-stan.org/loo/">leave-one-out</a> cross-validation if my computer decides to cooperate with that package.</p>
+<div style="text-align: center;">
+<p><script>window.onload = function() { var elevator = new Elevator({ element: document.querySelector(".elevator-button"),  mainAudio: "", endAudio: "ding.mp3" }); }</script><button class="btn btn-outline-primary elevator-button" type="submit">Return to the top!</button></p>
+</div>
+
+
+</section>
+</section>
+
+ ]]></description>
+  <guid>https://sinisterrob.github.io/professional_blog/2024-03-10-spaceship-titanic-part-3/</guid>
+  <pubDate>Sun, 10 Mar 2024 06:00:00 GMT</pubDate>
+  <media:content url="https://sinisterrob.github.io/../../assets/img/titanic-3.png" medium="image" type="image/png"/>
+</item>
 <item>
   <title>Spaceship Titanic - Introduction to Bayesian Models - Part 2</title>
   <link>https://sinisterrob.github.io/professional_blog/2024-03-09-spaceship-titanic-part-2/</link>
@@ -34,7 +1096,7 @@ table {
 </style>
 </div>
 <div style="text-align: center;">
-<p><img src="https://sinisterrob.github.io/img/titanic-2.png" class="img-fluid" width="350"></p>
+<p><img src="https://sinisterrob.github.io/assets/img/titanic-2.png" class="img-fluid" width="350"></p>
 </div>
 <section id="part-2-initial-modelling" class="level1">
 <h1>Part 2: Initial Modelling</h1>
@@ -51,7 +1113,7 @@ table {
 <p><a href="https://en.wikipedia.org/wiki/Stan_(software)">Stan</a> is a probabilistic programming language for statistical inference. To write a Stan model, I will create a .stan file using the Stan programming language, and then compile and run this model in R using the rstan package.</p>
 <p>I will first show the basic Stan code for the model, and explain each of the blocks:</p>
 <div style="text-align: center;">
-<p><img src="https://sinisterrob.github.io/img/stan2.png" class="img-fluid"></p>
+<p><img src="https://sinisterrob.github.io/assets/img/stan2.png" class="img-fluid"></p>
 </div>
 <section id="data" class="level3">
 <h3 class="anchored" data-anchor-id="data">data</h3>
@@ -89,35 +1151,60 @@ table {
 <p>The easiest way to handle missing values is to <a href="https://en.wikipedia.org/wiki/Imputation_(statistics)">impute</a> them using the <strong><code>mice</code></strong> package in R.</p>
 <p>Imputation helps us fill in these gaps with plausible values, ensuring that our analysis can proceed without dropping entire rows or columns which might lead to loss of valuable information.</p>
 <p><strong><code>mice</code></strong> stands for <strong>Multivariate Imputation by Chained Equations</strong>, a technique that provides a more nuanced approach than simply filling in the missing entries with average values. You could think of it as an iterative regression on the NA values using the non-NA values for that observation.</p>
+<p>I want to make sure I don’t include the Transported field when doing imputation for two reasons:</p>
+<ol type="1">
+<li>I don’t have this field available in my test dataset, where I will need to do the same thing.</li>
+</ol>
+<!-- -->
+<ol start="2" type="1">
+<li>That would be considered a form of [data leakage](<a href="https://en.wikipedia.org/wiki/Leakage_(machine_learning)" class="uri">https://en.wikipedia.org/wiki/Leakage_(machine_learning)</a>).</li>
+</ol>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1">imputed_sst <span class="ot" style="color: #003B4F;
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1">sst_transported <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> sst_data_stan<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Transported</span>
+<span id="cb1-2">sst_no_transported <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> sst_data_stan[, <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Transported"</span>]</span>
+<span id="cb1-3"></span>
+<span id="cb1-4">imputed_sst <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
 background-color: null;
-font-style: inherit;">mice</span>(sst_data_stan, <span class="at" style="color: #657422;
+font-style: inherit;">mice</span>(sst_no_transported, <span class="at" style="color: #657422;
 background-color: null;
 font-style: inherit;">m =</span> <span class="dv" style="color: #AD0000;
 background-color: null;
-font-style: inherit;">5</span>, <span class="at" style="color: #657422;
+font-style: inherit;">1</span>, <span class="at" style="color: #657422;
 background-color: null;
 font-style: inherit;">printFlag =</span> <span class="cn" style="color: #8f5902;
 background-color: null;
 font-style: inherit;">FALSE</span>)</span>
-<span id="cb1-2">imputed_sst_data <span class="ot" style="color: #003B4F;
+<span id="cb1-5">imputed_sst_data <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">complete</span>(imputed_sst, <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">1</span>)</span>
-<span id="cb1-3"></span>
-<span id="cb1-4">imputed_sst_data <span class="ot" style="color: #003B4F;
+<span id="cb1-6">imputed_sst_data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Transported <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> sst_transported</span>
+<span id="cb1-7">imputed_sst_data <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">&lt;-</span></span>
-<span id="cb1-5">  imputed_sst_data <span class="sc" style="color: #5E5E5E;
+<span id="cb1-8">  imputed_sst_data <span class="sc" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">%&gt;%</span> </span>
-<span id="cb1-6">  <span class="fu" style="color: #4758AB;
+<span id="cb1-9">  <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
 background-color: null;
@@ -128,7 +1215,7 @@ background-color: null;
 font-style: inherit;">levels =</span> <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">unique</span>(HomePlanet)),</span>
-<span id="cb1-7">         <span class="at" style="color: #657422;
+<span id="cb1-10">         <span class="at" style="color: #657422;
 background-color: null;
 font-style: inherit;">VIP =</span> <span class="fu" style="color: #4758AB;
 background-color: null;
@@ -203,12 +1290,12 @@ font-style: inherit;">%&gt;%</span> </span>
 background-color: null;
 font-style: inherit;">rj_custom_table</span>()</span></code></pre></div>
 <div class="cell-output-display">
-<div class="tabwid"><style>.cl-5a93fdaa{}.cl-5a8b97e6{font-family:'Iosevka';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-5a8b97fa{font-family:'Iosevka';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-5a8ea0da{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-5a8eb318{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 1.5pt solid rgba(190, 190, 190, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-5a8eb322{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-5a8eb32c{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-5a93fdaa"><thead><tr style="overflow-wrap:break-word;"><th class="cl-5a8eb318"><p class="cl-5a8ea0da"><span class="cl-5a8b97e6">(Intercept)</span></p></th><th class="cl-5a8eb318"><p class="cl-5a8ea0da"><span class="cl-5a8b97e6">Age</span></p></th><th class="cl-5a8eb318"><p class="cl-5a8ea0da"><span class="cl-5a8b97e6">VIPTRUE</span></p></th><th class="cl-5a8eb318"><p class="cl-5a8ea0da"><span class="cl-5a8b97e6">HomePlanetEarth</span></p></th><th class="cl-5a8eb318"><p class="cl-5a8ea0da"><span class="cl-5a8b97e6">HomePlanetMars</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">39</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">24</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">58</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">33</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">16</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">44</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">26</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">28</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">35</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-5a8eb32c"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb32c"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">14</span></p></td><td class="cl-5a8eb32c"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td><td class="cl-5a8eb32c"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td><td class="cl-5a8eb32c"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td></tr></tbody></table></div>
+<div class="tabwid"><style>.cl-be69b4d6{}.cl-be612ba4{font-family:'Iosevka Web';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-be612bb8{font-family:'Iosevka Web';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-be64ac66{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-be64bda0{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 1.5pt solid rgba(190, 190, 190, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-be64bda1{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-be64bdaa{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-be69b4d6"><thead><tr style="overflow-wrap:break-word;"><th class="cl-be64bda0"><p class="cl-be64ac66"><span class="cl-be612ba4">(Intercept)</span></p></th><th class="cl-be64bda0"><p class="cl-be64ac66"><span class="cl-be612ba4">Age</span></p></th><th class="cl-be64bda0"><p class="cl-be64ac66"><span class="cl-be612ba4">VIPTRUE</span></p></th><th class="cl-be64bda0"><p class="cl-be64ac66"><span class="cl-be612ba4">HomePlanetEarth</span></p></th><th class="cl-be64bda0"><p class="cl-be64ac66"><span class="cl-be612ba4">HomePlanetMars</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">39</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">24</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">58</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">33</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">16</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">44</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">26</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">28</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">35</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-be64bdaa"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bdaa"><p class="cl-be64ac66"><span class="cl-be612bb8">14</span></p></td><td class="cl-be64bdaa"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td><td class="cl-be64bdaa"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td><td class="cl-be64bdaa"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td></tr></tbody></table></div>
 </div>
 </div>
 <p>From the design matrix and the Stan code we can see that this model will need to estimate five separate <img src="https://latex.codecogs.com/png.latex?%5Cbeta"> parameters, one for each column of the design matrix.</p>
 <p>I will now fit the initial model using the <code>stan(...)</code> function from the rstan library.</p>
-<p>Referencing the parameters I defined in the <code>data</code> block in the Stan code above, we will need to provide the <code>stan(...)</code> function with a named list of parameters N, K, X, and y. Note that I am running a model with 4 chains of 2,000 iterations each (which will be split into 1,000 warm-up iterations and 1,000 sampling iterations per chain.)</p>
+<p>Referencing the parameters I defined in the <code>data</code> block in the Stan code above, we will need to provide the <code>stan(...)</code> function with a named list of parameters N, K, X, and y. Note that I am running a model with 2 chains of 2,000 iterations each (which will be split into 1,000 warm-up iterations and 1,000 sampling iterations per chain.)</p>
 <p>You can think of the model fitting as exploring a potentially jagged K-dimensional terrain across the parameter space and the log-likelihood of observing the data at each point using that specific set of parameters is the height. We start in 4 random locations on this terrain, and hope that these chains end up in the exact same spot of maximum likelihood and stabilize so that we can draw credible and usable posterior parameter estimates.</p>
 <p>The exact method that Stan uses to explore this terrain is complex and definitely beyond the scope of this blog, but if you’re interested in learning more, you should read about <a href="https://mc-stan.org/docs/reference-manual/mcmc.html#hamiltonian-monte-carlo">Hamiltonian Monte Carlo</a> and the <a href="https://mc-stan.org/docs/reference-manual/mcmc.html#nuts-and-its-configuration">no-U-turn sampler</a>.</p>
 <div class="cell">
@@ -270,7 +1357,7 @@ font-style: inherit;">!</span><span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">file.exists</span>(<span class="st" style="color: #20794D;
 background-color: null;
-font-style: inherit;">"../../models/sst_model_1.rds"</span>)){</span>
+font-style: inherit;">"../../assets/models/sst_model_1.rds"</span>)){</span>
 <span id="cb3-8">  sst_fit_1 <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">&lt;-</span> </span>
@@ -280,7 +1367,7 @@ font-style: inherit;">stan</span>(<span class="at" style="color: #657422;
 background-color: null;
 font-style: inherit;">file =</span> <span class="st" style="color: #20794D;
 background-color: null;
-font-style: inherit;">"spaceship_titanic_2.stan"</span>,</span>
+font-style: inherit;">"../../assets/stan/spaceship_titanic_2.stan"</span>,</span>
 <span id="cb3-10">         <span class="at" style="color: #657422;
 background-color: null;
 font-style: inherit;">data =</span> <span class="fu" style="color: #4758AB;
@@ -305,7 +1392,7 @@ font-style: inherit;">y =</span> sst_response),</span>
 background-color: null;
 font-style: inherit;">chains =</span> <span class="dv" style="color: #AD0000;
 background-color: null;
-font-style: inherit;">4</span>,</span>
+font-style: inherit;">2</span>,</span>
 <span id="cb3-15">         <span class="at" style="color: #657422;
 background-color: null;
 font-style: inherit;">iter =</span> <span class="dv" style="color: #AD0000;
@@ -317,7 +1404,7 @@ font-style: inherit;">save</span>(sst_fit_1, <span class="at" style="color: #657
 background-color: null;
 font-style: inherit;">file =</span> <span class="st" style="color: #20794D;
 background-color: null;
-font-style: inherit;">"../../models/sst_model_1.rds"</span>)</span>
+font-style: inherit;">"../../assets/models/sst_model_1.rds"</span>)</span>
 <span id="cb3-17">  } <span class="cf" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">else</span> {</span>
@@ -325,7 +1412,7 @@ font-style: inherit;">else</span> {</span>
 background-color: null;
 font-style: inherit;">load</span>(<span class="st" style="color: #20794D;
 background-color: null;
-font-style: inherit;">"../../models/sst_model_1.rds"</span>)</span>
+font-style: inherit;">"../../assets/models/sst_model_1.rds"</span>)</span>
 <span id="cb3-19">  }</span></code></pre></div>
 </div>
 </section>
@@ -398,7 +1485,7 @@ font-style: inherit;">24</span>))</span></code></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="https://sinisterrob.github.io/professional_blog/2024-03-09-spaceship-titanic-part-2/index_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="https://sinisterrob.github.io/professional_blog/2024-03-09-spaceship-titanic-part-2/index_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -407,7 +1494,9 @@ font-style: inherit;">24</span>))</span></code></pre></div>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1">rounded_betas <span class="ot" style="color: #003B4F;
 background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+font-style: inherit;">&lt;-</span> rstan<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">extract</span>(sst_fit_1)<span class="sc" style="color: #5E5E5E;
 background-color: null;
@@ -462,7 +1551,7 @@ font-style: inherit;">%&gt;%</span> </span>
 background-color: null;
 font-style: inherit;">rj_custom_table</span>()</span></code></pre></div>
 <div class="cell-output-display">
-<div class="tabwid"><style>.cl-668bb7b0{}.cl-6684566e{font-family:'Iosevka';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-66845678{font-family:'Iosevka';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-66873974{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-66875238{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 1.5pt solid rgba(190, 190, 190, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-66875242{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-668bb7b0"><thead><tr style="overflow-wrap:break-word;"><th class="cl-66875238"><p class="cl-66873974"><span class="cl-6684566e">beta[1]</span></p></th><th class="cl-66875238"><p class="cl-66873974"><span class="cl-6684566e">beta[2]</span></p></th><th class="cl-66875238"><p class="cl-66873974"><span class="cl-6684566e">beta[3]</span></p></th><th class="cl-66875238"><p class="cl-66873974"><span class="cl-6684566e">beta[4]</span></p></th><th class="cl-66875238"><p class="cl-66873974"><span class="cl-6684566e">beta[5]</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-66875242"><p class="cl-66873974"><span class="cl-66845678">1.3716</span></p></td><td class="cl-66875242"><p class="cl-66873974"><span class="cl-66845678">-0.0187</span></p></td><td class="cl-66875242"><p class="cl-66873974"><span class="cl-66845678">-0.919</span></p></td><td class="cl-66875242"><p class="cl-66873974"><span class="cl-66845678">-1.1987</span></p></td><td class="cl-66875242"><p class="cl-66873974"><span class="cl-66845678">-0.6832</span></p></td></tr></tbody></table></div>
+<div class="tabwid"><style>.cl-c01bd3ae{}.cl-c0150b0a{font-family:'Iosevka Web';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-c0150b14{font-family:'Iosevka Web';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-c017b0c6{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-c017bfbc{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 1.5pt solid rgba(190, 190, 190, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-c017bfc6{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-c01bd3ae"><thead><tr style="overflow-wrap:break-word;"><th class="cl-c017bfbc"><p class="cl-c017b0c6"><span class="cl-c0150b0a">beta[1]</span></p></th><th class="cl-c017bfbc"><p class="cl-c017b0c6"><span class="cl-c0150b0a">beta[2]</span></p></th><th class="cl-c017bfbc"><p class="cl-c017b0c6"><span class="cl-c0150b0a">beta[3]</span></p></th><th class="cl-c017bfbc"><p class="cl-c017b0c6"><span class="cl-c0150b0a">beta[4]</span></p></th><th class="cl-c017bfbc"><p class="cl-c017b0c6"><span class="cl-c0150b0a">beta[5]</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-c017bfc6"><p class="cl-c017b0c6"><span class="cl-c0150b14">1.3045</span></p></td><td class="cl-c017bfc6"><p class="cl-c017b0c6"><span class="cl-c0150b14">-0.0173</span></p></td><td class="cl-c017bfc6"><p class="cl-c017b0c6"><span class="cl-c0150b14">-0.8962</span></p></td><td class="cl-c017bfc6"><p class="cl-c017b0c6"><span class="cl-c0150b14">-1.163</span></p></td><td class="cl-c017bfc6"><p class="cl-c017b0c6"><span class="cl-c0150b14">-0.6726</span></p></td></tr></tbody></table></div>
 </div>
 </div>
 <p>One final check: Are these <img src="https://latex.codecogs.com/png.latex?%5Cbeta"> means in the same direction of what we expected from the univariate analysis in <a href="../../professional_blog/2024-03-08-spaceship-titanic-part-1/index.html">Part 1</a>?</p>
@@ -472,35 +1561,35 @@ font-style: inherit;">rj_custom_table</span>()</span></code></pre></div>
 <li><p>This quantity represents the baseline, which should correspond to a passenger who is Age 0, not a VIP, and having a home planet of Europa.</p></li>
 <li><p>To convert into a probability, we can undo the logit function manually.</p></li>
 <li><p><img src="https://latex.codecogs.com/png.latex?p%20=%20%5Cfrac%7Be%5E%7B%5Cbeta_1%7D%7D%7B1%20+%20e%5E%7B%5Cbeta_1%7D%7D"></p></li>
-<li><p><img src="https://latex.codecogs.com/png.latex?p%20=%2079.8%5C%25"></p></li>
+<li><p><img src="https://latex.codecogs.com/png.latex?p%20=%2078.7%5C%25"></p></li>
 </ul>
 </section>
 <section id="beta2-age" class="level3">
 <h3 class="anchored" data-anchor-id="beta2-age">beta[2]: (Age)</h3>
 <ul>
-<li><p>We can see a decreasing effect in Age, where every increase of Age by 1 year decreases the log odds of Transportation by -0.0187.</p></li>
+<li><p>We can see a decreasing effect in Age, where every increase of Age by 1 year decreases the log odds of Transportation by -0.0173.</p></li>
 <li><p>We did observe a decreasing effect with Age although it wasn’t exactly linear and mostly flat after Age 17.</p></li>
 </ul>
 </section>
 <section id="beta3-vip-true" class="level3">
 <h3 class="anchored" data-anchor-id="beta3-vip-true">beta[3]: (VIP = TRUE)</h3>
 <ul>
-<li><p>Being a VIP reduces the log odds of Transportation by -0.9190 compared to the baseline of not being a VIP.</p></li>
-<li><p>We can demonstrate what that means in terms of probability by calculating the Transportation prediction to a passenger who is Age 0, a VIP, and having a home planet of Europa and comparing that to the baseline probability of 80%.</p></li>
+<li><p>Being a VIP reduces the log odds of Transportation by -0.8962 compared to the baseline of not being a VIP.</p></li>
+<li><p>We can demonstrate what that means in terms of probability by calculating the Transportation prediction to a passenger who is Age 0, a VIP, and having a home planet of Europa and comparing that to the baseline probability of 78.7%.</p></li>
 <li><p><img src="https://latex.codecogs.com/png.latex?p%20=%20%5Cfrac%7Be%5E%7B%5Cbeta1%20+%20%5Cbeta3%7D%7D%7B1%20+%20e%5E%7B%5Cbeta1%20+%20%5Cbeta3%7D%7D"></p></li>
-<li><p><img src="https://latex.codecogs.com/png.latex?p%20=%2061.1%5C%25"></p></li>
+<li><p><img src="https://latex.codecogs.com/png.latex?p%20=%2063.3%5C%25"></p></li>
 </ul>
 </section>
 <section id="beta4-home-planet-earth" class="level3">
 <h3 class="anchored" data-anchor-id="beta4-home-planet-earth">beta[4]: (Home Planet = Earth)</h3>
 <ul>
-<li>Having a home planet of Earth reduces the log odds of Transportation by -1.2125 compared to the baseline of Europa.</li>
+<li>Having a home planet of Earth reduces the log odds of Transportation by -1.1629 compared to the baseline of Europa.</li>
 </ul>
 </section>
 <section id="beta5-home-planet-mars" class="level3">
 <h3 class="anchored" data-anchor-id="beta5-home-planet-mars">beta[5]: (Home Planet = Mars)</h3>
 <ul>
-<li>Having a home planet of Mars reduces the log odds of Transportation by -0.7003 compared to the baseline of Europa.</li>
+<li>Having a home planet of Mars reduces the log odds of Transportation by -0.6846 compared to the baseline of Europa.</li>
 </ul>
 <p>And finally, how do the new model’s predictions perform on the training data? Remember that roughly 50% of the travelers were Transported in the original data, so let’s see if we can identify who was Transported more accurately than randomly guessing by using a <a href="https://en.wikipedia.org/wiki/Confusion_matrix">confusion matrix</a>.</p>
 <p>Since we are testing the model on the same data we trained it on, these metrics are also referred to as training error and probably an optimistic estimate of how the model would generalize to data it hasn’t been trained on before.</p>
@@ -509,7 +1598,9 @@ font-style: inherit;">rj_custom_table</span>()</span></code></pre></div>
 background-color: null;
 font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
 background-color: null;
-font-style: inherit;">apply</span>(<span class="fu" style="color: #4758AB;
+font-style: inherit;">apply</span>(rstan<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">extract</span>(sst_fit_1, <span class="st" style="color: #20794D;
 background-color: null;
@@ -557,44 +1648,45 @@ font-style: inherit;">confusionMatrix</span>(y_pred_factor, sst_response_factor)
 
           Reference
 Prediction FALSE TRUE
-     FALSE  2886 2042
-     TRUE   1429 2336
-                                         
-               Accuracy : 0.6007         
-                 95% CI : (0.5903, 0.611)
-    No Information Rate : 0.5036         
-    P-Value [Acc &gt; NIR] : &lt; 2.2e-16      
-                                         
-                  Kappa : 0.2022         
-                                         
- Mcnemar's Test P-Value : &lt; 2.2e-16      
-                                         
-            Sensitivity : 0.6688         
-            Specificity : 0.5336         
-         Pos Pred Value : 0.5856         
-         Neg Pred Value : 0.6205         
-             Prevalence : 0.4964         
-         Detection Rate : 0.3320         
-   Detection Prevalence : 0.5669         
-      Balanced Accuracy : 0.6012         
-                                         
-       'Positive' Class : FALSE          
-                                         </code></pre>
+     FALSE  2884 2041
+     TRUE   1431 2337
+                                          
+               Accuracy : 0.6006          
+                 95% CI : (0.5902, 0.6109)
+    No Information Rate : 0.5036          
+    P-Value [Acc &gt; NIR] : &lt; 2.2e-16       
+                                          
+                  Kappa : 0.202           
+                                          
+ Mcnemar's Test P-Value : &lt; 2.2e-16       
+                                          
+            Sensitivity : 0.6684          
+            Specificity : 0.5338          
+         Pos Pred Value : 0.5856          
+         Neg Pred Value : 0.6202          
+             Prevalence : 0.4964          
+         Detection Rate : 0.3318          
+   Detection Prevalence : 0.5665          
+      Balanced Accuracy : 0.6011          
+                                          
+       'Positive' Class : FALSE           
+                                          </code></pre>
 </div>
 </div>
-<p>Accuracy is one of the most straightforward metrics derived from a confusion matrix. It represents the proportion of true results (both true positives and true negatives) among the total number of cases examined. With no information, we saw that we could randomly guess Transportation correctly 50.4% of the time. Now, given a random traveler we can predict if they were transported or not correctly 60.5% of the time.</p>
+<p>Accuracy is one of the most straightforward metrics derived from a confusion matrix. It represents the proportion of true results (both true positives and true negatives) among the total number of cases examined. With no information, we saw that we could randomly guess Transportation correctly 50.4% of the time. Now, given a random traveler we can predict if they were transported or not correctly 60.1% of the time.</p>
 </section>
 </section>
 <section id="summary-part-3-preview" class="level2">
 <h2 class="anchored" data-anchor-id="summary-part-3-preview">Summary + Part 3 Preview</h2>
-<p>I’d say those are some promising results considering this is the first iteration of the model. I only included three basic factors without too much data exploration, and was able to improve the accuracy from 50.4% to 60.5%. I’d like to see if we can get our training accuracy to at least 80% by the end of this series, which may or may not be possible given the complexity of the data.</p>
+<p>I’d say those are some promising results considering this is the first iteration of the model. I only included three basic factors without too much data exploration, and was able to improve the accuracy from 50.4% to 60.1%. I’d like to see if we can get our training accuracy to at least 80% by the end of this series, which may or may not be possible given the complexity of the data.</p>
 <p>There are a couple of specific improvements I plan on making in Part 3:</p>
 <ul>
-<li><p>Comparing a new model to this one to test for improvement using <a href="https://mc-stan.org/loo/">leave one out</a> cross-validation or an <a href="https://en.wikipedia.org/wiki/Receiver_operating_characteristic">ROC curve</a>.</p></li>
+<li><p>Comparing a new model to this one to test for improvement using an <a href="https://en.wikipedia.org/wiki/Receiver_operating_characteristic">ROC curve</a>.</p></li>
 <li><p>Fitting Age using a non-linear fitted effect instead of a linear effect term (possibly with the help of a <a href="https://en.wikipedia.org/wiki/Generalized_additive_model">generalized additive model</a> or spline.)</p></li>
-<li><p>Exploring the use of Cabin as a predictor variable using a hierarchical model (also called <a href="https://en.wikipedia.org/wiki/Bayesian_hierarchical_modeling">multilevel</a> model) structure.</p></li>
+<li><p>Exploring the use of Cabin as a predictor variable, and eventually using a hierarchical model (also called <a href="https://en.wikipedia.org/wiki/Bayesian_hierarchical_modeling">multilevel</a> model) structure.</p></li>
 </ul>
 <p>Stay tuned for Part 3, and thanks again for reading Part 2 of the Spaceship Titanic series using Bayesian modeling.</p>
+<p><span style="color: #FF0000;"><strong>UPDATE:</strong></span> Part 3 is out! You can read it <a href="../../professional_blog/2024-03-09-spaceship-titanic-part-2/index.html">here</a>.</p>
 <div style="text-align: center;">
 <p><script>window.onload = function() { var elevator = new Elevator({ element: document.querySelector(".elevator-button"),  mainAudio: "", endAudio: "ding.mp3" }); }</script><button class="btn btn-outline-primary elevator-button" type="submit">Return to the top!</button></p>
 </div>
@@ -606,7 +1698,7 @@ Prediction FALSE TRUE
  ]]></description>
   <guid>https://sinisterrob.github.io/professional_blog/2024-03-09-spaceship-titanic-part-2/</guid>
   <pubDate>Sat, 09 Mar 2024 06:00:00 GMT</pubDate>
-  <media:content url="https://sinisterrob.github.io/../../img/titanic-2.png" medium="image" type="image/png"/>
+  <media:content url="https://sinisterrob.github.io/../../assets/img/titanic-2.png" medium="image" type="image/png"/>
 </item>
 <item>
   <title>Spaceship Titanic - Introduction to Bayesian Models - Part 1</title>
@@ -626,7 +1718,7 @@ table {
 </style>
 </div>
 <div style="text-align: center;">
-<p><img src="https://sinisterrob.github.io/img/titanic.png" class="img-fluid" width="350"></p>
+<p><img src="https://sinisterrob.github.io/assets/img/titanic.png" class="img-fluid" width="350"></p>
 </div>
 <section id="introduction" class="level1">
 <h1>Introduction</h1>
@@ -699,7 +1791,7 @@ font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">fread</span>(<span class="st" style="color: #20794D;
 background-color: null;
-font-style: inherit;">"../../data/train.csv"</span>)</span></code></pre></div>
+font-style: inherit;">"../../assets/data/train.csv"</span>)</span></code></pre></div>
 </details>
 </div>
 <p>For reference, I will show the first few rows of the data set. For the sake of keeping the post shorter, you can refer to the <a href="https://www.kaggle.com/competitions/spaceship-titanic">Kaggle link</a> for the definitions of each of the data fields.</p>
@@ -1149,7 +2241,7 @@ font-style: inherit;">rj_custom_table</span>()</span></code></pre></div>
  ]]></description>
   <guid>https://sinisterrob.github.io/professional_blog/2024-03-08-spaceship-titanic-part-1/</guid>
   <pubDate>Fri, 08 Mar 2024 06:00:00 GMT</pubDate>
-  <media:content url="https://sinisterrob.github.io/../../img/titanic.png" medium="image" type="image/png"/>
+  <media:content url="https://sinisterrob.github.io/assets/img/titanic.png" medium="image" type="image/png" height="144" width="144"/>
 </item>
 </channel>
 </rss>

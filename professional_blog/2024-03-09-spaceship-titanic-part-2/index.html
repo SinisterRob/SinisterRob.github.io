@@ -150,12 +150,12 @@ window.Quarto = {
 <link rel="stylesheet" href="../../styles.css">
 <meta property="og:title" content="bites | brews | paws - Spaceship Titanic - Introduction to Bayesian Models - Part 2">
 <meta property="og:description" content="Using a Stan model to improve over random guessing.">
-<meta property="og:image" content="https://sinisterrob.github.io/../../img/titanic-2.png">
+<meta property="og:image" content="https://sinisterrob.github.io/../../assets/img/titanic-2.png">
 <meta property="og:site_name" content="bites | brews | paws">
 <meta property="og:locale" content="es_ES">
 <meta name="twitter:title" content="bites | brews | paws - Spaceship Titanic - Introduction to Bayesian Models - Part 2">
 <meta name="twitter:description" content="Using a Stan model to improve over random guessing.">
-<meta name="twitter:image" content="https://sinisterrob.github.io/../../img/titanic-2.png">
+<meta name="twitter:image" content="https://sinisterrob.github.io/../../assets/img/titanic-2.png">
 <meta name="twitter:card" content="summary_large_image">
 </head>
 
@@ -298,7 +298,7 @@ table {
 </style>
 </div>
 <div style="text-align: center;">
-<p><img src="./../../img/titanic-2.png" class="img-fluid" width="350"></p>
+<p><img src="./../../assets/img/titanic-2.png" class="img-fluid" width="350"></p>
 </div>
 <section id="part-2-initial-modelling" class="level1">
 <h1>Part 2: Initial Modelling</h1>
@@ -315,7 +315,7 @@ table {
 <p><a href="https://en.wikipedia.org/wiki/Stan_(software)">Stan</a> is a probabilistic programming language for statistical inference. To write a Stan model, I will create a .stan file using the Stan programming language, and then compile and run this model in R using the rstan package.</p>
 <p>I will first show the basic Stan code for the model, and explain each of the blocks:</p>
 <div style="text-align: center;">
-<p><img src="../../img/stan2.png" class="img-fluid"></p>
+<p><img src="../../assets/img/stan2.png" class="img-fluid"></p>
 </div>
 <section id="data" class="level3">
 <h3 class="anchored" data-anchor-id="data">data</h3>
@@ -353,14 +353,25 @@ table {
 <p>The easiest way to handle missing values is to <a href="https://en.wikipedia.org/wiki/Imputation_(statistics)">impute</a> them using the <strong><code>mice</code></strong> package in R.</p>
 <p>Imputation helps us fill in these gaps with plausible values, ensuring that our analysis can proceed without dropping entire rows or columns which might lead to loss of valuable information.</p>
 <p><strong><code>mice</code></strong> stands for <strong>Multivariate Imputation by Chained Equations</strong>, a technique that provides a more nuanced approach than simply filling in the missing entries with average values. You could think of it as an iterative regression on the NA values using the non-NA values for that observation.</p>
+<p>I want to make sure I don’t include the Transported field when doing imputation for two reasons:</p>
+<ol type="1">
+<li>I don’t have this field available in my test dataset, where I will need to do the same thing.</li>
+</ol>
+<!-- -->
+<ol start="2" type="1">
+<li>That would be considered a form of [data leakage](<a href="https://en.wikipedia.org/wiki/Leakage_(machine_learning)" class="uri">https://en.wikipedia.org/wiki/Leakage_(machine_learning)</a>).</li>
+</ol>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>imputed_sst <span class="ot">&lt;-</span> <span class="fu">mice</span>(sst_data_stan, <span class="at">m =</span> <span class="dv">5</span>, <span class="at">printFlag =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>imputed_sst_data <span class="ot">&lt;-</span> <span class="fu">complete</span>(imputed_sst, <span class="dv">1</span>)</span>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>sst_transported <span class="ot">&lt;-</span> sst_data_stan<span class="sc">$</span>Transported</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>sst_no_transported <span class="ot">&lt;-</span> sst_data_stan[, <span class="sc">-</span><span class="st">"Transported"</span>]</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>imputed_sst_data <span class="ot">&lt;-</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  imputed_sst_data <span class="sc">%&gt;%</span> </span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">HomePlanet =</span> <span class="fu">factor</span>(HomePlanet, <span class="at">levels =</span> <span class="fu">unique</span>(HomePlanet)),</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">VIP =</span> <span class="fu">factor</span>(VIP, <span class="at">levels =</span> <span class="fu">unique</span>(VIP)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>imputed_sst <span class="ot">&lt;-</span> <span class="fu">mice</span>(sst_no_transported, <span class="at">m =</span> <span class="dv">1</span>, <span class="at">printFlag =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>imputed_sst_data <span class="ot">&lt;-</span> <span class="fu">complete</span>(imputed_sst, <span class="dv">1</span>)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>imputed_sst_data<span class="sc">$</span>Transported <span class="ot">&lt;-</span> sst_transported</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>imputed_sst_data <span class="ot">&lt;-</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  imputed_sst_data <span class="sc">%&gt;%</span> </span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">HomePlanet =</span> <span class="fu">factor</span>(HomePlanet, <span class="at">levels =</span> <span class="fu">unique</span>(HomePlanet)),</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>         <span class="at">VIP =</span> <span class="fu">factor</span>(VIP, <span class="at">levels =</span> <span class="fu">unique</span>(VIP)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="fitting-the-initial-model" class="level2">
@@ -373,12 +384,12 @@ table {
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>) <span class="sc">%&gt;%</span> </span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rj_custom_table</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<div class="tabwid"><style>.cl-5a93fdaa{}.cl-5a8b97e6{font-family:'Iosevka';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-5a8b97fa{font-family:'Iosevka';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-5a8ea0da{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-5a8eb318{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 1.5pt solid rgba(190, 190, 190, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-5a8eb322{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-5a8eb32c{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-5a93fdaa"><thead><tr style="overflow-wrap:break-word;"><th class="cl-5a8eb318"><p class="cl-5a8ea0da"><span class="cl-5a8b97e6">(Intercept)</span></p></th><th class="cl-5a8eb318"><p class="cl-5a8ea0da"><span class="cl-5a8b97e6">Age</span></p></th><th class="cl-5a8eb318"><p class="cl-5a8ea0da"><span class="cl-5a8b97e6">VIPTRUE</span></p></th><th class="cl-5a8eb318"><p class="cl-5a8ea0da"><span class="cl-5a8b97e6">HomePlanetEarth</span></p></th><th class="cl-5a8eb318"><p class="cl-5a8ea0da"><span class="cl-5a8b97e6">HomePlanetMars</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">39</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">24</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">58</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">33</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">16</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">44</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">26</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">28</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">35</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb322"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-5a8eb32c"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">1</span></p></td><td class="cl-5a8eb32c"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">14</span></p></td><td class="cl-5a8eb32c"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td><td class="cl-5a8eb32c"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td><td class="cl-5a8eb32c"><p class="cl-5a8ea0da"><span class="cl-5a8b97fa">0</span></p></td></tr></tbody></table></div>
+<div class="tabwid"><style>.cl-be69b4d6{}.cl-be612ba4{font-family:'Iosevka Web';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-be612bb8{font-family:'Iosevka Web';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-be64ac66{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-be64bda0{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 1.5pt solid rgba(190, 190, 190, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-be64bda1{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-be64bdaa{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-be69b4d6"><thead><tr style="overflow-wrap:break-word;"><th class="cl-be64bda0"><p class="cl-be64ac66"><span class="cl-be612ba4">(Intercept)</span></p></th><th class="cl-be64bda0"><p class="cl-be64ac66"><span class="cl-be612ba4">Age</span></p></th><th class="cl-be64bda0"><p class="cl-be64ac66"><span class="cl-be612ba4">VIPTRUE</span></p></th><th class="cl-be64bda0"><p class="cl-be64ac66"><span class="cl-be612ba4">HomePlanetEarth</span></p></th><th class="cl-be64bda0"><p class="cl-be64ac66"><span class="cl-be612ba4">HomePlanetMars</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">39</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">24</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">58</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">33</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">16</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">44</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">26</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">28</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">35</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bda1"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-be64bdaa"><p class="cl-be64ac66"><span class="cl-be612bb8">1</span></p></td><td class="cl-be64bdaa"><p class="cl-be64ac66"><span class="cl-be612bb8">14</span></p></td><td class="cl-be64bdaa"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td><td class="cl-be64bdaa"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td><td class="cl-be64bdaa"><p class="cl-be64ac66"><span class="cl-be612bb8">0</span></p></td></tr></tbody></table></div>
 </div>
 </div>
 <p>From the design matrix and the Stan code we can see that this model will need to estimate five separate <span class="math inline">\(\beta\)</span> parameters, one for each column of the design matrix.</p>
 <p>I will now fit the initial model using the <code>stan(...)</code> function from the rstan library.</p>
-<p>Referencing the parameters I defined in the <code>data</code> block in the Stan code above, we will need to provide the <code>stan(...)</code> function with a named list of parameters N, K, X, and y. Note that I am running a model with 4 chains of 2,000 iterations each (which will be split into 1,000 warm-up iterations and 1,000 sampling iterations per chain.)</p>
+<p>Referencing the parameters I defined in the <code>data</code> block in the Stan code above, we will need to provide the <code>stan(...)</code> function with a named list of parameters N, K, X, and y. Note that I am running a model with 2 chains of 2,000 iterations each (which will be split into 1,000 warm-up iterations and 1,000 sampling iterations per chain.)</p>
 <p>You can think of the model fitting as exploring a potentially jagged K-dimensional terrain across the parameter space and the log-likelihood of observing the data at each point using that specific set of parameters is the height. We start in 4 random locations on this terrain, and hope that these chains end up in the exact same spot of maximum likelihood and stabilize so that we can draw credible and usable posterior parameter estimates.</p>
 <p>The exact method that Stan uses to explore this terrain is complex and definitely beyond the scope of this blog, but if you’re interested in learning more, you should read about <a href="https://mc-stan.org/docs/reference-manual/mcmc.html#hamiltonian-monte-carlo">Hamiltonian Monte Carlo</a> and the <a href="https://mc-stan.org/docs/reference-manual/mcmc.html#nuts-and-its-configuration">no-U-turn sampler</a>.</p>
 <div class="cell">
@@ -388,18 +399,18 @@ table {
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>sst_response <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(imputed_sst_data<span class="sc">$</span>Transported)</span>
 <span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">file.exists</span>(<span class="st">"../../models/sst_model_1.rds"</span>)){</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">file.exists</span>(<span class="st">"../../assets/models/sst_model_1.rds"</span>)){</span>
 <span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  sst_fit_1 <span class="ot">&lt;-</span> </span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stan</span>(<span class="at">file =</span> <span class="st">"spaceship_titanic_2.stan"</span>,</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stan</span>(<span class="at">file =</span> <span class="st">"../../assets/stan/spaceship_titanic_2.stan"</span>,</span>
 <span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>         <span class="at">data =</span> <span class="fu">list</span>(<span class="at">N =</span> <span class="fu">nrow</span>(sst_design_matrix),</span>
 <span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>                     <span class="at">K =</span> <span class="fu">ncol</span>(sst_design_matrix),</span>
 <span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>                     <span class="at">X =</span> sst_design_matrix,</span>
 <span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>                     <span class="at">y =</span> sst_response),</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>         <span class="at">chains =</span> <span class="dv">4</span>,</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>         <span class="at">chains =</span> <span class="dv">2</span>,</span>
 <span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>         <span class="at">iter =</span> <span class="dv">2000</span>)</span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">save</span>(sst_fit_1, <span class="at">file =</span> <span class="st">"../../models/sst_model_1.rds"</span>)</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">save</span>(sst_fit_1, <span class="at">file =</span> <span class="st">"../../assets/models/sst_model_1.rds"</span>)</span>
 <span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">load</span>(<span class="st">"../../models/sst_model_1.rds"</span>)</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">load</span>(<span class="st">"../../assets/models/sst_model_1.rds"</span>)</span>
 <span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>  }</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
@@ -416,14 +427,14 @@ table {
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="index_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="index_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
 <p>Interestingly, it looks like our posterior distributions for the <span class="math inline">\(\beta\)</span> parameters are looking approximately normal with reasonably tight standard errors, even though we didn’t even set any explicit prior distributions at all in the <code>model</code> block of the Stan code. Normally, the advantage of Bayesian models is the ability to incorporate expert opinion through prior distributions but this is not required. Instead you can use what is called a flat prior which basically indicates we have no prior information about what the distribution or mean of the <span class="math inline">\(\beta\)</span> parameters would be.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>rounded_betas <span class="ot">&lt;-</span> <span class="fu">extract</span>(sst_fit_1)<span class="sc">$</span>beta <span class="sc">%&gt;%</span> </span>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>rounded_betas <span class="ot">&lt;-</span> rstan<span class="sc">::</span><span class="fu">extract</span>(sst_fit_1)<span class="sc">$</span>beta <span class="sc">%&gt;%</span> </span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">apply</span>(<span class="dv">2</span>, mean) <span class="sc">%&gt;%</span> </span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">round</span>(<span class="dv">4</span>)</span>
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
@@ -434,7 +445,7 @@ table {
 <span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.data.frame</span>() <span class="sc">%&gt;%</span> </span>
 <span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rj_custom_table</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<div class="tabwid"><style>.cl-668bb7b0{}.cl-6684566e{font-family:'Iosevka';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-66845678{font-family:'Iosevka';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-66873974{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-66875238{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 1.5pt solid rgba(190, 190, 190, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-66875242{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-668bb7b0"><thead><tr style="overflow-wrap:break-word;"><th class="cl-66875238"><p class="cl-66873974"><span class="cl-6684566e">beta[1]</span></p></th><th class="cl-66875238"><p class="cl-66873974"><span class="cl-6684566e">beta[2]</span></p></th><th class="cl-66875238"><p class="cl-66873974"><span class="cl-6684566e">beta[3]</span></p></th><th class="cl-66875238"><p class="cl-66873974"><span class="cl-6684566e">beta[4]</span></p></th><th class="cl-66875238"><p class="cl-66873974"><span class="cl-6684566e">beta[5]</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-66875242"><p class="cl-66873974"><span class="cl-66845678">1.3716</span></p></td><td class="cl-66875242"><p class="cl-66873974"><span class="cl-66845678">-0.0187</span></p></td><td class="cl-66875242"><p class="cl-66873974"><span class="cl-66845678">-0.919</span></p></td><td class="cl-66875242"><p class="cl-66873974"><span class="cl-66845678">-1.1987</span></p></td><td class="cl-66875242"><p class="cl-66873974"><span class="cl-66845678">-0.6832</span></p></td></tr></tbody></table></div>
+<div class="tabwid"><style>.cl-c01bd3ae{}.cl-c0150b0a{font-family:'Iosevka Web';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-c0150b14{font-family:'Iosevka Web';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-c017b0c6{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-c017bfbc{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 1.5pt solid rgba(190, 190, 190, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-c017bfc6{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-c01bd3ae"><thead><tr style="overflow-wrap:break-word;"><th class="cl-c017bfbc"><p class="cl-c017b0c6"><span class="cl-c0150b0a">beta[1]</span></p></th><th class="cl-c017bfbc"><p class="cl-c017b0c6"><span class="cl-c0150b0a">beta[2]</span></p></th><th class="cl-c017bfbc"><p class="cl-c017b0c6"><span class="cl-c0150b0a">beta[3]</span></p></th><th class="cl-c017bfbc"><p class="cl-c017b0c6"><span class="cl-c0150b0a">beta[4]</span></p></th><th class="cl-c017bfbc"><p class="cl-c017b0c6"><span class="cl-c0150b0a">beta[5]</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-c017bfc6"><p class="cl-c017b0c6"><span class="cl-c0150b14">1.3045</span></p></td><td class="cl-c017bfc6"><p class="cl-c017b0c6"><span class="cl-c0150b14">-0.0173</span></p></td><td class="cl-c017bfc6"><p class="cl-c017b0c6"><span class="cl-c0150b14">-0.8962</span></p></td><td class="cl-c017bfc6"><p class="cl-c017b0c6"><span class="cl-c0150b14">-1.163</span></p></td><td class="cl-c017bfc6"><p class="cl-c017b0c6"><span class="cl-c0150b14">-0.6726</span></p></td></tr></tbody></table></div>
 </div>
 </div>
 <p>One final check: Are these <span class="math inline">\(\beta\)</span> means in the same direction of what we expected from the univariate analysis in <a href="../../professional_blog/2024-03-08-spaceship-titanic-part-1/index.html">Part 1</a>?</p>
@@ -444,40 +455,40 @@ table {
 <li><p>This quantity represents the baseline, which should correspond to a passenger who is Age 0, not a VIP, and having a home planet of Europa.</p></li>
 <li><p>To convert into a probability, we can undo the logit function manually.</p></li>
 <li><p><span class="math inline">\(p = \frac{e^{\beta_1}}{1 + e^{\beta_1}}\)</span></p></li>
-<li><p><span class="math inline">\(p = 79.8\%\)</span></p></li>
+<li><p><span class="math inline">\(p = 78.7\%\)</span></p></li>
 </ul>
 </section>
 <section id="beta2-age" class="level3">
 <h3 class="anchored" data-anchor-id="beta2-age">beta[2]: (Age)</h3>
 <ul>
-<li><p>We can see a decreasing effect in Age, where every increase of Age by 1 year decreases the log odds of Transportation by -0.0187.</p></li>
+<li><p>We can see a decreasing effect in Age, where every increase of Age by 1 year decreases the log odds of Transportation by -0.0173.</p></li>
 <li><p>We did observe a decreasing effect with Age although it wasn’t exactly linear and mostly flat after Age 17.</p></li>
 </ul>
 </section>
 <section id="beta3-vip-true" class="level3">
 <h3 class="anchored" data-anchor-id="beta3-vip-true">beta[3]: (VIP = TRUE)</h3>
 <ul>
-<li><p>Being a VIP reduces the log odds of Transportation by -0.9190 compared to the baseline of not being a VIP.</p></li>
-<li><p>We can demonstrate what that means in terms of probability by calculating the Transportation prediction to a passenger who is Age 0, a VIP, and having a home planet of Europa and comparing that to the baseline probability of 80%.</p></li>
+<li><p>Being a VIP reduces the log odds of Transportation by -0.8962 compared to the baseline of not being a VIP.</p></li>
+<li><p>We can demonstrate what that means in terms of probability by calculating the Transportation prediction to a passenger who is Age 0, a VIP, and having a home planet of Europa and comparing that to the baseline probability of 78.7%.</p></li>
 <li><p><span class="math inline">\(p = \frac{e^{\beta1 + \beta3}}{1 + e^{\beta1 + \beta3}}\)</span></p></li>
-<li><p><span class="math inline">\(p = 61.1\%\)</span></p></li>
+<li><p><span class="math inline">\(p = 63.3\%\)</span></p></li>
 </ul>
 </section>
 <section id="beta4-home-planet-earth" class="level3">
 <h3 class="anchored" data-anchor-id="beta4-home-planet-earth">beta[4]: (Home Planet = Earth)</h3>
 <ul>
-<li>Having a home planet of Earth reduces the log odds of Transportation by -1.2125 compared to the baseline of Europa.</li>
+<li>Having a home planet of Earth reduces the log odds of Transportation by -1.1629 compared to the baseline of Europa.</li>
 </ul>
 </section>
 <section id="beta5-home-planet-mars" class="level3">
 <h3 class="anchored" data-anchor-id="beta5-home-planet-mars">beta[5]: (Home Planet = Mars)</h3>
 <ul>
-<li>Having a home planet of Mars reduces the log odds of Transportation by -0.7003 compared to the baseline of Europa.</li>
+<li>Having a home planet of Mars reduces the log odds of Transportation by -0.6846 compared to the baseline of Europa.</li>
 </ul>
 <p>And finally, how do the new model’s predictions perform on the training data? Remember that roughly 50% of the travelers were Transported in the original data, so let’s see if we can identify who was Transported more accurately than randomly guessing by using a <a href="https://en.wikipedia.org/wiki/Confusion_matrix">confusion matrix</a>.</p>
 <p>Since we are testing the model on the same data we trained it on, these metrics are also referred to as training error and probably an optimistic estimate of how the model would generalize to data it hasn’t been trained on before.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>y_pred_means <span class="ot">&lt;-</span> <span class="fu">apply</span>(<span class="fu">extract</span>(sst_fit_1, <span class="st">"y_pred"</span>)<span class="sc">$</span>y_pred, <span class="dv">2</span>, mean)</span>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>y_pred_means <span class="ot">&lt;-</span> <span class="fu">apply</span>(rstan<span class="sc">::</span><span class="fu">extract</span>(sst_fit_1, <span class="st">"y_pred"</span>)<span class="sc">$</span>y_pred, <span class="dv">2</span>, mean)</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>y_pred_factor <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="fu">ifelse</span>(y_pred_means <span class="sc">&gt;</span> <span class="fl">0.5</span>, <span class="cn">TRUE</span>, <span class="cn">FALSE</span>))</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>sst_response_factor <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="fu">ifelse</span>(sst_response <span class="sc">==</span> <span class="dv">1</span>, <span class="cn">TRUE</span>, <span class="cn">FALSE</span>))</span>
 <span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
@@ -487,44 +498,45 @@ table {
 
           Reference
 Prediction FALSE TRUE
-     FALSE  2886 2042
-     TRUE   1429 2336
-                                         
-               Accuracy : 0.6007         
-                 95% CI : (0.5903, 0.611)
-    No Information Rate : 0.5036         
-    P-Value [Acc &gt; NIR] : &lt; 2.2e-16      
-                                         
-                  Kappa : 0.2022         
-                                         
- Mcnemar's Test P-Value : &lt; 2.2e-16      
-                                         
-            Sensitivity : 0.6688         
-            Specificity : 0.5336         
-         Pos Pred Value : 0.5856         
-         Neg Pred Value : 0.6205         
-             Prevalence : 0.4964         
-         Detection Rate : 0.3320         
-   Detection Prevalence : 0.5669         
-      Balanced Accuracy : 0.6012         
-                                         
-       'Positive' Class : FALSE          
-                                         </code></pre>
+     FALSE  2884 2041
+     TRUE   1431 2337
+                                          
+               Accuracy : 0.6006          
+                 95% CI : (0.5902, 0.6109)
+    No Information Rate : 0.5036          
+    P-Value [Acc &gt; NIR] : &lt; 2.2e-16       
+                                          
+                  Kappa : 0.202           
+                                          
+ Mcnemar's Test P-Value : &lt; 2.2e-16       
+                                          
+            Sensitivity : 0.6684          
+            Specificity : 0.5338          
+         Pos Pred Value : 0.5856          
+         Neg Pred Value : 0.6202          
+             Prevalence : 0.4964          
+         Detection Rate : 0.3318          
+   Detection Prevalence : 0.5665          
+      Balanced Accuracy : 0.6011          
+                                          
+       'Positive' Class : FALSE           
+                                          </code></pre>
 </div>
 </div>
-<p>Accuracy is one of the most straightforward metrics derived from a confusion matrix. It represents the proportion of true results (both true positives and true negatives) among the total number of cases examined. With no information, we saw that we could randomly guess Transportation correctly 50.4% of the time. Now, given a random traveler we can predict if they were transported or not correctly 60.5% of the time.</p>
+<p>Accuracy is one of the most straightforward metrics derived from a confusion matrix. It represents the proportion of true results (both true positives and true negatives) among the total number of cases examined. With no information, we saw that we could randomly guess Transportation correctly 50.4% of the time. Now, given a random traveler we can predict if they were transported or not correctly 60.1% of the time.</p>
 </section>
 </section>
 <section id="summary-part-3-preview" class="level2">
 <h2 class="anchored" data-anchor-id="summary-part-3-preview">Summary + Part 3 Preview</h2>
-<p>I’d say those are some promising results considering this is the first iteration of the model. I only included three basic factors without too much data exploration, and was able to improve the accuracy from 50.4% to 60.5%. I’d like to see if we can get our training accuracy to at least 80% by the end of this series, which may or may not be possible given the complexity of the data.</p>
+<p>I’d say those are some promising results considering this is the first iteration of the model. I only included three basic factors without too much data exploration, and was able to improve the accuracy from 50.4% to 60.1%. I’d like to see if we can get our training accuracy to at least 80% by the end of this series, which may or may not be possible given the complexity of the data.</p>
 <p>There are a couple of specific improvements I plan on making in Part 3:</p>
 <ul>
-<li><p>Comparing a new model to this one to test for improvement using <a href="https://mc-stan.org/loo/">leave one out</a> cross-validation or an <a href="https://en.wikipedia.org/wiki/Receiver_operating_characteristic">ROC curve</a>.</p></li>
+<li><p>Comparing a new model to this one to test for improvement using an <a href="https://en.wikipedia.org/wiki/Receiver_operating_characteristic">ROC curve</a>.</p></li>
 <li><p>Fitting Age using a non-linear fitted effect instead of a linear effect term (possibly with the help of a <a href="https://en.wikipedia.org/wiki/Generalized_additive_model">generalized additive model</a> or spline.)</p></li>
-<li><p>Exploring the use of Cabin as a predictor variable using a hierarchical model (also called <a href="https://en.wikipedia.org/wiki/Bayesian_hierarchical_modeling">multilevel</a> model) structure.</p></li>
+<li><p>Exploring the use of Cabin as a predictor variable, and eventually using a hierarchical model (also called <a href="https://en.wikipedia.org/wiki/Bayesian_hierarchical_modeling">multilevel</a> model) structure.</p></li>
 </ul>
 <p>Stay tuned for Part 3, and thanks again for reading Part 2 of the Spaceship Titanic series using Bayesian modeling.</p>
+<p><span style="color: #FF0000;"><strong>UPDATE:</strong></span> Part 3 is out! You can read it <a href="../../professional_blog/2024-03-09-spaceship-titanic-part-2/index.html">here</a>.</p>
 <div style="text-align: center;">
 <p><script>window.onload = function() { var elevator = new Elevator({ element: document.querySelector(".elevator-button"),  mainAudio: "", endAudio: "ding.mp3" }); }</script><button class="btn btn-outline-primary elevator-button" type="submit">Return to the top!</button></p>
 </div>
