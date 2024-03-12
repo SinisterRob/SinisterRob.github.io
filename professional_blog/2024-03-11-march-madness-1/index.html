@@ -419,8 +419,8 @@ table {
 <span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a><span class="fu">gc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>          used (Mb) gc trigger  (Mb) max used  (Mb)
-Ncells 1233902 65.9    2064217 110.3  2064217 110.3
-Vcells 2243835 17.2   25132151 191.8 23884387 182.3</code></pre>
+Ncells 1233903 65.9    2064454 110.3  2064454 110.3
+Vcells 2243856 17.2   25132175 191.8 23883274 182.3</code></pre>
 </div>
 </div>
 <p>Just for the heck of it, let’s create an <a href="https://en.wikipedia.org/wiki/XGBoost">XGBoost</a> model. For this competition I think it might be fun to create two or three independent models, and then <a href="https://en.wikipedia.org/wiki/Ensemble_learning#Stacking">stack</a> the predictions together for one final prediction.</p>
@@ -446,7 +446,11 @@ Vcells 2243835 17.2   25132151 191.8 23884387 182.3</code></pre>
 <span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> <span class="fu">predict</span>(m1, dtrain)</span>
 <span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>p1_binary <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(p1 <span class="sc">&gt;</span> <span class="fl">0.5</span>, <span class="dv">1</span>, <span class="dv">0</span>)</span>
 <span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>accuracy <span class="ot">&lt;-</span> <span class="fu">mean</span>(p1_binary <span class="sc">==</span> bb_train<span class="sc">$</span>WinA)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>accuracy <span class="ot">&lt;-</span> <span class="fu">mean</span>(p1_binary <span class="sc">==</span> bb_train<span class="sc">$</span>WinA)</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste0</span>(<span class="st">"Accuracy: "</span>, accuracy))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Accuracy: 0.953896368829049"</code></pre>
+</div>
 </div>
 <p>It seems like the accuracy of the model is extremely high - probably due to some type of data leakage. I’ll keep the model structure how it is for now and see how the predictions turn out.</p>
 </section>
