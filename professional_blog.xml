@@ -15,7 +15,1038 @@
 <link>https://sinisterrob.github.io/professional_blog.html</link>
 </image>
 <generator>quarto-1.4.550</generator>
-<lastBuildDate>Sun, 10 Mar 2024 06:00:00 GMT</lastBuildDate>
+<lastBuildDate>Mon, 11 Mar 2024 05:00:00 GMT</lastBuildDate>
+<item>
+  <title>A Descent into March Madness</title>
+  <link>https://sinisterrob.github.io/professional_blog/2024-03-11-march-madness-1/</link>
+  <description><![CDATA[ 
+
+
+
+
+<div class="cell">
+<style type="text/css">
+table {
+  width: 50%;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+</div>
+<div style="text-align: center;">
+<p><img src="https://sinisterrob.github.io/assets/img/cats-basketball.png" class="img-fluid" width="350"></p>
+</div>
+<section id="intro" class="level1">
+<h1>Intro</h1>
+<p>The NCAA Division I men’s basketball tournament, also known as March Madness (<em>please don’t sue me NCAA</em>) is beginning a week from now.</p>
+<p>If you’re not familiar with the tournament, I’ll briefly explain it. 68 college basketball teams are selected by a bracket committee to play in a hectic single-elimination style tournament where there can only be one winner. It’s also a tradition for people to fill out brackets with who they think will win each of the 67 matchups that will happen within the tournament - a tough task considering millions of people attempt this challenge every year and no one has ever successfully filled out a perfect bracket.</p>
+<br><br>
+<p><span style="font-size:24px; color:green"><strong>Until now!!</strong></span></p>
+<br><br>
+<p>Just kidding.</p>
+<p>We’ll do our best with a basic model and see if it can outperform me, a relatively casual college basketball watcher, first.</p>
+<br><br>
+<p>If I could ask for one favor, please <strong><a href="../../blog_subscribe.html">subscribe to my blog</a></strong> if you haven’t already. I would appreciate it and it helps me stay motivated and focused on creating high quality blog content.</p>
+<section id="loading-data" class="level2">
+<h2 class="anchored" data-anchor-id="loading-data">Loading Data</h2>
+<p>I have always wanted to build a March Madness model, so I will be using the <a href="https://www.kaggle.com/competitions/march-machine-learning-mania-2024/data">March Machine Learning Mania</a> data set on Kaggle to build a predictive model and use it to fill out a bracket once the tournament seeds for 2024 are finalized. This competition has a lot of available data sets provided, including the final scores and stats of every single college basketball game since the 1984-1985 season. That’s intense, and too many fields to work with effective with just a week to go until the tournament. That’s why I’ll be keeping things basic again and starting off with a couple of predictor variables: Seed, Win Ratio, and Average Margin of Victory/Loss.</p>
+<p>I will also be focusing more on the (hopefully very) predictive aspect and less on the interpretability of this model.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(data.table)</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(rstan)</span>
+<span id="cb1-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(dplyr)</span>
+<span id="cb1-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(magrittr)</span>
+<span id="cb1-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(tidyr)</span>
+<span id="cb1-6"></span>
+<span id="cb1-7">bb_teams <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fread</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"C:/Users/rober/OneDrive/Desktop/data/mm_data/MTeams.csv"</span>)</span>
+<span id="cb1-8">bb_seasons <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fread</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"C:/Users/rober/OneDrive/Desktop/data/mm_data/MSeasons.csv"</span>)</span>
+<span id="cb1-9">bb_data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fread</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"C:/Users/rober/OneDrive/Desktop/data/mm_data/MRegularSeasonCompactResults.csv"</span>)</span>
+<span id="cb1-10">bb_rankings <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fread</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"C:/Users/rober/OneDrive/Desktop/data/mm_data/MMasseyOrdinals.csv"</span>)</span>
+<span id="cb1-11">bb_seeds <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fread</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"C:/Users/rober/OneDrive/Desktop/data/mm_data/MNCAATourneySeeds.csv"</span>)</span>
+<span id="cb1-12">bb_tourney <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fread</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"C:/Users/rober/OneDrive/Desktop/data/mm_data/MNCAATourneyCompactResults.csv"</span>)</span>
+<span id="cb1-13">bb_sample <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fread</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"C:/Users/rober/OneDrive/Desktop/data/mm_data/SampleSubmission2023.csv"</span>)</span></code></pre></div>
+</div>
+<p>Once I’ve loaded in the various data files, my strategy to set up my first few predictors will be to closely follow <a href="https://www.kaggle.com/code/theoviel/it-s-that-time-of-the-year-again/notebook">this Kaggle Notebook</a> to come up with a base structure that I can improve on later.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1">bb_data <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&lt;&gt;%</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ScoreGap =</span> WScore <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> LScore)</span>
+<span id="cb2-2"></span>
+<span id="cb2-3"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Number of Wins</span></span>
+<span id="cb2-4">num_win <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> bb_data <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span></span>
+<span id="cb2-5">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">group_by</span>(Season, WTeamID) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span></span>
+<span id="cb2-6">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summarise</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">NumWins =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">n</span>()) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span></span>
+<span id="cb2-7">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rename</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">TeamID =</span> WTeamID)</span>
+<span id="cb2-8"></span>
+<span id="cb2-9"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Number of Losses</span></span>
+<span id="cb2-10">num_loss <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> bb_data <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span></span>
+<span id="cb2-11">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">group_by</span>(Season, LTeamID) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span></span>
+<span id="cb2-12">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summarise</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">NumLosses =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">n</span>()) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span></span>
+<span id="cb2-13">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rename</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">TeamID =</span> LTeamID)</span>
+<span id="cb2-14"></span>
+<span id="cb2-15"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Average Score Gap for Wins</span></span>
+<span id="cb2-16">gap_win <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> bb_data <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span></span>
+<span id="cb2-17">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">group_by</span>(Season, WTeamID) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span></span>
+<span id="cb2-18">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summarise</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">GapWins =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mean</span>(ScoreGap, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">na.rm =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span></span>
+<span id="cb2-19">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rename</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">TeamID =</span> WTeamID)</span>
+<span id="cb2-20"></span>
+<span id="cb2-21"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Average Score Gap for Losses</span></span>
+<span id="cb2-22">gap_loss <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> bb_data <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span></span>
+<span id="cb2-23">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">group_by</span>(Season, LTeamID) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span></span>
+<span id="cb2-24">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summarise</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">GapLosses =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mean</span>(ScoreGap, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">na.rm =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span></span>
+<span id="cb2-25">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rename</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">TeamID =</span> LTeamID)</span>
+<span id="cb2-26"></span>
+<span id="cb2-27"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Features for each season</span></span>
+<span id="cb2-28">bb_features_w <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> </span>
+<span id="cb2-29">  bb_data <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span></span>
+<span id="cb2-30">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">select</span>(Season, WTeamID) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb2-31">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">unique</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb2-32">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rename</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">TeamID =</span> WTeamID)</span>
+<span id="cb2-33"></span>
+<span id="cb2-34">bb_features_l <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> </span>
+<span id="cb2-35">  bb_data <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span></span>
+<span id="cb2-36">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">select</span>(Season, LTeamID) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb2-37">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">unique</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb2-38">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rename</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">TeamID =</span> LTeamID)</span>
+<span id="cb2-39"></span>
+<span id="cb2-40">bb_features <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> </span>
+<span id="cb2-41">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">bind_rows</span>(bb_features_w, bb_features_l) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb2-42">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">distinct</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb2-43">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">arrange</span>(Season, TeamID)</span>
+<span id="cb2-44"></span>
+<span id="cb2-45"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Merge features df with num_win, num_loss, gap_win, gap_loss.</span></span>
+<span id="cb2-46">bb_features <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&lt;&gt;%</span> </span>
+<span id="cb2-47">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">merge</span>(num_win, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">by =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Season"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"TeamID"</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">all.x =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb2-48">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">merge</span>(num_loss, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">by =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Season"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"TeamID"</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">all.x =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb2-49">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">merge</span>(gap_win, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">by =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Season"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"TeamID"</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">all.x =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb2-50">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">merge</span>(gap_loss, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">by =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Season"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"TeamID"</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">all.x =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)</span>
+<span id="cb2-51"></span>
+<span id="cb2-52">bb_features <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&lt;&gt;%</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">replace</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">is.na</span>(.), <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>)</span>
+<span id="cb2-53"></span>
+<span id="cb2-54">bb_features <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&lt;&gt;%</span> </span>
+<span id="cb2-55">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">WinRatio =</span> NumWins <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> (NumWins <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> NumLosses),</span>
+<span id="cb2-56">         <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">GapAvg =</span> (NumWins <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> GapWins <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> NumLosses <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> GapLosses) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> (NumWins <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> NumLosses)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb2-57">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">select</span>(<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span>NumWins, <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span>NumLosses, <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span>GapWins, <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span>GapLosses)</span></code></pre></div>
+</div>
+<p>In the code above I created variables called <code>WinRatio</code> and <code>GapAvg</code> using the historical regular season results for every team and every season going back to 1985. Now I will need to take the historical tournament results and merge the features we just created with that.</p>
+</section>
+<section id="historical-tournament-results" class="level2">
+<h2 class="anchored" data-anchor-id="historical-tournament-results">Historical Tournament Results</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1">bb_tourney <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&lt;&gt;%</span> </span>
+<span id="cb3-2">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">merge</span>(bb_seeds, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">by.x =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Season"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"WTeamID"</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">by.y =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Season"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"TeamID"</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">all.x =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb3-3">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rename</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"SeedW"</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Seed"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb3-4">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">merge</span>(bb_seeds, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">by.x =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Season"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"LTeamID"</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">by.y =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Season"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"TeamID"</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">all.x =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb3-5">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rename</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"SeedL"</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Seed"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb3-6">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">SeedW =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.integer</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">gsub</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">D"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">""</span>, SeedW)), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">SeedL =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.integer</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">gsub</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">D"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">""</span>, SeedL))) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb3-7">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">merge</span>(bb_features, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">by.x =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Season"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"WTeamID"</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">by.y =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Season"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"TeamID"</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">all.x =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span>   </span>
+<span id="cb3-8">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rename</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"GapAvgW"</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"GapAvg"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"WinRatioW"</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"WinRatio"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb3-9">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">merge</span>(bb_features, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">by.x =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Season"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"LTeamID"</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">by.y =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Season"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"TeamID"</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">all.x =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb3-10">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rename</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"GapAvgL"</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"GapAvg"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"WinRatioL"</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"WinRatio"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb3-11">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">select</span>(<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span>NumOT, <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span>WLoc)</span>
+<span id="cb3-12"></span>
+<span id="cb3-13"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Adding a reversed version of the data to itself so we have both wins and losses.</span></span>
+<span id="cb3-14"></span>
+<span id="cb3-15">bb_1 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> </span>
+<span id="cb3-16">  bb_tourney <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb3-17">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rename</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"TeamIdA"</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"WTeamID"</span>,</span>
+<span id="cb3-18">         <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"ScoreA"</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"WScore"</span>,</span>
+<span id="cb3-19">         <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"TeamIdB"</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"LTeamID"</span>,</span>
+<span id="cb3-20">         <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"ScoreB"</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"LScore"</span>,</span>
+<span id="cb3-21">         <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"SeedA"</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"SeedW"</span>,</span>
+<span id="cb3-22">         <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"SeedB"</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"SeedL"</span>,</span>
+<span id="cb3-23">         <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"WinRatioA"</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"WinRatioW"</span>,</span>
+<span id="cb3-24">         <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"WinRatioB"</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"WinRatioL"</span>,</span>
+<span id="cb3-25">         <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"GapAvgA"</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"GapAvgW"</span>,</span>
+<span id="cb3-26">         <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"GapAvgB"</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"GapAvgL"</span>)</span>
+<span id="cb3-27"></span>
+<span id="cb3-28">bb_2 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span></span>
+<span id="cb3-29">  bb_tourney <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb3-30">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rename</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"TeamIdB"</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"WTeamID"</span>,</span>
+<span id="cb3-31">         <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"ScoreB"</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"WScore"</span>,</span>
+<span id="cb3-32">         <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"TeamIdA"</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"LTeamID"</span>,</span>
+<span id="cb3-33">         <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"ScoreA"</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"LScore"</span>,</span>
+<span id="cb3-34">         <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"SeedB"</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"SeedW"</span>,</span>
+<span id="cb3-35">         <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"SeedA"</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"SeedL"</span>,</span>
+<span id="cb3-36">         <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"WinRatioB"</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"WinRatioW"</span>,</span>
+<span id="cb3-37">         <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"WinRatioA"</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"WinRatioL"</span>,</span>
+<span id="cb3-38">         <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"GapAvgB"</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"GapAvgW"</span>,</span>
+<span id="cb3-39">         <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"GapAvgA"</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"GapAvgL"</span>)</span>
+<span id="cb3-40"></span>
+<span id="cb3-41">bb <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rbind</span>(bb_1, bb_2 <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">relocate</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">names</span>(bb_1)))</span>
+<span id="cb3-42">  </span>
+<span id="cb3-43">bb <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&lt;&gt;%</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">SeedDiff =</span> SeedA <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> SeedB,</span>
+<span id="cb3-44">               <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">WinRatioDiff =</span> WinRatioA <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> WinRatioB,</span>
+<span id="cb3-45">               <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">GapAvgDiff =</span> GapAvgA <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> GapAvgB,</span>
+<span id="cb3-46">               <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ScoreDiff =</span> ScoreA <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> ScoreB,</span>
+<span id="cb3-47">               <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">WinA =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.integer</span>(ScoreDiff <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>))</span>
+<span id="cb3-48"></span>
+<span id="cb3-49">bb_train <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span></span>
+<span id="cb3-50">  bb <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb3-51">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">select</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"SeedA"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"SeedB"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"WinRatioA"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"WinRatioB"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"GapAvgA"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"GapAvgB"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"SeedDiff"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"WinRatioDiff"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"GapAvgDiff"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"WinA"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb3-52">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">across</span>(SeedA<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>GapAvgDiff, scale))</span>
+<span id="cb3-53"></span>
+<span id="cb3-54"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rm</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">list =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">setdiff</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ls</span>(), <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"bb_train"</span>, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">names</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sessionInfo</span>()<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>otherPkgs))))</span>
+<span id="cb3-55"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">gc</span>()</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          used (Mb) gc trigger  (Mb) max used  (Mb)
+Ncells 1233902 65.9    2064217 110.3  2064217 110.3
+Vcells 2243835 17.2   25132151 191.8 23884387 182.3</code></pre>
+</div>
+</div>
+<p>Just for the heck of it, let’s create an <a href="https://en.wikipedia.org/wiki/XGBoost">XGBoost</a> model. For this competition I think it might be fun to create two or three independent models, and then <a href="https://en.wikipedia.org/wiki/Ensemble_learning#Stacking">stack</a> the predictions together for one final prediction.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(xgboost)</span>
+<span id="cb5-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(pROC)</span>
+<span id="cb5-3"></span>
+<span id="cb5-4">X <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.matrix</span>(bb_train <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">select</span>(<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span>WinA))</span>
+<span id="cb5-5">y <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> bb_train<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>WinA</span>
+<span id="cb5-6"></span>
+<span id="cb5-7">dtrain <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">xgb.DMatrix</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> X, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">label =</span> y)</span>
+<span id="cb5-8"></span>
+<span id="cb5-9">params <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(</span>
+<span id="cb5-10">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">objective =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"binary:logistic"</span>,</span>
+<span id="cb5-11">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">eta =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.3</span>,</span>
+<span id="cb5-12">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">max_depth =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">6</span>,</span>
+<span id="cb5-13">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">eval_metric =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"logloss"</span></span>
+<span id="cb5-14">)</span>
+<span id="cb5-15"></span>
+<span id="cb5-16">nrounds <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span></span>
+<span id="cb5-17"></span>
+<span id="cb5-18">m1 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">xgb.train</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">params =</span> params, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> dtrain, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">nround =</span> nrounds)</span>
+<span id="cb5-19">p1 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">predict</span>(m1, dtrain)</span>
+<span id="cb5-20">p1_binary <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ifelse</span>(p1 <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.5</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>)</span>
+<span id="cb5-21"></span>
+<span id="cb5-22">accuracy <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mean</span>(p1_binary <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> bb_train<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>WinA)</span></code></pre></div>
+</div>
+<p>It seems like the accuracy of the model is extremely high - probably due to some type of data leakage. I’ll keep the model structure how it is for now and see how the predictions turn out.</p>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<p>Working with sports data is difficult and tedious. It’s also very easy to introduce data leakage into a temporal model, and it’s hard to evaluate if a prediction accuracy that high is actually possible. I have one week to look over the code for bugs and improve the model though, so hopefully if there is a problem I will catch it.</p>
+<p>I could run the same model on the 2023 Tournament Data and submit and see how it fares, because I doubt that 95% accuracy is possible.</p>
+<p>There are also so many possible predictor variables and the variability of who wins a single basketball game is extremely high. If it was easy to model, there would have been many perfect brackets by now (and millionaire data scientists who are taking advantage of casinos with their high accuracy model.)</p>
+<p>In this post, I started the model structure using an existing Kaggle Notebook and fit an XGBoost model to a few NCAA season team statistics like SeedDiff, WinRatioDiff, and GapAvgDiff. Before the week is over, I would like to test the model on 2023 competition and also fit one or two more models to be able to stack predictions, so consider this blog a work in progress.</p>
+<p>Thanks for reading, and please consider <a href="../../blog_subscribe.html">subscribing</a>.</p>
+<div style="text-align: center;">
+<p><script>window.onload = function() { var elevator = new Elevator({ element: document.querySelector(".elevator-button"),  mainAudio: "", endAudio: "ding.mp3" }); }</script><button class="btn btn-outline-primary elevator-button" type="submit">Return to the top!</button></p>
+</div>
+
+
+</section>
+</section>
+
+ ]]></description>
+  <guid>https://sinisterrob.github.io/professional_blog/2024-03-11-march-madness-1/</guid>
+  <pubDate>Mon, 11 Mar 2024 05:00:00 GMT</pubDate>
+  <media:content url="https://sinisterrob.github.io/../../assets/img/cats-basketball.png" medium="image" type="image/png"/>
+</item>
 <item>
   <title>Spaceship Titanic - Introduction to Bayesian Models - Part 3</title>
   <link>https://sinisterrob.github.io/professional_blog/2024-03-10-spaceship-titanic-part-3/</link>
@@ -258,7 +1289,7 @@ background-color: null;
 font-style: inherit;">rj_custom_table</span>()</span></code></pre></div>
 </details>
 <div class="cell-output-display">
-<div class="tabwid"><style>.cl-708e7b9a{}.cl-708524dc{font-family:'Iosevka Web';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-708524f0{font-family:'Iosevka Web';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-708856d4{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-708869f8{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 1.5pt solid rgba(190, 190, 190, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-70886a02{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-70886a03{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-708e7b9a"><thead><tr style="overflow-wrap:break-word;"><th class="cl-708869f8"><p class="cl-708856d4"><span class="cl-708524dc">Cabin</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-70886a02"><p class="cl-708856d4"><span class="cl-708524f0">B/0/P</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-70886a02"><p class="cl-708856d4"><span class="cl-708524f0">F/0/S</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-70886a02"><p class="cl-708856d4"><span class="cl-708524f0">A/0/S</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-70886a02"><p class="cl-708856d4"><span class="cl-708524f0">A/0/S</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-70886a02"><p class="cl-708856d4"><span class="cl-708524f0">F/1/S</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-70886a03"><p class="cl-708856d4"><span class="cl-708524f0">F/0/P</span></p></td></tr></tbody></table></div>
+<div class="tabwid"><style>.cl-bc27347c{}.cl-bc1cafac{font-family:'Iosevka Web';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-bc1cafb6{font-family:'Iosevka Web';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-bc1fede8{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-bc2006d4{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 1.5pt solid rgba(190, 190, 190, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-bc2006de{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-bc2006df{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-bc27347c"><thead><tr style="overflow-wrap:break-word;"><th class="cl-bc2006d4"><p class="cl-bc1fede8"><span class="cl-bc1cafac">Cabin</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-bc2006de"><p class="cl-bc1fede8"><span class="cl-bc1cafb6">B/0/P</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-bc2006de"><p class="cl-bc1fede8"><span class="cl-bc1cafb6">F/0/S</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-bc2006de"><p class="cl-bc1fede8"><span class="cl-bc1cafb6">A/0/S</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-bc2006de"><p class="cl-bc1fede8"><span class="cl-bc1cafb6">A/0/S</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-bc2006de"><p class="cl-bc1fede8"><span class="cl-bc1cafb6">F/1/S</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-bc2006df"><p class="cl-bc1fede8"><span class="cl-bc1cafb6">F/0/P</span></p></td></tr></tbody></table></div>
 </div>
 </div>
 <p>Implementing the information from the Cabin variable takes a little more complex data manipulation:</p>
@@ -580,7 +1611,7 @@ background-color: null;
 font-style: inherit;">rj_custom_table</span>()</span></code></pre></div>
 </details>
 <div class="cell-output-display">
-<div class="tabwid"><style>.cl-749e29e2{}.cl-74964da8{font-family:'Iosevka Web';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-74964db2{font-family:'Iosevka Web';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-74994bc0{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-74995ca0{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 1.5pt solid rgba(190, 190, 190, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-74995ca1{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-74995caa{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-749e29e2"><thead><tr style="overflow-wrap:break-word;"><th class="cl-74995ca0"><p class="cl-74994bc0"><span class="cl-74964da8">(Intercept)</span></p></th><th class="cl-74995ca0"><p class="cl-74994bc0"><span class="cl-74964da8">Age_Pred</span></p></th><th class="cl-74995ca0"><p class="cl-74994bc0"><span class="cl-74964da8">VIPTRUE</span></p></th><th class="cl-74995ca0"><p class="cl-74994bc0"><span class="cl-74964da8">HomePlanetEarth</span></p></th><th class="cl-74995ca0"><p class="cl-74994bc0"><span class="cl-74964da8">HomePlanetMars</span></p></th><th class="cl-74995ca0"><p class="cl-74994bc0"><span class="cl-74964da8">deckF</span></p></th><th class="cl-74995ca0"><p class="cl-74994bc0"><span class="cl-74964da8">deckA</span></p></th><th class="cl-74995ca0"><p class="cl-74994bc0"><span class="cl-74964da8">deckG</span></p></th><th class="cl-74995ca0"><p class="cl-74994bc0"><span class="cl-74964da8">deckE</span></p></th><th class="cl-74995ca0"><p class="cl-74994bc0"><span class="cl-74964da8">deckD</span></p></th><th class="cl-74995ca0"><p class="cl-74994bc0"><span class="cl-74964da8">deckC</span></p></th><th class="cl-74995ca0"><p class="cl-74994bc0"><span class="cl-74964da8">deckT</span></p></th><th class="cl-74995ca0"><p class="cl-74994bc0"><span class="cl-74964da8">num</span></p></th><th class="cl-74995ca0"><p class="cl-74994bc0"><span class="cl-74964da8">sideS</span></p></th><th class="cl-74995ca0"><p class="cl-74994bc0"><span class="cl-74964da8">CabinMultTRUE</span></p></th><th class="cl-74995ca0"><p class="cl-74994bc0"><span class="cl-74964da8">num_Pred</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">1</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0.4859592</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0.5013632</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">1</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0.4678870</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">1</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">1</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">1</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0.5013632</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">1</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0.4934344</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">1</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">1</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">1</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">1</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0.5013632</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">1</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0.4749858</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">1</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">1</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">1</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0.5013632</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">1</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0.5161315</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">1</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">1</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">1</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">1</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995ca1"><p class="cl-74994bc0"><span class="cl-74964db2">0.5018923</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-74995caa"><p class="cl-74994bc0"><span class="cl-74964db2">1</span></p></td><td class="cl-74995caa"><p class="cl-74994bc0"><span class="cl-74964db2">0.4918638</span></p></td><td class="cl-74995caa"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995caa"><p class="cl-74994bc0"><span class="cl-74964db2">1</span></p></td><td class="cl-74995caa"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995caa"><p class="cl-74994bc0"><span class="cl-74964db2">1</span></p></td><td class="cl-74995caa"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995caa"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995caa"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995caa"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995caa"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995caa"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995caa"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995caa"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995caa"><p class="cl-74994bc0"><span class="cl-74964db2">0</span></p></td><td class="cl-74995caa"><p class="cl-74994bc0"><span class="cl-74964db2">0.5013632</span></p></td></tr></tbody></table></div>
+<div class="tabwid"><style>.cl-c02d4e44{}.cl-c025a626{font-family:'Iosevka Web';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-c025a630{font-family:'Iosevka Web';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-c0289f98{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-c028afd8{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 1.5pt solid rgba(190, 190, 190, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-c028afe2{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-c028afec{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-c02d4e44"><thead><tr style="overflow-wrap:break-word;"><th class="cl-c028afd8"><p class="cl-c0289f98"><span class="cl-c025a626">(Intercept)</span></p></th><th class="cl-c028afd8"><p class="cl-c0289f98"><span class="cl-c025a626">Age_Pred</span></p></th><th class="cl-c028afd8"><p class="cl-c0289f98"><span class="cl-c025a626">VIPTRUE</span></p></th><th class="cl-c028afd8"><p class="cl-c0289f98"><span class="cl-c025a626">HomePlanetEarth</span></p></th><th class="cl-c028afd8"><p class="cl-c0289f98"><span class="cl-c025a626">HomePlanetMars</span></p></th><th class="cl-c028afd8"><p class="cl-c0289f98"><span class="cl-c025a626">deckF</span></p></th><th class="cl-c028afd8"><p class="cl-c0289f98"><span class="cl-c025a626">deckA</span></p></th><th class="cl-c028afd8"><p class="cl-c0289f98"><span class="cl-c025a626">deckG</span></p></th><th class="cl-c028afd8"><p class="cl-c0289f98"><span class="cl-c025a626">deckE</span></p></th><th class="cl-c028afd8"><p class="cl-c0289f98"><span class="cl-c025a626">deckD</span></p></th><th class="cl-c028afd8"><p class="cl-c0289f98"><span class="cl-c025a626">deckC</span></p></th><th class="cl-c028afd8"><p class="cl-c0289f98"><span class="cl-c025a626">deckT</span></p></th><th class="cl-c028afd8"><p class="cl-c0289f98"><span class="cl-c025a626">num</span></p></th><th class="cl-c028afd8"><p class="cl-c0289f98"><span class="cl-c025a626">sideS</span></p></th><th class="cl-c028afd8"><p class="cl-c0289f98"><span class="cl-c025a626">CabinMultTRUE</span></p></th><th class="cl-c028afd8"><p class="cl-c0289f98"><span class="cl-c025a626">num_Pred</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">1</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0.4860878</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0.5045935</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">1</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0.4669584</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">1</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">1</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">1</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0.5045935</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">1</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0.4972914</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">1</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">1</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">1</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">1</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0.5045935</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">1</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0.4752091</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">1</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">1</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">1</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0.5045935</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">1</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0.5151974</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">1</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">1</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">1</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">1</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afe2"><p class="cl-c0289f98"><span class="cl-c025a630">0.5050975</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-c028afec"><p class="cl-c0289f98"><span class="cl-c025a630">1</span></p></td><td class="cl-c028afec"><p class="cl-c0289f98"><span class="cl-c025a630">0.4908686</span></p></td><td class="cl-c028afec"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afec"><p class="cl-c0289f98"><span class="cl-c025a630">1</span></p></td><td class="cl-c028afec"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afec"><p class="cl-c0289f98"><span class="cl-c025a630">1</span></p></td><td class="cl-c028afec"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afec"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afec"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afec"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afec"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afec"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afec"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afec"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afec"><p class="cl-c0289f98"><span class="cl-c025a630">0</span></p></td><td class="cl-c028afec"><p class="cl-c0289f98"><span class="cl-c025a630">0.5045935</span></p></td></tr></tbody></table></div>
 </div>
 </div>
 <p>I have shown a sample of the latest design matrix above, so finally, it’s time to fit the model.</p>
@@ -1290,7 +2321,7 @@ font-style: inherit;">%&gt;%</span> </span>
 background-color: null;
 font-style: inherit;">rj_custom_table</span>()</span></code></pre></div>
 <div class="cell-output-display">
-<div class="tabwid"><style>.cl-69275f70{}.cl-691fe18c{font-family:'Iosevka Web';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-691fe196{font-family:'Iosevka Web';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-6922d2de{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-6922e490{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 1.5pt solid rgba(190, 190, 190, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-6922e49a{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-6922e49b{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-69275f70"><thead><tr style="overflow-wrap:break-word;"><th class="cl-6922e490"><p class="cl-6922d2de"><span class="cl-691fe18c">(Intercept)</span></p></th><th class="cl-6922e490"><p class="cl-6922d2de"><span class="cl-691fe18c">Age</span></p></th><th class="cl-6922e490"><p class="cl-6922d2de"><span class="cl-691fe18c">VIPTRUE</span></p></th><th class="cl-6922e490"><p class="cl-6922d2de"><span class="cl-691fe18c">HomePlanetEarth</span></p></th><th class="cl-6922e490"><p class="cl-6922d2de"><span class="cl-691fe18c">HomePlanetMars</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">1</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">39</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">0</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">0</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">1</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">24</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">0</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">1</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">1</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">58</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">1</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">0</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">1</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">33</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">0</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">0</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">1</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">16</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">0</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">1</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">1</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">44</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">0</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">1</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">1</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">26</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">0</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">1</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">1</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">28</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">0</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">1</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">1</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">35</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">0</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">1</span></p></td><td class="cl-6922e49a"><p class="cl-6922d2de"><span class="cl-691fe196">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-6922e49b"><p class="cl-6922d2de"><span class="cl-691fe196">1</span></p></td><td class="cl-6922e49b"><p class="cl-6922d2de"><span class="cl-691fe196">14</span></p></td><td class="cl-6922e49b"><p class="cl-6922d2de"><span class="cl-691fe196">0</span></p></td><td class="cl-6922e49b"><p class="cl-6922d2de"><span class="cl-691fe196">0</span></p></td><td class="cl-6922e49b"><p class="cl-6922d2de"><span class="cl-691fe196">0</span></p></td></tr></tbody></table></div>
+<div class="tabwid"><style>.cl-b4df7e40{}.cl-b4d7f224{font-family:'Iosevka Web';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-b4d7f238{font-family:'Iosevka Web';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-b4dae236{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-b4daf406{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 1.5pt solid rgba(190, 190, 190, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b4daf410{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b4daf41a{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-b4df7e40"><thead><tr style="overflow-wrap:break-word;"><th class="cl-b4daf406"><p class="cl-b4dae236"><span class="cl-b4d7f224">(Intercept)</span></p></th><th class="cl-b4daf406"><p class="cl-b4dae236"><span class="cl-b4d7f224">Age</span></p></th><th class="cl-b4daf406"><p class="cl-b4dae236"><span class="cl-b4d7f224">VIPTRUE</span></p></th><th class="cl-b4daf406"><p class="cl-b4dae236"><span class="cl-b4d7f224">HomePlanetEarth</span></p></th><th class="cl-b4daf406"><p class="cl-b4dae236"><span class="cl-b4d7f224">HomePlanetMars</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">1</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">39</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">0</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">0</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">1</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">24</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">0</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">1</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">1</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">58</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">1</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">0</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">1</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">33</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">0</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">0</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">1</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">16</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">0</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">1</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">1</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">44</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">0</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">1</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">1</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">26</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">0</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">1</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">1</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">28</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">0</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">1</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">1</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">35</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">0</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">1</span></p></td><td class="cl-b4daf410"><p class="cl-b4dae236"><span class="cl-b4d7f238">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-b4daf41a"><p class="cl-b4dae236"><span class="cl-b4d7f238">1</span></p></td><td class="cl-b4daf41a"><p class="cl-b4dae236"><span class="cl-b4d7f238">14</span></p></td><td class="cl-b4daf41a"><p class="cl-b4dae236"><span class="cl-b4d7f238">0</span></p></td><td class="cl-b4daf41a"><p class="cl-b4dae236"><span class="cl-b4d7f238">0</span></p></td><td class="cl-b4daf41a"><p class="cl-b4dae236"><span class="cl-b4d7f238">0</span></p></td></tr></tbody></table></div>
 </div>
 </div>
 <p>From the design matrix and the Stan code we can see that this model will need to estimate five separate <img src="https://latex.codecogs.com/png.latex?%5Cbeta"> parameters, one for each column of the design matrix.</p>
@@ -1551,7 +2582,7 @@ font-style: inherit;">%&gt;%</span> </span>
 background-color: null;
 font-style: inherit;">rj_custom_table</span>()</span></code></pre></div>
 <div class="cell-output-display">
-<div class="tabwid"><style>.cl-6acb8c16{}.cl-6ac44578{font-family:'Iosevka Web';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-6ac44582{font-family:'Iosevka Web';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-6ac749ee{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-6ac75c54{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 1.5pt solid rgba(190, 190, 190, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-6ac75c5e{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-6acb8c16"><thead><tr style="overflow-wrap:break-word;"><th class="cl-6ac75c54"><p class="cl-6ac749ee"><span class="cl-6ac44578">beta[1]</span></p></th><th class="cl-6ac75c54"><p class="cl-6ac749ee"><span class="cl-6ac44578">beta[2]</span></p></th><th class="cl-6ac75c54"><p class="cl-6ac749ee"><span class="cl-6ac44578">beta[3]</span></p></th><th class="cl-6ac75c54"><p class="cl-6ac749ee"><span class="cl-6ac44578">beta[4]</span></p></th><th class="cl-6ac75c54"><p class="cl-6ac749ee"><span class="cl-6ac44578">beta[5]</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-6ac75c5e"><p class="cl-6ac749ee"><span class="cl-6ac44582">1.3045</span></p></td><td class="cl-6ac75c5e"><p class="cl-6ac749ee"><span class="cl-6ac44582">-0.0173</span></p></td><td class="cl-6ac75c5e"><p class="cl-6ac749ee"><span class="cl-6ac44582">-0.8962</span></p></td><td class="cl-6ac75c5e"><p class="cl-6ac749ee"><span class="cl-6ac44582">-1.163</span></p></td><td class="cl-6ac75c5e"><p class="cl-6ac749ee"><span class="cl-6ac44582">-0.6726</span></p></td></tr></tbody></table></div>
+<div class="tabwid"><style>.cl-b67dc5e0{}.cl-b676fff8{font-family:'Iosevka Web';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-b676fff9{font-family:'Iosevka Web';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-b679a398{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-b679b298{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 1.5pt solid rgba(190, 190, 190, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b679b299{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-b67dc5e0"><thead><tr style="overflow-wrap:break-word;"><th class="cl-b679b298"><p class="cl-b679a398"><span class="cl-b676fff8">beta[1]</span></p></th><th class="cl-b679b298"><p class="cl-b679a398"><span class="cl-b676fff8">beta[2]</span></p></th><th class="cl-b679b298"><p class="cl-b679a398"><span class="cl-b676fff8">beta[3]</span></p></th><th class="cl-b679b298"><p class="cl-b679a398"><span class="cl-b676fff8">beta[4]</span></p></th><th class="cl-b679b298"><p class="cl-b679a398"><span class="cl-b676fff8">beta[5]</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-b679b299"><p class="cl-b679a398"><span class="cl-b676fff9">1.3045</span></p></td><td class="cl-b679b299"><p class="cl-b679a398"><span class="cl-b676fff9">-0.0173</span></p></td><td class="cl-b679b299"><p class="cl-b679a398"><span class="cl-b676fff9">-0.8962</span></p></td><td class="cl-b679b299"><p class="cl-b679a398"><span class="cl-b676fff9">-1.163</span></p></td><td class="cl-b679b299"><p class="cl-b679a398"><span class="cl-b676fff9">-0.6726</span></p></td></tr></tbody></table></div>
 </div>
 </div>
 <p>One final check: Are these <img src="https://latex.codecogs.com/png.latex?%5Cbeta"> means in the same direction of what we expected from the univariate analysis in <a href="../../professional_blog/2024-03-08-spaceship-titanic-part-1/index.html">Part 1</a>?</p>
