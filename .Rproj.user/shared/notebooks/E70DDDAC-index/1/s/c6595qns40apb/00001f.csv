@@ -1,5 +1,0 @@
-"0","imputed_sst_data %>% "
-"0","  model.matrix(`Transported` ~ `Age` + `VIP` + `HomePlanet`, data = .) %>% "
-"0","  as.data.frame() %>% "
-"0","  slice(1:10) %>% "
-"0","  rj_custom_table()"

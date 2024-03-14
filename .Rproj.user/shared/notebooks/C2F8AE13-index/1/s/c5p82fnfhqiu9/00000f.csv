@@ -1,5 +1,0 @@
-"0","#| code-fold: true"
-"0","imputed_sst_data %>% "
-"0","  select(Cabin) %>% "
-"0","  head %>% "
-"0","  rj_custom_table()"

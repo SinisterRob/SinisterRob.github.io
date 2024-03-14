@@ -1,5 +1,0 @@
-"0","bb_data %>% 
-  group_by(Season, WTeamID) %>% 
-  summarize(NumWins = n())
-"
-"2","`summarise()` has grouped output by 'Season'. You can override using the `.groups` argument."

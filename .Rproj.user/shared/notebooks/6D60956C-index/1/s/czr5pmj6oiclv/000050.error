@@ -1,1 +1,0 @@
-{"frames":[{"func":"bb_reg_comp_data %<>% filter(Season >= 2022)","file":"","line_number":0,"end_line_number":0,"character_number":0,"end_character_number":0},{"func":"filter(., Season >= 2022)","file":"","line_number":0,"end_line_number":0,"character_number":0,"end_character_number":0}],"message":"Error: object 'bb_reg_comp_data' not found\n"}

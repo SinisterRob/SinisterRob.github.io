@@ -1,6 +1,0 @@
-"0","gam1 <- gam(WinA ~ s(SeedA) + s(SeedB) + s(WinRatioA) + s(WinRatioB) + s(GapAvgA) + s(GapAvgB) + s(SeedDiff) + s(WinRatioDiff) + s(GapAvgDiff) + te(SeedA, SeedB, WinRatioA, WinRatioB, GapAvgA, GapAvgB), data = bb_train)
-"
-"2","
-"
-"2","
-"

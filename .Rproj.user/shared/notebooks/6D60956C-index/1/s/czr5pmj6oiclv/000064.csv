@@ -1,8 +1,0 @@
-"0","# Merge features df with num_win, num_loss, gap_win, gap_loss.
-bb_features %>% 
-  merge(num_win, by = by = c(""Season"", ""TeamID""), all.x = TRUE) %>% 
-"
-"2","Error: unexpected '=' in:
-""bb_features %>% 
-  merge(num_win, by = by =""
-"

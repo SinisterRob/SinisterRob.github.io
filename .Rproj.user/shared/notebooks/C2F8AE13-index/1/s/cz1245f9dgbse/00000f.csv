@@ -1,6 +1,0 @@
-"0","#| code-fold: true"
-"0","imputed_cabin_data %>% "
-"0","  model.matrix(`Transported` ~ `Age_Pred` + `VIP` + `HomePlanet` + deck + num + side + CabinMult + num_Pred, data = .) %>% "
-"0","  head() %>% "
-"0","  as.data.frame() %>% "
-"0","  rj_custom_table()"

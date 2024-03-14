@@ -1,2 +1,0 @@
-"0","#| code-fold: true"
-"0","imputed_sst_data$Age_Pred <- predict(age_model, imputed_sst_data, type = ""response"")"

@@ -1,7 +1,0 @@
-"0","# Average Score Gap for Losses
-gap_loss <- bb_data %>%
-  group_by(Season, LTeamID) %>%
-  summarise(GapLosses = mean(ScoreGap, na.rm = TRUE)) %>%
-  rename(TeamID = LTeamID)
-"
-"2","`summarise()` has grouped output by 'Season'. You can override using the `.groups` argument."

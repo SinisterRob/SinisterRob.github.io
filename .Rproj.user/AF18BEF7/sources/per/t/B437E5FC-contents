@@ -1,9 +1,0 @@
----
-title: "Photography"
-lightbox:
-  match: auto
-  effect: fade
----
-
-![Quincy](data/quincy.jpg){group="cats"}
-![Enyo](data/enyo.jpg){group="cats"}

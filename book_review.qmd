@@ -1,8 +1,0 @@
----
-title: "Book Reviews"
-listing:
-  feed: true
-  contents: book_review
----
-
-Reserving this page for when I want to do some book reviews.

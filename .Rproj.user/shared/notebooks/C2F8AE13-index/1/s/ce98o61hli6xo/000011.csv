@@ -1,4 +1,0 @@
-"0","data.table::fwrite(imputed_cabin_data, ""../../assets/data/imputed_cabin_data.csv"")
-"
-"2","Error: object 'imputed_cabin_data' not found
-"

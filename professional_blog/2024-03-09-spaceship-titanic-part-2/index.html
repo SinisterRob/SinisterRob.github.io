@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.4.550">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="dcterms.date" content="2024-03-09">
+<meta name="description" content="Using a Stan model to improve over random guessing.">
+
+<title>bites | brews | paws - Spaceship Titanic - Introduction to Bayesian Models - Part 2</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../..//img/favicon.ico" rel="icon">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script src="../../site_libs/quarto-contrib/elevatorjs-1.0.0/elevator.min.js"></script>
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-TLJMCG2VMV"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-TLJMCG2VMV', { 'anonymize_ip': true});
+</script>
+<link href="../../site_libs/tabwid-1.1.3/tabwid.css" rel="stylesheet">
+<script src="../../site_libs/tabwid-1.1.3/tabwid.js"></script>
+<link href="https://iosevka-webfonts.github.io/iosevka/Iosevka.css" rel="stylesheet">
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="bites | brews | paws - Spaceship Titanic - Introduction to Bayesian Models - Part 2">
+<meta property="og:description" content="Using a Stan model to improve over random guessing.">
+<meta property="og:image" content="https://sinisterrob.github.io/../../assets/img/titanic-2.png">
+<meta property="og:site_name" content="bites | brews | paws">
+<meta property="og:locale" content="es_ES">
+<meta name="twitter:title" content="bites | brews | paws - Spaceship Titanic - Introduction to Bayesian Models - Part 2">
+<meta name="twitter:description" content="Using a Stan model to improve over random guessing.">
+<meta name="twitter:image" content="https://sinisterrob.github.io/../../assets/img/titanic-2.png">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">bites | brews | paws</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about_me.html"> 
+<span class="menu-text">About Me</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-personal-reviews" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Personal Reviews</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-personal-reviews">    
+        <li>
+    <a class="dropdown-item" href="../../food_review.html">
+ <span class="dropdown-text">Food Reviews</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../music_review.html">
+ <span class="dropdown-text">Music Reviews</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../book_review.html">
+ <span class="dropdown-text">Book Reviews</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-blogs--analysis" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Blogs &amp; Analysis</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-blogs--analysis">    
+        <li>
+    <a class="dropdown-item" href="../../chess_analysis.html">
+ <span class="dropdown-text">Chess Analysis</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../personal_blog.html">
+ <span class="dropdown-text">Personal Blog</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../professional_blog.html">
+ <span class="dropdown-text">Professional Blog</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../../photography.html"> 
+<span class="menu-text">Photography</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../blog_subscribe.html"> 
+<span class="menu-text">Subscribe to bites | brews | paws!</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+          <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul class="collapse">
+  <li><a href="#part-2-initial-modelling" id="toc-part-2-initial-modelling" class="nav-link active" data-scroll-target="#part-2-initial-modelling">Part 2: Initial Modelling</a>
+  <ul class="collapse">
+  <li><a href="#starting-with-stan" id="toc-starting-with-stan" class="nav-link" data-scroll-target="#starting-with-stan">Starting with Stan</a></li>
+  <li><a href="#handling-missing-values" id="toc-handling-missing-values" class="nav-link" data-scroll-target="#handling-missing-values">Handling Missing Values</a></li>
+  <li><a href="#fitting-the-initial-model" id="toc-fitting-the-initial-model" class="nav-link" data-scroll-target="#fitting-the-initial-model">Fitting the Initial Model</a></li>
+  <li><a href="#model-diagnostics" id="toc-model-diagnostics" class="nav-link" data-scroll-target="#model-diagnostics">Model Diagnostics</a></li>
+  <li><a href="#summary-part-3-preview" id="toc-summary-part-3-preview" class="nav-link" data-scroll-target="#summary-part-3-preview">Summary + Part 3 Preview</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Spaceship Titanic - Introduction to Bayesian Models - Part 2</h1>
+</div>
+
+<div>
+  <div class="description">
+    Using a Stan model to improve over random guessing.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">March 9, 2024</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="cell">
+<style type="text/css">
+table {
+  width: 50%;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+</div>
+<div style="text-align: center;">
+<p><img src="./../../assets/img/titanic-2.png" class="img-fluid" width="350"></p>
+</div>
+<section id="part-2-initial-modelling" class="level1">
+<h1>Part 2: Initial Modelling</h1>
+<p>Welcome to Part 2 of my Introduction to Bayesian Models series.</p>
+<p>Before I begin building the model, recall the three insights we found in <a href="../../professional_blog/2024-03-08-spaceship-titanic-part-1/index.html">Part 1</a>:</p>
+<ul>
+<li><p><span style="color: #BF5700;">Passengers from Age 0-17</span> were more likely to be transported.</p></li>
+<li><p><span style="color: #BF5700;">Non-VIP passengers</span> were more likely to be transported.</p></li>
+<li><p><span style="color: #BF5700;">Passengers with a Home Planet of Europa</span> were more likely to be transported.</p></li>
+</ul>
+<p>I’m sure this is a small subset of the available insights of our data, but I don’t want to make the model too complicated before even starting so we will stick with implementing these three factors in Part 2.</p>
+<section id="starting-with-stan" class="level2">
+<h2 class="anchored" data-anchor-id="starting-with-stan">Starting with Stan</h2>
+<p><a href="https://en.wikipedia.org/wiki/Stan_(software)">Stan</a> is a probabilistic programming language for statistical inference. To write a Stan model, I will create a .stan file using the Stan programming language, and then compile and run this model in R using the rstan package.</p>
+<p>I will first show the basic Stan code for the model, and explain each of the blocks:</p>
+<div style="text-align: center;">
+<p><img src="../../assets/img/stan2.png" class="img-fluid"></p>
+</div>
+<section id="data" class="level3">
+<h3 class="anchored" data-anchor-id="data">data</h3>
+<ul>
+<li><p>This section declares all of the data that will be used in the model.</p></li>
+<li><p>This is data that needs to be provided by the user to run a Stan model.</p></li>
+<li><p>I will be using an N x K <a href="https://www.statlect.com/glossary/design-matrix">design matrix</a> that has N distinct observations, and K predictive variables.</p></li>
+</ul>
+</section>
+<section id="parameters" class="level3">
+<h3 class="anchored" data-anchor-id="parameters">parameters</h3>
+<ul>
+<li><p>This section defines all of the unknown parameters in your model that Stan will estimate using the data.</p></li>
+<li><p>In our model, we will be estimating the <span class="math inline">\(\beta\)</span> coefficients which are the corresponding linear effects of each of the K predictor variables.</p></li>
+</ul>
+</section>
+<section id="model" class="level3">
+<h3 class="anchored" data-anchor-id="model">model</h3>
+<ul>
+<li><p>This section will define the statistical model (using a log-likelihood function), prior distributions, and provide the mathematical link between your parameters and observed data.</p></li>
+<li><p>In <a href="../../professional_blog/2024-03-08-spaceship-titanic-part-1/index.html">Part 1</a> I decided to use a logistic regression. This distribution is implemented in Stan using the <code>bernoulli_logit(...)</code> function.</p></li>
+<li><p>Note that Age is a continuous variable, so unless we make any modification to the predictive variable or the model structure, it will be modeled as a linear effect which we saw previously may not be completely accurate. We can still run the model without making any changes and see what the output tells us.</p></li>
+</ul>
+</section>
+<section id="generated-quantities" class="level3">
+<h3 class="anchored" data-anchor-id="generated-quantities">generated quantities</h3>
+<ul>
+<li>After running a Stan model and having some fitted posterior distributions from the data, you may want to sample from these distributions (or even from some algebraically manipulated variation of the distributions). Sampling can be set up in the <code>generated quantities</code> block.</li>
+</ul>
+</section>
+</section>
+<section id="handling-missing-values" class="level2">
+<h2 class="anchored" data-anchor-id="handling-missing-values">Handling Missing Values</h2>
+<p>It turns out there are some missing values in the Age, VIP, and HomePlanet fields.</p>
+<p>The easiest way to handle missing values is to <a href="https://en.wikipedia.org/wiki/Imputation_(statistics)">impute</a> them using the <strong><code>mice</code></strong> package in R.</p>
+<p>Imputation helps us fill in these gaps with plausible values, ensuring that our analysis can proceed without dropping entire rows or columns which might lead to loss of valuable information.</p>
+<p><strong><code>mice</code></strong> stands for <strong>Multivariate Imputation by Chained Equations</strong>, a technique that provides a more nuanced approach than simply filling in the missing entries with average values. You could think of it as an iterative regression on the NA values using the non-NA values for that observation.</p>
+<p>I want to make sure I don’t include the Transported field when doing imputation for two reasons:</p>
+<ol type="1">
+<li>I don’t have this field available in my test dataset, where I will need to do the same thing.</li>
+</ol>
+<!-- -->
+<ol start="2" type="1">
+<li>That would be considered a form of [data leakage](<a href="https://en.wikipedia.org/wiki/Leakage_(machine_learning)" class="uri">https://en.wikipedia.org/wiki/Leakage_(machine_learning)</a>).</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>sst_transported <span class="ot">&lt;-</span> sst_data_stan<span class="sc">$</span>Transported</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>sst_no_transported <span class="ot">&lt;-</span> sst_data_stan[, <span class="sc">-</span><span class="st">"Transported"</span>]</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>imputed_sst <span class="ot">&lt;-</span> <span class="fu">mice</span>(sst_no_transported, <span class="at">m =</span> <span class="dv">1</span>, <span class="at">printFlag =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>imputed_sst_data <span class="ot">&lt;-</span> <span class="fu">complete</span>(imputed_sst, <span class="dv">1</span>)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>imputed_sst_data<span class="sc">$</span>Transported <span class="ot">&lt;-</span> sst_transported</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>imputed_sst_data <span class="ot">&lt;-</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  imputed_sst_data <span class="sc">%&gt;%</span> </span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">HomePlanet =</span> <span class="fu">factor</span>(HomePlanet, <span class="at">levels =</span> <span class="fu">unique</span>(HomePlanet)),</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>         <span class="at">VIP =</span> <span class="fu">factor</span>(VIP, <span class="at">levels =</span> <span class="fu">unique</span>(VIP)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="fitting-the-initial-model" class="level2">
+<h2 class="anchored" data-anchor-id="fitting-the-initial-model">Fitting the Initial Model</h2>
+<p>Here is what the first 10 rows of the design matrix (denoted as <code>X</code> in our Stan code) looks like:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>imputed_sst_data <span class="sc">%&gt;%</span> </span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">model.matrix</span>(<span class="st">`</span><span class="at">Transported</span><span class="st">`</span> <span class="sc">~</span> <span class="st">`</span><span class="at">Age</span><span class="st">`</span> <span class="sc">+</span> <span class="st">`</span><span class="at">VIP</span><span class="st">`</span> <span class="sc">+</span> <span class="st">`</span><span class="at">HomePlanet</span><span class="st">`</span>, <span class="at">data =</span> .) <span class="sc">%&gt;%</span> </span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.data.frame</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rj_custom_table</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="tabwid"><style>.cl-14c71e34{}.cl-14bd57c8{font-family:'Iosevka Web';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-14bd57d2{font-family:'Iosevka Web';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-14c18366{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-14c197ca{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 1.5pt solid rgba(190, 190, 190, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-14c197d4{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-14c197d5{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-14c71e34"><thead><tr style="overflow-wrap:break-word;"><th class="cl-14c197ca"><p class="cl-14c18366"><span class="cl-14bd57c8">(Intercept)</span></p></th><th class="cl-14c197ca"><p class="cl-14c18366"><span class="cl-14bd57c8">Age</span></p></th><th class="cl-14c197ca"><p class="cl-14c18366"><span class="cl-14bd57c8">VIPTRUE</span></p></th><th class="cl-14c197ca"><p class="cl-14c18366"><span class="cl-14bd57c8">HomePlanetEarth</span></p></th><th class="cl-14c197ca"><p class="cl-14c18366"><span class="cl-14bd57c8">HomePlanetMars</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">1</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">39</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">0</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">0</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">1</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">24</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">0</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">1</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">1</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">58</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">1</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">0</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">1</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">33</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">0</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">0</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">1</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">16</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">0</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">1</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">1</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">44</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">0</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">1</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">1</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">26</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">0</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">1</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">1</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">28</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">0</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">1</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">1</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">35</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">0</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">1</span></p></td><td class="cl-14c197d4"><p class="cl-14c18366"><span class="cl-14bd57d2">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-14c197d5"><p class="cl-14c18366"><span class="cl-14bd57d2">1</span></p></td><td class="cl-14c197d5"><p class="cl-14c18366"><span class="cl-14bd57d2">14</span></p></td><td class="cl-14c197d5"><p class="cl-14c18366"><span class="cl-14bd57d2">0</span></p></td><td class="cl-14c197d5"><p class="cl-14c18366"><span class="cl-14bd57d2">0</span></p></td><td class="cl-14c197d5"><p class="cl-14c18366"><span class="cl-14bd57d2">0</span></p></td></tr></tbody></table></div>
+</div>
+</div>
+<p>From the design matrix and the Stan code we can see that this model will need to estimate five separate <span class="math inline">\(\beta\)</span> parameters, one for each column of the design matrix.</p>
+<p>I will now fit the initial model using the <code>stan(...)</code> function from the rstan library.</p>
+<p>Referencing the parameters I defined in the <code>data</code> block in the Stan code above, we will need to provide the <code>stan(...)</code> function with a named list of parameters N, K, X, and y. Note that I am running a model with 2 chains of 2,000 iterations each (which will be split into 1,000 warm-up iterations and 1,000 sampling iterations per chain.)</p>
+<p>You can think of the model fitting as exploring a potentially jagged K-dimensional terrain across the parameter space and the log-likelihood of observing the data at each point using that specific set of parameters is the height. We start in 4 random locations on this terrain, and hope that these chains end up in the exact same spot of maximum likelihood and stabilize so that we can draw credible and usable posterior parameter estimates.</p>
+<p>The exact method that Stan uses to explore this terrain is complex and definitely beyond the scope of this blog, but if you’re interested in learning more, you should read about <a href="https://mc-stan.org/docs/reference-manual/mcmc.html#hamiltonian-monte-carlo">Hamiltonian Monte Carlo</a> and the <a href="https://mc-stan.org/docs/reference-manual/mcmc.html#nuts-and-its-configuration">no-U-turn sampler</a>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>sst_design_matrix <span class="ot">&lt;-</span> </span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  imputed_sst_data <span class="sc">%&gt;%</span> </span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">model.matrix</span>(<span class="st">`</span><span class="at">Transported</span><span class="st">`</span> <span class="sc">~</span> <span class="st">`</span><span class="at">Age</span><span class="st">`</span> <span class="sc">+</span> <span class="st">`</span><span class="at">VIP</span><span class="st">`</span> <span class="sc">+</span> <span class="st">`</span><span class="at">HomePlanet</span><span class="st">`</span>, <span class="at">data =</span> .)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>sst_response <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(imputed_sst_data<span class="sc">$</span>Transported)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">file.exists</span>(<span class="st">"../../assets/models/sst_model_1.rds"</span>)){</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  sst_fit_1 <span class="ot">&lt;-</span> </span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stan</span>(<span class="at">file =</span> <span class="st">"../../assets/stan/spaceship_titanic_2.stan"</span>,</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>         <span class="at">data =</span> <span class="fu">list</span>(<span class="at">N =</span> <span class="fu">nrow</span>(sst_design_matrix),</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>                     <span class="at">K =</span> <span class="fu">ncol</span>(sst_design_matrix),</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>                     <span class="at">X =</span> sst_design_matrix,</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>                     <span class="at">y =</span> sst_response),</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>         <span class="at">chains =</span> <span class="dv">2</span>,</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>         <span class="at">iter =</span> <span class="dv">2000</span>)</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">save</span>(sst_fit_1, <span class="at">file =</span> <span class="st">"../../assets/models/sst_model_1.rds"</span>)</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">load</span>(<span class="st">"../../assets/models/sst_model_1.rds"</span>)</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>  }</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="model-diagnostics" class="level2">
+<h2 class="anchored" data-anchor-id="model-diagnostics">Model Diagnostics</h2>
+<p>That model was easy enough to set up and run! Let’s examine what the resulting posterior distributions look like.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mcmc_hist</span>(<span class="fu">as.array</span>(sst_fit_1, <span class="at">pars =</span> <span class="st">"beta"</span>),</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>          <span class="at">facet_args =</span> <span class="fu">list</span>(<span class="at">labeller =</span> ggplot2<span class="sc">::</span>label_parsed)) <span class="sc">+</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">text =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">24</span>),</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>        <span class="at">axis.text =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">18</span>), <span class="co"># Tick text size</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>        <span class="at">axis.title =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">24</span>), <span class="co"># Axis label size</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        <span class="at">strip.text =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">24</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Interestingly, it looks like our posterior distributions for the <span class="math inline">\(\beta\)</span> parameters are looking approximately normal with reasonably tight standard errors, even though we didn’t even set any explicit prior distributions at all in the <code>model</code> block of the Stan code. Normally, the advantage of Bayesian models is the ability to incorporate expert opinion through prior distributions but this is not required. Instead you can use what is called a flat prior which basically indicates we have no prior information about what the distribution or mean of the <span class="math inline">\(\beta\)</span> parameters would be.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>rounded_betas <span class="ot">&lt;-</span> rstan<span class="sc">::</span><span class="fu">extract</span>(sst_fit_1)<span class="sc">$</span>beta <span class="sc">%&gt;%</span> </span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">apply</span>(<span class="dv">2</span>, mean) <span class="sc">%&gt;%</span> </span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">round</span>(<span class="dv">4</span>)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(rounded_betas) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"beta[1]"</span>, <span class="st">"beta[2]"</span>, <span class="st">"beta[3]"</span>, <span class="st">"beta[4]"</span>, <span class="st">"beta[5]"</span>)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>rounded_betas <span class="sc">%&gt;%</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">t</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.data.frame</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rj_custom_table</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="tabwid"><style>.cl-1674ad14{}.cl-166d9f06{font-family:'Iosevka Web';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-166d9f1a{font-family:'Iosevka Web';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-167067cc{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-167076c2{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 1.5pt solid rgba(190, 190, 190, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-167076cc{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(190, 190, 190, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-1674ad14"><thead><tr style="overflow-wrap:break-word;"><th class="cl-167076c2"><p class="cl-167067cc"><span class="cl-166d9f06">beta[1]</span></p></th><th class="cl-167076c2"><p class="cl-167067cc"><span class="cl-166d9f06">beta[2]</span></p></th><th class="cl-167076c2"><p class="cl-167067cc"><span class="cl-166d9f06">beta[3]</span></p></th><th class="cl-167076c2"><p class="cl-167067cc"><span class="cl-166d9f06">beta[4]</span></p></th><th class="cl-167076c2"><p class="cl-167067cc"><span class="cl-166d9f06">beta[5]</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-167076cc"><p class="cl-167067cc"><span class="cl-166d9f1a">1.3045</span></p></td><td class="cl-167076cc"><p class="cl-167067cc"><span class="cl-166d9f1a">-0.0173</span></p></td><td class="cl-167076cc"><p class="cl-167067cc"><span class="cl-166d9f1a">-0.8962</span></p></td><td class="cl-167076cc"><p class="cl-167067cc"><span class="cl-166d9f1a">-1.163</span></p></td><td class="cl-167076cc"><p class="cl-167067cc"><span class="cl-166d9f1a">-0.6726</span></p></td></tr></tbody></table></div>
+</div>
+</div>
+<p>One final check: Are these <span class="math inline">\(\beta\)</span> means in the same direction of what we expected from the univariate analysis in <a href="../../professional_blog/2024-03-08-spaceship-titanic-part-1/index.html">Part 1</a>?</p>
+<section id="beta1-intercept" class="level3">
+<h3 class="anchored" data-anchor-id="beta1-intercept">beta[1]: (Intercept)</h3>
+<ul>
+<li><p>This quantity represents the baseline, which should correspond to a passenger who is Age 0, not a VIP, and having a home planet of Europa.</p></li>
+<li><p>To convert into a probability, we can undo the logit function manually.</p></li>
+<li><p><span class="math inline">\(p = \frac{e^{\beta_1}}{1 + e^{\beta_1}}\)</span></p></li>
+<li><p><span class="math inline">\(p = 78.7\%\)</span></p></li>
+</ul>
+</section>
+<section id="beta2-age" class="level3">
+<h3 class="anchored" data-anchor-id="beta2-age">beta[2]: (Age)</h3>
+<ul>
+<li><p>We can see a decreasing effect in Age, where every increase of Age by 1 year decreases the log odds of Transportation by -0.0173.</p></li>
+<li><p>We did observe a decreasing effect with Age although it wasn’t exactly linear and mostly flat after Age 17.</p></li>
+</ul>
+</section>
+<section id="beta3-vip-true" class="level3">
+<h3 class="anchored" data-anchor-id="beta3-vip-true">beta[3]: (VIP = TRUE)</h3>
+<ul>
+<li><p>Being a VIP reduces the log odds of Transportation by -0.8962 compared to the baseline of not being a VIP.</p></li>
+<li><p>We can demonstrate what that means in terms of probability by calculating the Transportation prediction to a passenger who is Age 0, a VIP, and having a home planet of Europa and comparing that to the baseline probability of 78.7%.</p></li>
+<li><p><span class="math inline">\(p = \frac{e^{\beta1 + \beta3}}{1 + e^{\beta1 + \beta3}}\)</span></p></li>
+<li><p><span class="math inline">\(p = 63.3\%\)</span></p></li>
+</ul>
+</section>
+<section id="beta4-home-planet-earth" class="level3">
+<h3 class="anchored" data-anchor-id="beta4-home-planet-earth">beta[4]: (Home Planet = Earth)</h3>
+<ul>
+<li>Having a home planet of Earth reduces the log odds of Transportation by -1.1629 compared to the baseline of Europa.</li>
+</ul>
+</section>
+<section id="beta5-home-planet-mars" class="level3">
+<h3 class="anchored" data-anchor-id="beta5-home-planet-mars">beta[5]: (Home Planet = Mars)</h3>
+<ul>
+<li>Having a home planet of Mars reduces the log odds of Transportation by -0.6846 compared to the baseline of Europa.</li>
+</ul>
+<p>And finally, how do the new model’s predictions perform on the training data? Remember that roughly 50% of the travelers were Transported in the original data, so let’s see if we can identify who was Transported more accurately than randomly guessing by using a <a href="https://en.wikipedia.org/wiki/Confusion_matrix">confusion matrix</a>.</p>
+<p>Since we are testing the model on the same data we trained it on, these metrics are also referred to as training error and probably an optimistic estimate of how the model would generalize to data it hasn’t been trained on before.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>y_pred_means <span class="ot">&lt;-</span> <span class="fu">apply</span>(rstan<span class="sc">::</span><span class="fu">extract</span>(sst_fit_1, <span class="st">"y_pred"</span>)<span class="sc">$</span>y_pred, <span class="dv">2</span>, mean)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>y_pred_factor <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="fu">ifelse</span>(y_pred_means <span class="sc">&gt;</span> <span class="fl">0.5</span>, <span class="cn">TRUE</span>, <span class="cn">FALSE</span>))</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>sst_response_factor <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="fu">ifelse</span>(sst_response <span class="sc">==</span> <span class="dv">1</span>, <span class="cn">TRUE</span>, <span class="cn">FALSE</span>))</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="fu">confusionMatrix</span>(y_pred_factor, sst_response_factor)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Confusion Matrix and Statistics
+
+          Reference
+Prediction FALSE TRUE
+     FALSE  2884 2041
+     TRUE   1431 2337
+                                          
+               Accuracy : 0.6006          
+                 95% CI : (0.5902, 0.6109)
+    No Information Rate : 0.5036          
+    P-Value [Acc &gt; NIR] : &lt; 2.2e-16       
+                                          
+                  Kappa : 0.202           
+                                          
+ Mcnemar's Test P-Value : &lt; 2.2e-16       
+                                          
+            Sensitivity : 0.6684          
+            Specificity : 0.5338          
+         Pos Pred Value : 0.5856          
+         Neg Pred Value : 0.6202          
+             Prevalence : 0.4964          
+         Detection Rate : 0.3318          
+   Detection Prevalence : 0.5665          
+      Balanced Accuracy : 0.6011          
+                                          
+       'Positive' Class : FALSE           
+                                          </code></pre>
+</div>
+</div>
+<p>Accuracy is one of the most straightforward metrics derived from a confusion matrix. It represents the proportion of true results (both true positives and true negatives) among the total number of cases examined. With no information, we saw that we could randomly guess Transportation correctly 50.4% of the time. Now, given a random traveler we can predict if they were transported or not correctly 60.1% of the time.</p>
+</section>
+</section>
+<section id="summary-part-3-preview" class="level2">
+<h2 class="anchored" data-anchor-id="summary-part-3-preview">Summary + Part 3 Preview</h2>
+<p>I’d say those are some promising results considering this is the first iteration of the model. I only included three basic factors without too much data exploration, and was able to improve the accuracy from 50.4% to 60.1%. I’d like to see if we can get our training accuracy to at least 80% by the end of this series, which may or may not be possible given the complexity of the data.</p>
+<p>There are a couple of specific improvements I plan on making in Part 3:</p>
+<ul>
+<li><p>Comparing a new model to this one to test for improvement using an <a href="https://en.wikipedia.org/wiki/Receiver_operating_characteristic">ROC curve</a>.</p></li>
+<li><p>Fitting Age using a non-linear fitted effect instead of a linear effect term (possibly with the help of a <a href="https://en.wikipedia.org/wiki/Generalized_additive_model">generalized additive model</a> or spline.)</p></li>
+<li><p>Exploring the use of Cabin as a predictor variable, and eventually using a hierarchical model (also called <a href="https://en.wikipedia.org/wiki/Bayesian_hierarchical_modeling">multilevel</a> model) structure.</p></li>
+</ul>
+<p>Stay tuned for Part 3, and thanks again for reading Part 2 of the Spaceship Titanic series using Bayesian modeling.</p>
+<p><span style="color: #FF0000;"><strong>UPDATE:</strong></span> Part 3 is out! You can read it <a href="../../professional_blog/2024-03-09-spaceship-titanic-part-2/index.html">here</a>.</p>
+<div style="text-align: center;">
+<p><script>window.onload = function() { var elevator = new Elevator({ element: document.querySelector(".elevator-button"),  mainAudio: "", endAudio: "ding.mp3" }); }</script><button class="btn btn-outline-primary elevator-button" type="submit">Return to the top!</button></p>
+</div>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

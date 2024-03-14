@@ -1,1 +1,0 @@
-{"frames":[{"func":"bb_data %<>% mutate(ScoreGap = WScore - LScore)","file":"","line_number":0,"end_line_number":0,"character_number":0,"end_character_number":0},{"func":"mutate(., ScoreGap = WScore - LScore)","file":"","line_number":0,"end_line_number":0,"character_number":0,"end_character_number":0}],"message":"Error: object 'bb_data' not found\n"}
