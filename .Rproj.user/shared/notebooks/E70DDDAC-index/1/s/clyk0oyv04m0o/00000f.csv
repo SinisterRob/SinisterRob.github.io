@@ -1,0 +1,7 @@
+"0","#| warning: false"
+"0","mcmc_hist(as.array(sst_fit_1, pars = ""beta""),"
+"0","          facet_args = list(labeller = ggplot2::label_parsed)) +"
+"0","  theme(text = element_text(size = 24),"
+"0","        axis.text = element_text(size = 18), # Tick text size"
+"0","        axis.title = element_text(size = 24), # Axis label size"
+"0","        strip.text = element_text(size = 24))"

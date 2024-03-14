@@ -1,0 +1,1 @@
+{"frames":[{"func":"data.table::fwrite(imputed_cabin_data, \"../../assets/data/imputed_cabin_data.csv\")","file":"","line_number":0,"end_line_number":0,"character_number":0,"end_character_number":0}],"message":"Error: object 'imputed_cabin_data' not found\n"}

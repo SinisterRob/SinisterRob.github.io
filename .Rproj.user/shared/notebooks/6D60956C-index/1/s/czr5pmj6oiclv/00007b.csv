@@ -1,0 +1,5 @@
+"0","bb_sample <- fread(""../../assets/data/mm_data/SampleSubmission2023.csv"")
+"
+"2","Error in fread(""../../assets/data/mm_data/SampleSubmission2023.csv"") : 
+  File '../../assets/data/mm_data/SampleSubmission2023.csv' does not exist or is non-readable. getwd()=='C:/Users/rober/OneDrive/Desktop/GithubIO/Robert-GH-Site/professional_blog/2024-03-11-march-madness-1'
+"

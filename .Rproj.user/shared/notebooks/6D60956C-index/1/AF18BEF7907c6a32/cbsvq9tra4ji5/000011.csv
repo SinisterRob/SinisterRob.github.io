@@ -1,0 +1,23 @@
+"0","install.packages(""xgboost"")
+"
+"2","Installing package into ‘C:/Users/rober/AppData/Local/R/win-library/4.3’
+(as ‘lib’ is unspecified)
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.3/xgboost_1.7.7.1.zip'
+"
+"2","Content type 'application/zip'"
+"2"," length 2440956 bytes (2.3 MB)
+"
+"2","downloaded 2.3 MB
+
+"
+"1","package ‘xgboost’ successfully unpacked and MD5 sums checked
+"
+"1","
+"
+"1",""
+"1","The downloaded binary packages are in
+	C:\Users\rober\AppData\Local\Temp\RtmpkPR2cs\downloaded_packages"
+"1",""
+"1","
+"

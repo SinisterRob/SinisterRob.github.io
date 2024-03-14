@@ -1,0 +1,9 @@
+---
+title: "Chess Analysis"
+---
+
+Reserving this page for when I want to do some analysis of my own chess games. One of my goals for 2024 is to try to get an official USCF chess rating.
+
+```{=html}
+<iframe src="https://lichess.org/embed/game/lhPpPjFv?theme=blue&bg=light" width=600 height=397 frameborder=0></iframe>
+```

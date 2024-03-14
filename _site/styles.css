@@ -1,0 +1,47 @@
+/* css styles */
+body {
+  font-family: 'Iosevka Web', monospace; !important
+}
+
+p {
+  font-family: 'Iosevka Web', monospace; !important
+}
+
+span {
+  font-family: 'Iosevka Web', monospace; !important
+}
+
+figcaption {
+  text-align: center;
+}
+
+.navbar-nav-scroll.ms-auto .nav-item .nav-link .menu-text {
+    color: #BF5700; /* UT Burnt Orange */
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.navbar-title {
+    color: #BF5700; /* UT Burnt Orange */
+}
+
+
+/* Base styles for the navbar - adjust these as needed */
+.navbar {
+    padding: 5px;
+    font-size: 16px;
+}
+
+/* Styles for mobile devices */
+@media (max-width: 768px) {
+    .navbar {
+        padding: 5px;
+        font-size: 14px;
+    }
+    .navbar-nav .nav-link {
+        padding: 5px;
+    }
+    .navbar-brand {
+        font-size: 16px;
+    }
+}

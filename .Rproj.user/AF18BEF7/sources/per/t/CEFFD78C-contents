@@ -1,0 +1,19 @@
+---
+title: "Photography"
+lightbox:
+  match: auto
+  effect: fade
+---
+
+-   [Two Weeks in Vietnam - October 2023](https://lightroom.adobe.com/shares/2286a1c21a514e5c9506d3b4854d02cb)
+
+-   [Kedzie Wells L Train S Curve](https://lightroom.adobe.com/shares/0c2103ef215a4861a3e84d57c1af5e88)
+
+-   [Flowers of Đà Lạt](https://lightroom.adobe.com/shares/26fa2a3a86234bafa68bbdf39d28ae82)
+
+::: {layout-ncol=2}
+![Quincy](data/quincy.jpg){fig-alt="Quincy"}
+
+![Enyo](data/enyo.jpg){fig-alt="Enyo"}
+
+:::

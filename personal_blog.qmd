@@ -1,0 +1,10 @@
+---
+title: "Personal Blog"
+listing:
+  contents: personal_blog
+  sort: "date asc"
+  type: grid
+  feed: true
+---
+
+On this page I will talk about random personal topics that are interesting to me.

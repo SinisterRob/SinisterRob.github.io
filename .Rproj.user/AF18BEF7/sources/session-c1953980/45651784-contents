@@ -1,0 +1,9 @@
+---
+title: "Food Reviews"
+listing:
+  contents: food_review
+  sort: "date desc"
+  type: grid
+---
+
+On this page I will review restaurants and talk about the variety of food that is available in Chicago!

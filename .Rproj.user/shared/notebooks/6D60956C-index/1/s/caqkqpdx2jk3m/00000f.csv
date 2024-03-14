@@ -1,0 +1,4 @@
+"0","bb_data %<>% mutate(ScoreGap = WScore - LScore)
+"
+"2","Error: object 'bb_data' not found
+"

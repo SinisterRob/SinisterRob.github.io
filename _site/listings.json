@@ -1,0 +1,27 @@
+[
+  {
+    "listing": "/professional_blog.html",
+    "items": [
+      "/professional_blog/2024-03-11-march-madness-1/index.html",
+      "/professional_blog/2024-03-10-spaceship-titanic-part-3/index.html",
+      "/professional_blog/2024-03-09-spaceship-titanic-part-2/index.html",
+      "/professional_blog/2024-03-08-spaceship-titanic-part-1/index.html"
+    ]
+  },
+  {
+    "listing": "/food_review.html",
+    "items": [
+      "/food_review/index.html",
+      "/food_review/2024-03-09-sawada-coffee/index.html",
+      "/food_review/2024-03-07-galit/index.html"
+    ]
+  },
+  {
+    "listing": "/book_review.html",
+    "items": []
+  },
+  {
+    "listing": "/personal_blog.html",
+    "items": []
+  }
+]

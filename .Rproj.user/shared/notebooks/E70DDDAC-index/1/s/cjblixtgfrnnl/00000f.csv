@@ -1,0 +1,157 @@
+"0","#| include: false"
+"0","#| echo: false"
+"0","#| warning: false"
+"0",""
+"0","source(""../../assets/scripts/load_functions.R"")"
+"2","Loading required package: StanHeaders
+"
+"2","
+rstan version 2.32.5 (Stan version 2.32.2)
+
+"
+"2","For execution on a local, multicore CPU with excess RAM we recommend calling
+options(mc.cores = parallel::detectCores()).
+To avoid recompilation of unchanged Stan programs, we recommend calling
+rstan_options(auto_write = TRUE)
+For within-chain threading using `reduce_sum()` or `map_rect()` Stan functions,
+change `threads_per_chain` option:
+rstan_options(threads_per_chain = 1)
+
+"
+"2","Do not specify '-march=native' in 'LOCAL_CPPFLAGS' or a Makevars file
+"
+"2","data.table 1.14.10 using 6 threads (see ?getDTthreads).  Latest news: r-datatable.com
+"
+"2","
+Attaching package: ‘dplyr’
+
+"
+"2","The following objects are masked from ‘package:data.table’:
+
+    between, first, last
+
+"
+"2","The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+"
+"2","The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+"
+"2","Registered S3 methods overwritten by 'htmltools':
+  method               from         
+  print.html           tools:rstudio
+  print.shiny.tag      tools:rstudio
+  print.shiny.tag.list tools:rstudio
+"
+"2","Registered S3 method overwritten by 'htmlwidgets':
+  method           from         
+  print.htmlwidget tools:rstudio
+"
+"2","
+Attaching package: ‘plotly’
+
+"
+"2","The following object is masked from ‘package:ggplot2’:
+
+    last_plot
+
+"
+"2","The following object is masked from ‘package:stats’:
+
+    filter
+
+"
+"2","The following object is masked from ‘package:graphics’:
+
+    layout
+
+"
+"2","Loading required package: nlme
+"
+"2","
+Attaching package: ‘nlme’
+
+"
+"2","The following object is masked from ‘package:dplyr’:
+
+    collapse
+
+"
+"2","This is mgcv 1.9-1. For overview type 'help(""mgcv-package"")'.
+"
+"2","Loading required package: sysfonts
+"
+"2","Loading required package: showtextdb
+"
+"2","
+Attaching package: ‘flextable’
+
+"
+"2","The following objects are masked from ‘package:plotly’:
+
+    highlight, style
+
+"
+"2","
+Attaching package: ‘mice’
+
+"
+"2","The following object is masked from ‘package:stats’:
+
+    filter
+
+"
+"2","The following objects are masked from ‘package:base’:
+
+    cbind, rbind
+
+"
+"2","This is bayesplot version 1.10.0
+"
+"2","- Online documentation and vignettes at mc-stan.org/bayesplot
+"
+"2","- bayesplot theme set to bayesplot::theme_default()
+"
+"2","   * Does _not_ affect other ggplot2 plots
+"
+"2","   * See ?bayesplot_theme_set for details on theme setting
+"
+"2","This is posterior version 1.5.0
+"
+"2","
+Attaching package: ‘posterior’
+
+"
+"2","The following object is masked from ‘package:bayesplot’:
+
+    rhat
+
+"
+"2","The following objects are masked from ‘package:rstan’:
+
+    ess_bulk, ess_tail
+
+"
+"2","The following objects are masked from ‘package:stats’:
+
+    mad, sd, var
+
+"
+"2","The following objects are masked from ‘package:base’:
+
+    %in%, match
+
+"
+"2","Loading required package: lattice
+"
+"0","sst_data <- data.table::fread(""../../assets/data/train.csv"")"
+"0",""
+"0","sst_data_stan <-"
+"0","  sst_data %>% "
+"0","  select(`Age`, `VIP`, `HomePlanet`, `Transported`, `Cabin`) %>% "
+"0","  mutate(`HomePlanet` = factor(ifelse(`HomePlanet` == """", NA, `HomePlanet`)),"
+"0","         `VIP` = factor(VIP))"

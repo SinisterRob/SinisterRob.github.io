@@ -1,0 +1,5 @@
+"0","bb_features[is.na(bb_features)]
+"
+"2","Error in `[.data.table`(bb_features, is.na(bb_features)) : 
+  i is invalid type (matrix). Perhaps in future a 2 column matrix could return a list of elements of DT (in the spirit of A[B] in FAQ 2.14). Please report to data.table issue tracker if you'd like this, or add your comments to FR #657.
+"
