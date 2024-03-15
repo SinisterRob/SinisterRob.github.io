@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>bites | brews | paws - Professional Blog</title>
+<title>bites | brews | paws - Reviews</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -79,9 +79,9 @@ ul.task-list li input[type="checkbox"] {
     }
 
     const options = {
-      valueNames: ['listing-date','listing-title','listing-author','listing-image','listing-description',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
+      valueNames: ['listing-title','listing-author','listing-date','listing-image','listing-description',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
       
-      searchColumns: ["listing-date","listing-title","listing-author","listing-image","listing-description"],
+      searchColumns: ["listing-title","listing-author","listing-date","listing-image","listing-description"],
     };
 
     window['quarto-listings'] = window['quarto-listings'] || {};
@@ -140,12 +140,14 @@ window.Quarto = {
 </script>
 
 <link rel="stylesheet" href="styles.css">
-<link rel="alternate" type="application/rss+xml" title="bites | brews | paws" href="professional_blog.xml" data-external="1"><meta property="og:title" content="bites | brews | paws - Professional Blog">
-<meta property="og:image" content="https://sinisterrob.github.io/img/bites_brews_paws_logo.png">
+<link rel="alternate" type="application/rss+xml" title="bites | brews | paws" href="reviews.xml" data-external="1"><meta property="og:title" content="bites | brews | paws - Reviews">
+<meta property="og:description" content="A personal take on Chicago food, music, photography, and other topics.">
+<meta property="og:image" content="https://sinisterrob.github.io/assets/img/biblical-wine.jpg">
 <meta property="og:site_name" content="bites | brews | paws">
 <meta property="og:locale" content="es_ES">
-<meta name="twitter:title" content="bites | brews | paws - Professional Blog">
-<meta name="twitter:image" content="https://sinisterrob.github.io/img/bites_brews_paws_logo.png">
+<meta name="twitter:title" content="bites | brews | paws - Reviews">
+<meta name="twitter:description" content="A personal take on Chicago food, music, photography, and other topics.">
+<meta name="twitter:image" content="https://sinisterrob.github.io/assets/img/biblical-wine.jpg">
 <meta name="twitter:card" content="summary_large_image">
 </head>
 
@@ -176,38 +178,27 @@ window.Quarto = {
     </a>
     <ul class="dropdown-menu" aria-labelledby="nav-menu-personal-reviews">    
         <li>
-    <a class="dropdown-item" href="./food_review.html">
+    <a class="dropdown-item" href="./food_review.qmd">
  <span class="dropdown-text">Food Reviews</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="./music_review.html">
+    <a class="dropdown-item" href="./music_review.qmd">
  <span class="dropdown-text">Music Reviews</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="./book_review.html">
+    <a class="dropdown-item" href="./book_review.qmd">
  <span class="dropdown-text">Book Reviews</span></a>
   </li>  
     </ul>
   </li>
-  <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-blogs--analysis" role="button" data-bs-toggle="dropdown" aria-expanded="false">
- <span class="menu-text">Blogs &amp; Analysis</span>
-    </a>
-    <ul class="dropdown-menu" aria-labelledby="nav-menu-blogs--analysis">    
-        <li>
-    <a class="dropdown-item" href="./chess_analysis.html">
- <span class="dropdown-text">Chess Analysis</span></a>
+  <li class="nav-item">
+    <a class="nav-link" href="./blogs.html"> 
+<span class="menu-text">Blogs</span></a>
   </li>  
-        <li>
-    <a class="dropdown-item" href="./personal_blog.html">
- <span class="dropdown-text">Personal Blog</span></a>
+  <li class="nav-item">
+    <a class="nav-link active" href="./reviews.html" aria-current="page"> 
+<span class="menu-text">Reviews</span></a>
   </li>  
-        <li>
-    <a class="dropdown-item" href="./professional_blog.html">
- <span class="dropdown-text">Professional Blog</span></a>
-  </li>  
-    </ul>
-  </li>
   <li class="nav-item">
     <a class="nav-link" href="./photography.html"> 
 <span class="menu-text">Photography</span></a>
@@ -237,7 +228,7 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Professional Blog</h1>
+<h1 class="title">Reviews</h1>
 </div>
 
 
@@ -254,111 +245,62 @@ window.Quarto = {
 </header>
 
 
+<p>On this page I will review restaurants and talk about the wide variety of food that is available in Chicago (and occasionally other cities!)</p>
 
 
 
 
-<div class="quarto-listing quarto-listing-container-default" id="listing-listing">
-<div class="list quarto-listing-default">
-<div class="quarto-post image-right" data-index="0" data-listing-date-sort="1710133200000" data-listing-file-modified-sort="1710387111986" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="8" data-listing-word-count-sort="1529">
-<div class="thumbnail">
-<p><a href="./professional_blog/2024-03-11-march-madness-1/index.html" class="no-external"></a></p><a href="./professional_blog/2024-03-11-march-madness-1/index.html" class="no-external">
-<p><img src="./../../assets/img/cats-basketball.png" class="thumbnail-image"></p>
-</a><p><a href="./professional_blog/2024-03-11-march-madness-1/index.html" class="no-external"></a></p>
+<div class="quarto-listing quarto-listing-container-grid" id="listing-listing">
+<div class="list grid quarto-listing-cols-3">
+<div class="g-col-1" data-index="0" data-listing-date-sort="1709964000000" data-listing-file-modified-sort="1710387111970" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="4" data-listing-word-count-sort="691">
+<a href="./reviews/2024-03-09-sawada-coffee/index.html" class="quarto-grid-link">
+<div class="quarto-grid-item card h-100 card-left">
+<p class="card-img-top">
+<img src="./../../assets/img/mocha-cookie.jpg" class="thumbnail-image card-img" style="height: 150px;">
+</p>
+<div class="card-body post-contents">
+<h5 class="no-anchor card-title listing-title">
+Sawada Coffee
+</h5>
+<div class="card-text listing-description">
+Lion’s Mane, sanshō, orange peel, plus a massive cookie.
 </div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="./professional_blog/2024-03-11-march-madness-1/index.html" class="no-external">A Descent into March Madness</a>
-</h3>
-<div class="listing-subtitle">
-<a href="./professional_blog/2024-03-11-march-madness-1/index.html" class="no-external"></a>
+<div class="card-attribution card-text-small justify">
+<div class="listing-author">
+
 </div>
-<div class="listing-description">
-<a href="./professional_blog/2024-03-11-march-madness-1/index.html" class="no-external">Can a computer beat a human in basketball?</a>
-</div>
-</div>
-<div class="metadata">
-<a href="./professional_blog/2024-03-11-march-madness-1/index.html" class="no-external">
-<div class="listing-date">
-Mar 11, 2024
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="1" data-listing-date-sort="1710050400000" data-listing-file-modified-sort="1710387111985" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="10" data-listing-word-count-sort="1853">
-<div class="thumbnail">
-<p><a href="./professional_blog/2024-03-10-spaceship-titanic-part-3/index.html" class="no-external"></a></p><a href="./professional_blog/2024-03-10-spaceship-titanic-part-3/index.html" class="no-external">
-<p><img src="./../../assets/img/titanic-3.png" class="thumbnail-image"></p>
-</a><p><a href="./professional_blog/2024-03-10-spaceship-titanic-part-3/index.html" class="no-external"></a></p>
-</div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="./professional_blog/2024-03-10-spaceship-titanic-part-3/index.html" class="no-external">Spaceship Titanic - Introduction to Bayesian Models - Part 3</a>
-</h3>
-<div class="listing-subtitle">
-<a href="./professional_blog/2024-03-10-spaceship-titanic-part-3/index.html" class="no-external"></a>
-</div>
-<div class="listing-description">
-<a href="./professional_blog/2024-03-10-spaceship-titanic-part-3/index.html" class="no-external">Fighting back against the aliens using GAMs and ROC.</a>
-</div>
-</div>
-<div class="metadata">
-<a href="./professional_blog/2024-03-10-spaceship-titanic-part-3/index.html" class="no-external">
-<div class="listing-date">
-Mar 10, 2024
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="2" data-listing-date-sort="1709964000000" data-listing-file-modified-sort="1710387111984" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="10" data-listing-word-count-sort="1916">
-<div class="thumbnail">
-<p><a href="./professional_blog/2024-03-09-spaceship-titanic-part-2/index.html" class="no-external"></a></p><a href="./professional_blog/2024-03-09-spaceship-titanic-part-2/index.html" class="no-external">
-<p><img src="./../../assets/img/titanic-2.png" class="thumbnail-image"></p>
-</a><p><a href="./professional_blog/2024-03-09-spaceship-titanic-part-2/index.html" class="no-external"></a></p>
-</div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="./professional_blog/2024-03-09-spaceship-titanic-part-2/index.html" class="no-external">Spaceship Titanic - Introduction to Bayesian Models - Part 2</a>
-</h3>
-<div class="listing-subtitle">
-<a href="./professional_blog/2024-03-09-spaceship-titanic-part-2/index.html" class="no-external"></a>
-</div>
-<div class="listing-description">
-<a href="./professional_blog/2024-03-09-spaceship-titanic-part-2/index.html" class="no-external">Using a Stan model to improve over random guessing.</a>
-</div>
-</div>
-<div class="metadata">
-<a href="./professional_blog/2024-03-09-spaceship-titanic-part-2/index.html" class="no-external">
 <div class="listing-date">
 Mar 9, 2024
 </div>
+</div>
+</div>
+</div>
 </a>
 </div>
+<div class="g-col-1" data-index="1" data-listing-date-sort="1709791200000" data-listing-file-modified-sort="1710387111969" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="6" data-listing-word-count-sort="1019">
+<a href="./reviews/2024-03-07-galit/index.html" class="quarto-grid-link">
+<div class="quarto-grid-item card h-100 card-left">
+<p class="card-img-top">
+<img src="./assets/img/course-1.jpg" class="thumbnail-image card-img" style="height: 150px;">
+</p>
+<div class="card-body post-contents">
+<h5 class="no-anchor card-title listing-title">
+Galit (⭐)
+</h5>
+<div class="card-text listing-description">
+I ventured out to the Michelin Star restaurant named Galit in Lincoln Park to give chef Zach Engel’s take on Middle-Eastern cuisine a try.
 </div>
-<div class="quarto-post image-right" data-index="3" data-listing-date-sort="1709877600000" data-listing-file-modified-sort="1710387111973" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="6" data-listing-word-count-sort="1119">
-<div class="thumbnail">
-<p><a href="./professional_blog/2024-03-08-spaceship-titanic-part-1/index.html" class="no-external"></a></p><a href="./professional_blog/2024-03-08-spaceship-titanic-part-1/index.html" class="no-external">
-<p><img src="./assets/img/titanic.png" class="thumbnail-image"></p>
-</a><p><a href="./professional_blog/2024-03-08-spaceship-titanic-part-1/index.html" class="no-external"></a></p>
+<div class="card-attribution card-text-small justify">
+<div class="listing-author">
+
 </div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="./professional_blog/2024-03-08-spaceship-titanic-part-1/index.html" class="no-external">Spaceship Titanic - Introduction to Bayesian Models - Part 1</a>
-</h3>
-<div class="listing-subtitle">
-<a href="./professional_blog/2024-03-08-spaceship-titanic-part-1/index.html" class="no-external"></a>
-</div>
-<div class="listing-description">
-<a href="./professional_blog/2024-03-08-spaceship-titanic-part-1/index.html" class="no-external">Predict which passengers are transported to an alternate dimension.</a>
-</div>
-</div>
-<div class="metadata">
-<a href="./professional_blog/2024-03-08-spaceship-titanic-part-1/index.html" class="no-external">
 <div class="listing-date">
-Mar 8, 2024
+Mar 7, 2024
+</div>
+</div>
+</div>
 </div>
 </a>
-</div>
 </div>
 </div>
 <div class="listing-no-matching d-none">

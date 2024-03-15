@@ -6,19 +6,19 @@
       version="2.0">
 <channel>
 <title>bites | brews | paws</title>
-<link>https://sinisterrob.github.io/food_review.html</link>
-<atom:link href="https://sinisterrob.github.io/food_review.xml" rel="self" type="application/rss+xml"/>
+<link>https://sinisterrob.github.io/reviews.html</link>
+<atom:link href="https://sinisterrob.github.io/reviews.xml" rel="self" type="application/rss+xml"/>
 <description>A personal take on Chicago food, music, photography, and other topics.</description>
 <image>
 <url>https://sinisterrob.github.io/assets/img/biblical-wine.jpg</url>
 <title>bites | brews | paws</title>
-<link>https://sinisterrob.github.io/food_review.html</link>
+<link>https://sinisterrob.github.io/reviews.html</link>
 </image>
 <generator>quarto-1.4.550</generator>
 <lastBuildDate>Sat, 09 Mar 2024 06:00:00 GMT</lastBuildDate>
 <item>
   <title>Sawada Coffee</title>
-  <link>https://sinisterrob.github.io/food_review/2024-03-09-sawada-coffee/</link>
+  <link>https://sinisterrob.github.io/reviews/2024-03-09-sawada-coffee/</link>
   <description><![CDATA[ 
 
 
@@ -49,7 +49,7 @@
 <p>Either way, I drank my coffee way too quickly - 30 seconds flat - and tried a bite of the chocolate cookie.</p>
 <p><img src="https://sinisterrob.github.io/assets/img/mocha-cookie.jpg" class="img-fluid"></p>
 <p>The cookie was delicious, of course. I don’t know that I can honestly give a thorough review of a cookie, because it’s just chocolate and powdered sugar. All I can say about it was it was extremely sweet and too much to finish in one serving especially since I had just eaten lunch.</p>
-<p>I was also inspired by my <a href="../../food_review/2024-03-07-galit/index.html">Galit Review</a> to get Lion’s Mane mushroom added to my coffee for an extra $3. Normally I get CBD in my coffee whenever it’s an option, but I’ve always heard of Lion’s Mane being a nootropic that supposedly <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10675414/">boosts cognitive performance and memory</a>. I’m not sure if I 100% believe all of the claimed effects, but I do know that mushrooms are healthy for you anyway, so maybe I’ll see some marginal effects!</p>
+<p>I was also inspired by my <a href="../../reviews/2024-03-07-galit/index.html">Galit Review</a> to get Lion’s Mane mushroom added to my coffee for an extra $3. Normally I get CBD in my coffee whenever it’s an option, but I’ve always heard of Lion’s Mane being a nootropic that supposedly <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10675414/">boosts cognitive performance and memory</a>. I’m not sure if I 100% believe all of the claimed effects, but I do know that mushrooms are healthy for you anyway, so maybe I’ll see some marginal effects!</p>
 </section>
 <section id="rating" class="level2">
 <h2 class="anchored" data-anchor-id="rating">Rating</h2>
@@ -61,13 +61,13 @@
 </section>
 
  ]]></description>
-  <guid>https://sinisterrob.github.io/food_review/2024-03-09-sawada-coffee/</guid>
+  <guid>https://sinisterrob.github.io/reviews/2024-03-09-sawada-coffee/</guid>
   <pubDate>Sat, 09 Mar 2024 06:00:00 GMT</pubDate>
   <media:content url="https://sinisterrob.github.io/../../assets/img/mocha-cookie.jpg" medium="image" type="image/jpeg"/>
 </item>
 <item>
   <title>Galit (⭐)</title>
-  <link>https://sinisterrob.github.io/food_review/2024-03-07-galit/</link>
+  <link>https://sinisterrob.github.io/reviews/2024-03-07-galit/</link>
   <description><![CDATA[ 
 
 
@@ -124,7 +124,7 @@
 </section>
 
  ]]></description>
-  <guid>https://sinisterrob.github.io/food_review/2024-03-07-galit/</guid>
+  <guid>https://sinisterrob.github.io/reviews/2024-03-07-galit/</guid>
   <pubDate>Thu, 07 Mar 2024 06:00:00 GMT</pubDate>
   <media:content url="https://sinisterrob.github.io/assets/img/course-1.jpg" medium="image" type="image/jpeg"/>
 </item>

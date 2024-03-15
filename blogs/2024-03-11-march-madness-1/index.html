@@ -155,38 +155,27 @@ gtag('config', 'G-TLJMCG2VMV', { 'anonymize_ip': true});
     </a>
     <ul class="dropdown-menu" aria-labelledby="nav-menu-personal-reviews">    
         <li>
-    <a class="dropdown-item" href="../../food_review.html">
+    <a class="dropdown-item" href="../../food_review.qmd">
  <span class="dropdown-text">Food Reviews</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="../../music_review.html">
+    <a class="dropdown-item" href="../../music_review.qmd">
  <span class="dropdown-text">Music Reviews</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="../../book_review.html">
+    <a class="dropdown-item" href="../../book_review.qmd">
  <span class="dropdown-text">Book Reviews</span></a>
   </li>  
     </ul>
   </li>
-  <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-blogs--analysis" role="button" data-bs-toggle="dropdown" aria-expanded="false">
- <span class="menu-text">Blogs &amp; Analysis</span>
-    </a>
-    <ul class="dropdown-menu" aria-labelledby="nav-menu-blogs--analysis">    
-        <li>
-    <a class="dropdown-item" href="../../chess_analysis.html">
- <span class="dropdown-text">Chess Analysis</span></a>
+  <li class="nav-item">
+    <a class="nav-link" href="../../blogs.html"> 
+<span class="menu-text">Blogs</span></a>
   </li>  
-        <li>
-    <a class="dropdown-item" href="../../personal_blog.html">
- <span class="dropdown-text">Personal Blog</span></a>
+  <li class="nav-item">
+    <a class="nav-link" href="../../reviews.html"> 
+<span class="menu-text">Reviews</span></a>
   </li>  
-        <li>
-    <a class="dropdown-item" href="../../professional_blog.html">
- <span class="dropdown-text">Professional Blog</span></a>
-  </li>  
-    </ul>
-  </li>
   <li class="nav-item">
     <a class="nav-link" href="../../photography.html"> 
 <span class="menu-text">Photography</span></a>
@@ -419,8 +408,8 @@ table {
 <span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a><span class="fu">gc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>          used (Mb) gc trigger  (Mb) max used  (Mb)
-Ncells 1233908 65.9    2064352 110.3  2064352 110.3
-Vcells 2244092 17.2   25132447 191.8 23883991 182.3</code></pre>
+Ncells 1233897 65.9    2064474 110.3  2064474 110.3
+Vcells 2244038 17.2   25132384 191.8 23883279 182.3</code></pre>
 </div>
 </div>
 <p>Just for the heck of it, let’s create an <a href="https://en.wikipedia.org/wiki/XGBoost">XGBoost</a> model. For this competition I think it might be fun to create two or three independent models, and then <a href="https://en.wikipedia.org/wiki/Ensemble_learning#Stacking">stack</a> the predictions together for one final prediction.</p>
