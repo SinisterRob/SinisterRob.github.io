@@ -247,7 +247,7 @@ table {
 <p>Just kidding.</p>
 <p>We’ll do our best with a basic model and see if it can outperform me, a relatively casual college basketball watcher, first.</p>
 <br><br>
-<p>If I could ask for one favor, please <strong><a href="../../blog_subscribe.html">subscribe to my blog</a></strong> if you haven’t already. I would appreciate it and it helps me stay motivated and focused on creating high quality blog content.</p>
+<p>If I could ask for one favor, please <a href="../../blog_subscribe.html"><strong>subscribe to my blog</strong></a> if you haven’t already. I would appreciate it and it helps me stay motivated and focused on creating high quality blog content.</p>
 <section id="loading-data" class="level2">
 <h2 class="anchored" data-anchor-id="loading-data">Loading Data</h2>
 <p>I have always wanted to build a March Madness model, so I will be using the <a href="https://www.kaggle.com/competitions/march-machine-learning-mania-2024/data">March Machine Learning Mania</a> data set on Kaggle to build a predictive model and use it to fill out a bracket once the tournament seeds for 2024 are finalized. This competition has a lot of available data sets provided, including the final scores and stats of every single college basketball game since the 1984-1985 season. That’s intense, and too many fields to work with effective with just a week to go until the tournament. That’s why I’ll be keeping things basic again and starting off with a couple of predictor variables: Seed, Win Ratio, and Average Margin of Victory/Loss.</p>
@@ -389,8 +389,8 @@ table {
 <span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a><span class="fu">gc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>          used (Mb) gc trigger  (Mb) max used  (Mb)
-Ncells 1233881 65.9    2064242 110.3  2064242 110.3
-Vcells 2243963 17.2   25132298 191.8 23884269 182.3</code></pre>
+Ncells 1233879 65.9    2064421 110.3  2064421 110.3
+Vcells 2243924 17.2   25132253 191.8 23883366 182.3</code></pre>
 </div>
 </div>
 <p>Just for the heck of it, let’s create an <a href="https://en.wikipedia.org/wiki/XGBoost">XGBoost</a> model. For this competition I think it might be fun to create two or three independent models, and then <a href="https://en.wikipedia.org/wiki/Ensemble_learning#Stacking">stack</a> the predictions together for one final prediction.</p>
@@ -420,7 +420,7 @@ Vcells 2243963 17.2   25132298 191.8 23884269 182.3</code></pre>
 <span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>p2_binary <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(p2 <span class="sc">&gt;</span> <span class="fl">0.5</span>, <span class="dv">1</span>, <span class="dv">0</span>)</span>
 <span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>accuracy1 <span class="ot">&lt;-</span> <span class="fu">mean</span>(p1_binary <span class="sc">==</span> bb_train<span class="sc">$</span>WinA)</span>
-<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>accuracy2 <span class="ot">&lt;-</span> <span class="fu">mean</span>(p1_binary <span class="sc">==</span> bb_train<span class="sc">$</span>WinA)</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>accuracy2 <span class="ot">&lt;-</span> <span class="fu">mean</span>(p2_binary <span class="sc">==</span> bb_train<span class="sc">$</span>WinA)</span>
 <span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste0</span>(<span class="st">"Accuracy (XGBoost): "</span>, accuracy1))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -428,7 +428,7 @@ Vcells 2243963 17.2   25132298 191.8 23884269 182.3</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste0</span>(<span class="st">"Accuracy (Logistic Regression): "</span>, accuracy2))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] "Accuracy (Logistic Regression): 0.86515707874337"</code></pre>
+<pre><code>[1] "Accuracy (Logistic Regression): 0.705426356589147"</code></pre>
 </div>
 </div>
 <p>It seems like the accuracy of the model is higher than I expected. I’ll keep the model structure how it is for now and see how the predictions turn out.</p>
