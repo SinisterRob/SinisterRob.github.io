@@ -727,7 +727,7 @@ async function loadModel() {
 
 function getPlot(svg, plotWidth, { start, end, left, right, low, high }) {
   const width = Math.max(250, Math.round(plotWidth || 540));
-  const height = width < 380 ? 166 : 206;
+  const height = width < 380 ? 176 : 236;
   const top = 22;
   const bottom = height - 26;
   svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
@@ -1380,10 +1380,9 @@ function showModel(exports) {
   new ResizeObserver(entries => {
     const nextWidth = Math.round(entries[0]?.contentRect.width || 0);
     if (nextWidth > 0 && nextWidth !== lastWidth) {
-      const initialDesktop = lastWidth === 0 && nextWidth >= 480;
       lastWidth = nextWidth;
       plotWidth = nextWidth;
-      if (!initialDesktop) draw();
+      draw();
     }
   }).observe(svg);
 }
