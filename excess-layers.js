@@ -1,8 +1,8 @@
 const GROUND_UP_MEAN = 100_000;
 const MIN_VALUE = 25_000;
-const MAX_LIMIT = 750_000;
+const MAX_LIMIT = 1_000_000;
 const LIMIT_STEP = 25_000;
-const PDF_MAX = 800_000;
+const PDF_MAX = 1_000_000;
 const TAILS = ['Lighter', 'Moderate', 'Heavier'];
 const TAIL_SIGMAS = ['σ = 0.55', 'σ = 1.00', 'σ = 1.55'];
 
@@ -18,7 +18,13 @@ const percent = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 1,
 });
 
-const compactDollars = value => `$${Math.round(value / 1000)}k`;
+const compactDollars = value => {
+  if (value >= 1_000_000) {
+    const m = value / 1_000_000;
+    return `$${Number.isInteger(m) ? m : m.toFixed(2).replace(/0$/, '')}M`;
+  }
+  return `$${Math.round(value / 1000)}k`;
+};
 const ratio = value => `${value.toFixed(2)}×`;
 const byId = id => document.getElementById(id);
 
@@ -530,7 +536,7 @@ function initCommandPalette() {
     { group: 'Navigate', label: 'Independent Research', sub: '#interests', keywords: 'reserving quant bayesian', run: () => jumpTo('#interests', 'interests') },
     { group: 'Navigate', label: 'Credentials & Background', sub: '#about', keywords: 'fcas acas ut austin cas mentor', run: () => jumpTo('#about', 'about') },
     { group: 'Navigate', label: 'Contact', sub: '#contact', keywords: 'email linkedin github connect', run: () => jumpTo('#contact', 'contact') },
-    { group: 'Lab Presets', label: 'Load High Excess Scenario', sub: '$500k xs $250k · σ 1.55', keywords: 'heavy tail high excess preset lab', run: () => runLabPreset(250_000, 750_000, 2, 'excess') },
+    { group: 'Lab Presets', label: 'Load High Excess Scenario', sub: '$750k xs $250k · σ 1.55', keywords: 'heavy tail high excess preset lab 1m', run: () => runLabPreset(250_000, 1_000_000, 2, 'excess') },
     { group: 'Lab Presets', label: 'Load Working Layer Scenario', sub: '$200k xs $50k · σ 0.55', keywords: 'light tail working layer preset lab', run: () => runLabPreset(50_000, 250_000, 0, 'working') },
     { group: 'Lab Presets', label: 'Toggle ILF Curve / Severity PDF', sub: 'Chart view', keywords: 'pdf ilf chart view', run: () => toggleLabView() },
     { group: 'Actions', label: 'Copy Email Address', sub: 'robertdjurgens@gmail.com', keywords: 'mail clipboard contact', run: () => copyEmailFn() },
@@ -676,7 +682,7 @@ async function loadModel() {
 
 function getPlot(svg, plotWidth, { start, end, left, right, low, high }) {
   const width = Math.max(250, Math.round(plotWidth || 540));
-  const height = width < 380 ? 152 : 172;
+  const height = width < 380 ? 166 : 206;
   const top = 22;
   const bottom = height - 26;
   svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
@@ -694,14 +700,15 @@ function getPlot(svg, plotWidth, { start, end, left, right, low, high }) {
   };
 }
 
-function axes(plot, xTicks, yTicks = []) {
+function axes(plot, xTicks, yTicks = [], pivotValue = null) {
   const { x, y, left, right, bottom } = plot;
   const grid = yTicks
-    .map(
-      value => `
-      <line class="chart-grid" x1="${left}" y1="${y(value).toFixed(1)}" x2="${right}" y2="${y(value).toFixed(1)}"/>
-      <text class="chart-text" x="${left - 6}" y="${(y(value) + 4).toFixed(1)}" text-anchor="end">${ratio(value)}</text>`,
-    )
+    .map(value => {
+      const isPivot = pivotValue !== null && Math.abs(value - pivotValue) < 1e-6;
+      return `
+      <line class="${isPivot ? 'chart-pivot-line' : 'chart-grid'}" x1="${left}" y1="${y(value).toFixed(1)}" x2="${right}" y2="${y(value).toFixed(1)}"/>
+      <text class="chart-text${isPivot ? ' is-attachment' : ''}" x="${left - 6}" y="${(y(value) + 4).toFixed(1)}" text-anchor="end">${ratio(value)}</text>`;
+    })
     .join('');
 
   const labels = xTicks
@@ -725,45 +732,53 @@ function chartLabels(title, description) {
 }
 
 function ilfAxisScale(maxIlf) {
-  if (maxIlf <= 2.02) return { high: 2.05, ticks: [1, 1.25, 1.5, 1.75, 2] };
-  if (maxIlf <= 2.52) return { high: 2.58, ticks: [1, 1.5, 2, 2.5] };
-  if (maxIlf <= 3.1) return { high: 3.15, ticks: [1, 1.5, 2, 2.5, 3] };
-  const topTick = Math.ceil(maxIlf * 2) / 2;
-  const step = topTick <= 4 ? 1 : Math.ceil((topTick - 1) / 3);
-  const ticks = [1];
-  for (let v = 1 + step; v <= topTick + 0.01; v += step) ticks.push(v);
-  return { high: Math.max(maxIlf * 1.06, topTick + 0.08), ticks };
+  if (maxIlf <= 1.52) return { high: 1.6, ticks: [0, 0.5, 1, 1.5] };
+  if (maxIlf <= 2.04) return { high: 2.12, ticks: [0, 0.5, 1, 1.5, 2] };
+  if (maxIlf <= 3.05) return { high: 3.16, ticks: [0, 1, 2, 3] };
+  const topTick = Math.ceil(maxIlf);
+  const step = topTick <= 4 ? 1 : Math.ceil(topTick / 4);
+  const ticks = [0, 1];
+  for (let v = step > 1 ? step : 2; v <= topTick; v += step) {
+    if (v > 1) ticks.push(v);
+  }
+  return { high: Math.max(maxIlf * 1.06, topTick + 0.12), ticks };
 }
+
+const ILF_GRID = (() => {
+  const g = [0, 5_000, 10_000, 15_000, 25_000, 40_000, 50_000, 75_000];
+  for (let l = 100_000; l <= MAX_LIMIT; l += LIMIT_STEP) g.push(l);
+  return g;
+})();
 
 function renderIlf(svg, plotWidth, lev, tail, attach, limit, ilf) {
   const narrow = (plotWidth || 540) < 420;
   const curves = TAILS.map((_, tailIndex) => {
     const base = Math.max(1e-6, lev(tailIndex, attach));
-    const pts = [];
-    for (let l = attach; l <= MAX_LIMIT; l += LIMIT_STEP) {
-      pts.push([l, lev(tailIndex, l) / base]);
-    }
-    return pts;
+    return ILF_GRID.map(l => [l, lev(tailIndex, l) / base]);
   });
   const maxIlf = Math.max(...curves.map(pts => pts.at(-1)[1]), ilf);
   const { high, ticks: yTicks } = ilfAxisScale(maxIlf);
 
   const plot = getPlot(svg, plotWidth, {
-    start: MIN_VALUE,
+    start: 0,
     end: MAX_LIMIT,
     left: 44,
     right: narrow ? 12 : 66,
-    low: 1,
+    low: 0,
     high,
   });
-  const { x, y, top, bottom, right } = plot;
+  const { x, y, top, bottom, left, right } = plot;
   const xTicks = narrow
-    ? [25_000, 350_000, 750_000]
-    : [25_000, 200_000, 400_000, 575_000, 750_000];
+    ? [0, 500_000, MAX_LIMIT]
+    : [0, 250_000, 500_000, 750_000, MAX_LIMIT];
 
   const comparison = curves
     .map((points, index) => (index === tail ? '' : `<path d="${path(points, x, y)}" class="chart-curve"/>`))
     .join('');
+
+  const activeFull = curves[tail];
+  const activePrimary = activeFull.filter(([v]) => v <= attach);
+  const activeExcess = activeFull.filter(([v]) => v >= attach);
 
   const labels = !narrow
     ? (() => {
@@ -771,7 +786,6 @@ function renderIlf(svg, plotWidth, lev, tail, attach, limit, ilf) {
           index,
           yPos: y(points.at(-1)[1]) + 4,
         }));
-        // Prevent right-edge curve labels from colliding at high attachments
         items.sort((a, b) => a.yPos - b.yPos);
         for (let i = 1; i < items.length; i++) {
           if (items[i].yPos - items[i - 1].yPos < 13) {
@@ -789,26 +803,29 @@ function renderIlf(svg, plotWidth, lev, tail, attach, limit, ilf) {
 
   const xAtt = x(attach);
   const xLim = x(limit);
+  const yPivot = y(1);
   const markerY = y(ilf);
   const markerLabel = `${compactDollars(limit)} · ${ratio(ilf)}`;
   const halfW = (markerLabel.length * 6.5) / 2;
-  const labelX = Math.max(plot.left + halfW, Math.min(xLim, right - halfW));
+  const labelX = Math.max(left + halfW, Math.min(xLim, right - halfW));
 
   const attText = compactDollars(attach);
   const attHalfW = (attText.length * 6.5) / 2;
-  const attLabelX = Math.max(plot.left + attHalfW, Math.min(xAtt, right - attHalfW));
+  const attLabelX = Math.max(left + attHalfW, Math.min(xAtt, right - attHalfW));
   const showAttLabel = Math.abs(labelX - attLabelX) > halfW + attHalfW + 8;
 
   svg.innerHTML = `
-    ${chartLabels('Increased limits factor by coverage limit', `The selected ${TAILS[tail].toLowerCase()} tail has an ILF of ${ilf.toFixed(2)} for ${compactDollars(limit - attach)} excess of ${compactDollars(attach)}.`)}
-    ${axes(plot, xTicks, yTicks)}
+    ${chartLabels('Increased limits factor by coverage limit', `The selected ${TAILS[tail].toLowerCase()} tail has an ILF of ${ilf.toFixed(2)} for ${compactDollars(limit - attach)} excess of ${compactDollars(attach)} across a $0 to $1M limit range.`)}
+    ${axes(plot, xTicks, yTicks, 1)}
+    <rect class="chart-primary-band" x="${left.toFixed(1)}" y="${top}" width="${Math.max(0, xAtt - left).toFixed(1)}" height="${(bottom - top).toFixed(1)}"/>
     <rect class="chart-layer-band" x="${xAtt.toFixed(1)}" y="${top}" width="${Math.max(0, xLim - xAtt).toFixed(1)}" height="${(bottom - top).toFixed(1)}"/>
     <line class="chart-marker attachment" x1="${xAtt.toFixed(1)}" y1="${top}" x2="${xAtt.toFixed(1)}" y2="${bottom}"/>
     <line class="chart-marker" x1="${xLim.toFixed(1)}" y1="${top}" x2="${xLim.toFixed(1)}" y2="${bottom}"/>
     ${comparison}
-    <path d="${path(curves[tail], x, y)}" class="chart-curve is-active"/>
+    <path d="${path(activePrimary, x, y)}" class="chart-curve is-primary"/>
+    <path d="${path(activeExcess, x, y)}" class="chart-curve is-active"/>
     ${labels}
-    <circle class="chart-dot-attach" cx="${xAtt.toFixed(1)}" cy="${bottom.toFixed(1)}" r="3.6"/>
+    <circle class="chart-dot-attach" cx="${xAtt.toFixed(1)}" cy="${yPivot.toFixed(1)}" r="3.8"/>
     <circle class="chart-dot-ring" cx="${xLim.toFixed(1)}" cy="${markerY.toFixed(1)}" r="8.5"/>
     <circle class="chart-dot" cx="${xLim.toFixed(1)}" cy="${markerY.toFixed(1)}" r="4.4"/>
     ${showAttLabel ? `<text class="chart-text is-attachment" x="${attLabelX.toFixed(1)}" y="14" text-anchor="middle">${attText}</text>` : ''}
@@ -828,8 +845,8 @@ function renderSeverity(svg, plotWidth, distributions, tailPeaks, density, tail,
   });
   const { x, y, top, bottom, left, right } = plot;
   const ticks = narrow
-    ? [0, 400_000, PDF_MAX]
-    : [0, 200_000, 400_000, 600_000, PDF_MAX];
+    ? [0, 500_000, PDF_MAX]
+    : [0, 250_000, 500_000, 750_000, PDF_MAX];
   const points = distributions[tail];
 
   function area(from, to) {
@@ -912,7 +929,7 @@ function showModel(exports) {
   let view = 'ilf';
   let ilf = 1 + expectedLayer(1, 100_000, 350_000, 1) / expectedLayer(1, 100_000, 350_000, 0);
   let plotWidth = 540;
-  let lastPlot = { width: 540, left: 44, right: 474, start: MIN_VALUE, end: MAX_LIMIT };
+  let lastPlot = { width: 540, left: 44, right: 474, start: 0, end: MAX_LIMIT };
   const simPrimaryCache = new Map();
   const simExcessCache = new Map();
   let announcement;

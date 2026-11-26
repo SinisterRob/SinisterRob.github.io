@@ -128,7 +128,7 @@ mod tests {
                 assert_eq!(expected_layer(tail, attach, attach, 1), 0.0);
                 let mut previous_upper = 0.0;
                 let start = (attach as u32) + 25_000;
-                for top in (start..=750_000).step_by(25_000) {
+                for top in (start..=1_000_000).step_by(25_000) {
                     let upper = expected_layer(tail, attach, f64::from(top), 1);
                     assert!(upper > previous_upper);
                     assert!(lower + upper <= GROUND_UP_MEAN + 1e-6);
@@ -145,7 +145,7 @@ mod tests {
     fn fixed_seed_simulation_agrees_with_limited_expectations() {
         for tail in 0..=2 {
             for attach in [50_000, 100_000, 250_000] {
-                for top in (attach + 50_000..=750_000).step_by(100_000) {
+                for top in (attach + 50_000..=1_000_000).step_by(125_000) {
                     for layer in 0..=1 {
                         let exact = expected_layer(tail, f64::from(attach), f64::from(top), layer);
                         let simulated =

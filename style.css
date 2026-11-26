@@ -1137,6 +1137,13 @@ code {
   stroke-width: 1;
 }
 
+.chart-pivot-line {
+  stroke: var(--layer-primary);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+  opacity: 0.45;
+}
+
 .chart-baseline {
   stroke: var(--line-strong);
   stroke-width: 1;
@@ -1145,9 +1152,15 @@ code {
 .chart-curve {
   fill: none;
   stroke: var(--chart-line);
-  stroke-width: 1.3;
+  stroke-width: 1.25;
   stroke-dasharray: 4 4;
   transition: opacity 0.18s ease;
+}
+
+.chart-curve.is-primary {
+  stroke: var(--layer-primary);
+  stroke-width: 2.3;
+  stroke-dasharray: none;
 }
 
 .chart-curve.is-active {
@@ -1166,9 +1179,16 @@ code {
   stroke: var(--layer-primary);
 }
 
+.chart-primary-band {
+  fill: var(--layer-primary-soft);
+  opacity: 0.45;
+  transition: opacity 0.16s ease;
+}
+
 .chart-layer-band {
   fill: var(--accent-soft);
-  opacity: 0.65;
+  opacity: 0.72;
+  transition: opacity 0.16s ease;
 }
 
 .chart-dot-attach {
@@ -1215,10 +1235,14 @@ code {
 
 /* Cross-hover highlighting between Ledger, Share Bar & Chart */
 .lab-shell[data-hover-layer="primary"] .area-excess,
+.lab-shell[data-hover-layer="primary"] .chart-layer-band,
 .lab-shell[data-hover-layer="excess"] .area-primary,
+.lab-shell[data-hover-layer="excess"] .chart-primary-band,
 .lab-shell[data-hover-layer="above"] .area-primary,
-.lab-shell[data-hover-layer="above"] .area-excess {
-  opacity: 0.28;
+.lab-shell[data-hover-layer="above"] .area-excess,
+.lab-shell[data-hover-layer="above"] .chart-primary-band,
+.lab-shell[data-hover-layer="above"] .chart-layer-band {
+  opacity: 0.18;
 }
 
 .lab-shell[data-hover-layer="primary"] .share-seg:not(.seg-primary),

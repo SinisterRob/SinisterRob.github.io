@@ -69,9 +69,9 @@
     <circle cx="120" cy="109" r="6.5" fill="#9e3a12" stroke="#fdfcf9" stroke-width="2.5"/>
     <text x="120" y="6" text-anchor="middle" fill="#9e3a12" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" font-weight="600">$350k · 1.48×</text>
 
-    <text x="0" y="202" fill="#525b66" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11.5">$100k</text>
-    <text x="140" y="202" text-anchor="middle" fill="#525b66" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11.5">$400k</text>
-    <text x="280" y="202" text-anchor="end" fill="#525b66" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11.5">$750k</text>
+    <text x="0" y="202" fill="#525b66" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11.5">$0</text>
+    <text x="140" y="202" text-anchor="middle" fill="#525b66" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11.5">$500k</text>
+    <text x="280" y="202" text-anchor="end" fill="#525b66" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11.5">$1M</text>
   </g>
 
   <!-- Loss Share Strip inside Card -->
