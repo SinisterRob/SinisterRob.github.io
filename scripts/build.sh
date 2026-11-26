@@ -33,15 +33,18 @@ node -e '
 const fs = require("fs");
 WebAssembly.instantiate(fs.readFileSync("excess_layers.wasm")).then(({ instance }) => {
   const e = instance.exports;
-  for (const fn of ["expected_layer", "simulated_layer", "exceedance_prob", "severity_pdf"]) {
+  for (const fn of ["limited_expected_value", "expected_layer", "simulated_layer", "exceedance_prob", "severity_pdf"]) {
     if (typeof e[fn] !== "function") throw new Error("Missing export: " + fn);
   }
-  const primary = e.expected_layer(1, 350000, 0);
-  const excess = e.expected_layer(1, 350000, 1);
+  const primary = e.expected_layer(1, 100000, 350000, 0);
+  const excess = e.expected_layer(1, 100000, 350000, 1);
   if (Math.abs(primary - 61707.51) > 0.05 || Math.abs(excess - 29650.34) > 0.05) {
     throw new Error(`Unexpected default values: Primary=${primary}, Excess=${excess}`);
   }
-  console.log(`    Verified default Moderate @ $350k: Primary=$${primary.toFixed(2)}, Excess=$${excess.toFixed(2)}, ILF=${(1 + excess / primary).toFixed(2)}x`);
+  const pAtt = e.exceedance_prob(1, 100000);
+  const avgHit = excess / pAtt;
+  const layerRate = (excess / 250000) * 100;
+  console.log(`    Verified Moderate $250k xs $100k: Primary=$${primary.toFixed(2)}, Excess=$${excess.toFixed(2)}, ILF=${(1 + excess / primary).toFixed(2)}x, LayerRate=${layerRate.toFixed(2)}%, AvgHit=$${avgHit.toFixed(2)}`);
 });
 '
 

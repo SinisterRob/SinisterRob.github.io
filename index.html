@@ -364,23 +364,31 @@
             <div class="lab-presets" role="group" aria-label="Illustrative layer scenarios">
               <span class="mono-label preset-heading">Scenarios</span>
               <div class="preset-chips">
-                <button type="button" class="preset-chip" data-preset="working" data-preset-limit="250000" data-preset-tail="0" aria-pressed="false">Working layer <span>$250k · σ 0.55</span></button>
-                <button type="button" class="preset-chip" data-preset="baseline" data-preset-limit="350000" data-preset-tail="1" aria-pressed="true">Baseline excess <span>$350k · σ 1.00</span></button>
-                <button type="button" class="preset-chip" data-preset="excess" data-preset-limit="650000" data-preset-tail="2" aria-pressed="false">Severe tail <span>$650k · σ 1.55</span></button>
+                <button type="button" class="preset-chip" data-preset="working" data-preset-attach="50000" data-preset-limit="250000" data-preset-tail="0" aria-pressed="false">Working layer <span>$200k xs $50k · σ 0.55</span></button>
+                <button type="button" class="preset-chip" data-preset="baseline" data-preset-attach="100000" data-preset-limit="350000" data-preset-tail="1" aria-pressed="true">Baseline excess <span>$250k xs $100k · σ 1.00</span></button>
+                <button type="button" class="preset-chip" data-preset="excess" data-preset-attach="250000" data-preset-limit="750000" data-preset-tail="2" aria-pressed="false">High excess <span>$500k xs $250k · σ 1.55</span></button>
               </div>
             </div>
 
             <div class="lab-controls-bar">
               <div class="control-group slider-group">
                 <div class="range-label">
-                  <label for="layer-top">Coverage limit <span class="label-hint">(attaches at $100k)</span></label>
-                  <span class="mono-readout" id="top-value">$350,000</span>
+                  <span class="control-label">Excess layer <span class="layer-shorthand" id="layer-shorthand">$250k xs $100k</span></span>
+                  <span class="range-pair" aria-live="off">
+                    <span class="attach-readout" id="attach-value" title="Attachment point">$100k</span>
+                    <span class="range-sep" aria-hidden="true">→</span>
+                    <span class="limit-readout" id="top-value" title="Coverage limit">$350k</span>
+                  </span>
                 </div>
-                <input id="layer-top" type="range" min="150000" max="750000" step="25000" value="350000" style="--slider-pct: 33.33%" aria-valuetext="$350,000">
+                <div class="dual-range" id="dual-range" style="--attach-pct: 10.34%; --limit-pct: 44.83%">
+                  <div class="dual-range-track" aria-hidden="true"></div>
+                  <input id="layer-attach" class="range-input is-attach" type="range" min="25000" max="750000" step="25000" value="100000" aria-label="Attachment point" aria-valuetext="$100,000">
+                  <input id="layer-top" class="range-input is-limit" type="range" min="25000" max="750000" step="25000" value="350000" aria-label="Coverage limit" aria-valuetext="$350,000">
+                </div>
                 <div class="range-ends">
-                  <button type="button" class="tick-btn" data-limit-jump="150000">$150k</button>
-                  <button type="button" class="tick-btn" data-limit-jump="350000">$350k</button>
-                  <button type="button" class="tick-btn" data-limit-jump="550000">$550k</button>
+                  <button type="button" class="tick-btn" data-limit-jump="25000">$25k</button>
+                  <button type="button" class="tick-btn" data-limit-jump="250000">$250k</button>
+                  <button type="button" class="tick-btn" data-limit-jump="500000">$500k</button>
                   <button type="button" class="tick-btn" data-limit-jump="750000">$750k</button>
                 </div>
               </div>
@@ -403,7 +411,7 @@
                 <div class="chart-panel-head">
                   <div class="chart-head-left">
                     <span class="mono-label" id="chart-title-label">ILF Curve · $100k Base</span>
-                    <span class="chart-scrub-hint">Drag plot to sweep</span>
+                    <span class="chart-scrub-hint">Drag handles on plot</span>
                   </div>
                   <div class="segmented compact" role="group" aria-label="Chart view">
                     <button type="button" data-chart-view="ilf" aria-pressed="true">ILF</button>
@@ -412,7 +420,7 @@
                 </div>
                 <svg id="severity-chart" class="severity-chart" viewBox="0 0 540 172" role="img" aria-label="Interactive increased limits factor and severity distribution chart">
                   <title id="chart-title">Increased limits factor by coverage limit</title>
-                  <desc id="chart-description">The selected moderate tail has an ILF of 1.48 at a $350,000 limit relative to a $100,000 basic limit.</desc>
+                  <desc id="chart-description">The selected moderate tail has an ILF of 1.48 at a $350,000 limit relative to a $100,000 attachment.</desc>
                   <line class="chart-grid" x1="44" y1="146.0" x2="474" y2="146.0"/>
                   <text class="chart-text" x="38" y="150.0" text-anchor="end">1.00×</text>
                   <line class="chart-grid" x1="44" y1="116.5" x2="474" y2="116.5"/>
@@ -423,22 +431,26 @@
                   <text class="chart-text" x="38" y="61.4" text-anchor="end">1.75×</text>
                   <line class="chart-grid" x1="44" y1="27.9" x2="474" y2="27.9"/>
                   <text class="chart-text" x="38" y="31.9" text-anchor="end">2.00×</text>
+                  <rect class="chart-layer-band" x="88.5" y="22" width="148.3" height="124"/>
                   <line class="chart-baseline" x1="44" y1="146.0" x2="474" y2="146.0"/>
-                  <text class="chart-text" x="44.0" y="164" text-anchor="start">$100k</text>
-                  <text class="chart-text" x="143.2" y="164" text-anchor="middle">$250k</text>
-                  <text class="chart-text" x="242.5" y="164" text-anchor="middle">$400k</text>
-                  <text class="chart-text" x="341.7" y="164" text-anchor="middle">$550k</text>
+                  <text class="chart-text" x="44.0" y="164" text-anchor="start">$25k</text>
+                  <text class="chart-text" x="147.8" y="164" text-anchor="middle">$200k</text>
+                  <text class="chart-text" x="266.4" y="164" text-anchor="middle">$400k</text>
+                  <text class="chart-text" x="370.2" y="164" text-anchor="middle">$575k</text>
                   <text class="chart-text" x="474.0" y="164" text-anchor="end">$750k</text>
-                  <line class="chart-marker" x1="209.4" y1="22" x2="209.4" y2="146"/>
-                  <path d="M 44.0 146.0 L 60.5 134.2 L 77.1 126.7 L 93.6 121.9 L 110.2 119.0 L 126.7 117.1 L 143.2 115.9 L 159.8 115.1 L 176.3 114.5 L 192.8 114.2 L 209.4 113.9 L 225.9 113.7 L 242.5 113.6 L 259.0 113.5 L 275.5 113.5 L 292.1 113.4 L 308.6 113.4 L 325.2 113.4 L 341.7 113.3 L 358.2 113.3 L 374.8 113.3 L 391.3 113.3 L 407.8 113.3 L 424.4 113.3 L 440.9 113.3 L 457.5 113.3 L 474.0 113.3" class="chart-curve"/>
-                  <path d="M 44.0 146.0 L 60.5 132.7 L 77.1 121.7 L 93.6 112.3 L 110.2 104.3 L 126.7 97.3 L 143.2 91.1 L 159.8 85.6 L 176.3 80.7 L 192.8 76.3 L 209.4 72.3 L 225.9 68.7 L 242.5 65.4 L 259.0 62.3 L 275.5 59.5 L 292.1 56.8 L 308.6 54.4 L 325.2 52.1 L 341.7 50.0 L 358.2 48.0 L 374.8 46.1 L 391.3 44.4 L 407.8 42.7 L 424.4 41.2 L 440.9 39.8 L 457.5 38.4 L 474.0 37.1" class="chart-curve"/>
-                  <path d="M 44.0 146.0 L 60.5 133.1 L 77.1 123.2 L 93.6 115.4 L 110.2 109.2 L 126.7 104.1 L 143.2 100.0 L 159.8 96.6 L 176.3 93.7 L 192.8 91.3 L 209.4 89.3 L 225.9 87.5 L 242.5 86.0 L 259.0 84.7 L 275.5 83.6 L 292.1 82.6 L 308.6 81.7 L 325.2 80.9 L 341.7 80.2 L 358.2 79.5 L 374.8 79.0 L 391.3 78.5 L 407.8 78.0 L 424.4 77.6 L 440.9 77.2 L 457.5 76.9 L 474.0 76.6" class="chart-curve is-active"/>
+                  <line class="chart-marker attachment" x1="88.5" y1="22" x2="88.5" y2="146"/>
+                  <line class="chart-marker" x1="236.8" y1="22" x2="236.8" y2="146"/>
+                  <path d="M 88.5 146.0 L 103.3 134.1 L 118.1 126.7 L 133.0 122.0 L 147.8 119.0 L 162.6 117.1 L 177.4 115.9 L 192.3 115.1 L 207.1 114.5 L 221.9 114.2 L 236.8 113.9 L 251.6 113.8 L 266.4 113.6 L 281.2 113.6 L 296.1 113.5 L 310.9 113.5 L 325.7 113.4 L 340.6 113.4 L 355.4 113.4 L 370.2 113.4 L 385.0 113.4 L 399.9 113.4 L 414.7 113.3 L 429.5 113.3 L 444.3 113.3 L 459.2 113.3 L 474.0 113.3" class="chart-curve"/>
+                  <path d="M 88.5 146.0 L 103.3 132.7 L 118.1 121.6 L 133.0 112.3 L 147.8 104.3 L 162.6 97.3 L 177.4 91.1 L 192.3 85.7 L 207.1 80.8 L 221.9 76.4 L 236.8 72.4 L 251.6 68.7 L 266.4 65.4 L 281.2 62.3 L 296.1 59.5 L 310.9 56.8 L 325.7 54.4 L 340.6 52.1 L 355.4 50.0 L 370.2 48.0 L 385.0 46.2 L 399.9 44.4 L 414.7 42.8 L 429.5 41.2 L 444.3 39.8 L 459.2 38.4 L 474.0 37.1" class="chart-curve"/>
+                  <path d="M 88.5 146.0 L 103.3 133.1 L 118.1 123.2 L 133.0 115.4 L 147.8 109.2 L 162.6 104.2 L 177.4 100.0 L 192.3 96.6 L 207.1 93.7 L 221.9 91.3 L 236.8 89.3 L 251.6 87.5 L 266.4 86.0 L 281.2 84.6 L 296.1 83.5 L 310.9 82.5 L 325.7 81.6 L 340.6 80.8 L 355.4 80.1 L 370.2 79.5 L 385.0 78.9 L 399.9 78.4 L 414.7 78.0 L 429.5 77.6 L 444.3 77.2 L 459.2 76.9 L 474.0 76.6" class="chart-curve is-active"/>
                   <text class="chart-text" x="482" y="117.3">Lighter</text>
                   <text class="chart-text is-active" x="482" y="80.6">Moderate</text>
                   <text class="chart-text" x="482" y="41.1">Heavier</text>
-                  <circle class="chart-dot-ring" cx="209.4" cy="89.3" r="8.5"/>
-                  <circle class="chart-dot" cx="209.4" cy="89.3" r="4.4"/>
-                  <text class="chart-text is-active" x="209.4" y="14" text-anchor="middle">$350k · 1.48×</text>
+                  <circle class="chart-dot-attach" cx="88.5" cy="146.0" r="3.6"/>
+                  <circle class="chart-dot-ring" cx="236.8" cy="89.3" r="8.5"/>
+                  <circle class="chart-dot" cx="236.8" cy="89.3" r="4.4"/>
+                  <text class="chart-text is-attachment" x="88.5" y="14" text-anchor="middle">$100k</text>
+                  <text class="chart-text is-active" x="236.8" y="14" text-anchor="middle">$350k · 1.48×</text>
                 </svg>
               </div>
 
@@ -480,26 +492,32 @@
                   <div class="share-seg seg-above" id="bar-above" data-layer-seg="above" style="width: 8.64%"></div>
                 </div>
 
-                <dl class="stat-strip">
-                  <div class="stat-cell is-accent">
-                    <dt>ILF <span>L(x)/L(100k)</span></dt>
+                <dl class="kpi-strip">
+                  <div class="kpi-tile is-accent">
+                    <dt>ILF <span id="ilf-sub">$350k / $100k</span></dt>
                     <dd id="ilf">1.48×</dd>
                   </div>
-                  <div class="stat-cell">
-                    <dt>Relativity <span>Excess/Pri.</span></dt>
-                    <dd id="relativity">48.0%</dd>
+                  <div class="kpi-tile">
+                    <dt>Layer Burn <span id="burn-sub">of $250k width</span></dt>
+                    <dd id="layer-rate">11.9%</dd>
                   </div>
-                  <div class="stat-cell">
-                    <dt>Rust MC <span>65k</span></dt>
-                    <dd id="sim-ilf" title="65,536-draw fixed-seed Rust MC: Primary $61,650, Excess $29,747 (+$96 vs. closed-form)">1.48× <small id="sim-diff">+$96</small></dd>
+                  <div class="kpi-tile">
+                    <dt>Avg Attached <span id="avg-hit-sub">given X&gt;$100k</span></dt>
+                    <dd id="avg-hit">$96,100</dd>
                   </div>
                 </dl>
+
+                <div class="mc-verify" id="mc-verify" title="65,536-draw fixed-seed Rust MC: Primary $61,650, Excess $29,747 (+$96 vs. closed-form)">
+                  <span class="mc-dot" aria-hidden="true"></span>
+                  <span class="mc-label">Rust 65k MC</span>
+                  <span class="mc-value" id="sim-check">Excess $29,747 <small>(+$96 · +0.3%)</small></span>
+                </div>
               </div>
             </div>
 
             <div class="lab-takeaway" id="lab-takeaway">
               <span class="takeaway-tag">Reading</span>
-              <p id="takeaway-text">Under a <strong>moderate tail</strong> (σ = 1.00) at a <strong>$350k</strong> limit, <strong>29.7%</strong> of expected loss sits in the excess layer and <strong>4.0%</strong> of claims pierce above—giving an ILF of <strong>1.48×</strong>.</p>
+              <p id="takeaway-text">For <strong>$250k xs $100k</strong> under a <strong>moderate tail</strong> (σ = 1.00), <strong>29.7%</strong> of expected loss sits in the excess layer and <strong>4.0%</strong> of claims pierce the cap—an ILF of <strong>1.48×</strong>.</p>
             </div>
             <p class="sr-only" id="results-summary" role="status"></p>
           </div>

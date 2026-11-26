@@ -1,6 +1,5 @@
 const GROUND_UP_MEAN = 100_000;
-const ATTACHMENT = 100_000;
-const MIN_LIMIT = 150_000;
+const MIN_VALUE = 25_000;
 const MAX_LIMIT = 750_000;
 const LIMIT_STEP = 25_000;
 const PDF_MAX = 800_000;
@@ -531,8 +530,8 @@ function initCommandPalette() {
     { group: 'Navigate', label: 'Independent Research', sub: '#interests', keywords: 'reserving quant bayesian', run: () => jumpTo('#interests', 'interests') },
     { group: 'Navigate', label: 'Credentials & Background', sub: '#about', keywords: 'fcas acas ut austin cas mentor', run: () => jumpTo('#about', 'about') },
     { group: 'Navigate', label: 'Contact', sub: '#contact', keywords: 'email linkedin github connect', run: () => jumpTo('#contact', 'contact') },
-    { group: 'Lab Presets', label: 'Load Severe Tail Scenario', sub: '$650k · σ 1.55', keywords: 'heavy tail preset lab', run: () => runLabPreset(650_000, 2, 'excess') },
-    { group: 'Lab Presets', label: 'Load Working Layer Scenario', sub: '$250k · σ 0.55', keywords: 'light tail preset lab', run: () => runLabPreset(250_000, 0, 'working') },
+    { group: 'Lab Presets', label: 'Load High Excess Scenario', sub: '$500k xs $250k · σ 1.55', keywords: 'heavy tail high excess preset lab', run: () => runLabPreset(250_000, 750_000, 2, 'excess') },
+    { group: 'Lab Presets', label: 'Load Working Layer Scenario', sub: '$200k xs $50k · σ 0.55', keywords: 'light tail working layer preset lab', run: () => runLabPreset(50_000, 250_000, 0, 'working') },
     { group: 'Lab Presets', label: 'Toggle ILF Curve / Severity PDF', sub: 'Chart view', keywords: 'pdf ilf chart view', run: () => toggleLabView() },
     { group: 'Actions', label: 'Copy Email Address', sub: 'robertdjurgens@gmail.com', keywords: 'mail clipboard contact', run: () => copyEmailFn() },
     { group: 'Actions', label: 'Switch Light / Dark Theme', sub: 'Appearance', keywords: 'dark light mode theme', run: () => toggleThemeFn() },
@@ -554,9 +553,9 @@ function initCommandPalette() {
     else window.location.hash = hash;
   }
 
-  function runLabPreset(limit, tailIndex, name) {
+  function runLabPreset(attach, limit, tailIndex, name) {
     if (labController) {
-      labController.applyPreset(limit, tailIndex, name, 'command_palette');
+      labController.applyPreset(attach, limit, tailIndex, name, 'command_palette');
     }
     byId('lab')?.scrollIntoView({ behavior: scrollBehavior() });
   }
@@ -725,54 +724,99 @@ function chartLabels(title, description) {
   return `<title id="chart-title">${title}</title><desc id="chart-description">${description}</desc>`;
 }
 
-function renderIlf(svg, plotWidth, curves, tail, limit, ilf) {
+function ilfAxisScale(maxIlf) {
+  if (maxIlf <= 2.02) return { high: 2.05, ticks: [1, 1.25, 1.5, 1.75, 2] };
+  if (maxIlf <= 2.52) return { high: 2.58, ticks: [1, 1.5, 2, 2.5] };
+  if (maxIlf <= 3.1) return { high: 3.15, ticks: [1, 1.5, 2, 2.5, 3] };
+  const topTick = Math.ceil(maxIlf * 2) / 2;
+  const step = topTick <= 4 ? 1 : Math.ceil((topTick - 1) / 3);
+  const ticks = [1];
+  for (let v = 1 + step; v <= topTick + 0.01; v += step) ticks.push(v);
+  return { high: Math.max(maxIlf * 1.06, topTick + 0.08), ticks };
+}
+
+function renderIlf(svg, plotWidth, lev, tail, attach, limit, ilf) {
   const narrow = (plotWidth || 540) < 420;
+  const curves = TAILS.map((_, tailIndex) => {
+    const base = Math.max(1e-6, lev(tailIndex, attach));
+    const pts = [];
+    for (let l = attach; l <= MAX_LIMIT; l += LIMIT_STEP) {
+      pts.push([l, lev(tailIndex, l) / base]);
+    }
+    return pts;
+  });
+  const maxIlf = Math.max(...curves.map(pts => pts.at(-1)[1]), ilf);
+  const { high, ticks: yTicks } = ilfAxisScale(maxIlf);
+
   const plot = getPlot(svg, plotWidth, {
-    start: ATTACHMENT,
+    start: MIN_VALUE,
     end: MAX_LIMIT,
     left: 44,
     right: narrow ? 12 : 66,
     low: 1,
-    high: 2.05,
+    high,
   });
   const { x, y, top, bottom, right } = plot;
-  const ticks = narrow
-    ? [100_000, 350_000, 750_000]
-    : [100_000, 250_000, 400_000, 550_000, 750_000];
+  const xTicks = narrow
+    ? [25_000, 350_000, 750_000]
+    : [25_000, 200_000, 400_000, 575_000, 750_000];
 
   const comparison = curves
     .map((points, index) => (index === tail ? '' : `<path d="${path(points, x, y)}" class="chart-curve"/>`))
     .join('');
 
   const labels = !narrow
-    ? curves
-        .map((points, index) => {
-          const final = points.at(-1)[1];
-          return `<text class="chart-text ${index === tail ? 'is-active' : ''}" x="${right + 8}" y="${(y(final) + 4).toFixed(1)}">${TAILS[index]}</text>`;
-        })
-        .join('')
+    ? (() => {
+        const items = curves.map((points, index) => ({
+          index,
+          yPos: y(points.at(-1)[1]) + 4,
+        }));
+        // Prevent right-edge curve labels from colliding at high attachments
+        items.sort((a, b) => a.yPos - b.yPos);
+        for (let i = 1; i < items.length; i++) {
+          if (items[i].yPos - items[i - 1].yPos < 13) {
+            items[i].yPos = items[i - 1].yPos + 13;
+          }
+        }
+        return items
+          .map(
+            item =>
+              `<text class="chart-text ${item.index === tail ? 'is-active' : ''}" x="${right + 8}" y="${item.yPos.toFixed(1)}">${TAILS[item.index]}</text>`,
+          )
+          .join('');
+      })()
     : '';
 
-  const marker = x(limit);
+  const xAtt = x(attach);
+  const xLim = x(limit);
   const markerY = y(ilf);
   const markerLabel = `${compactDollars(limit)} · ${ratio(ilf)}`;
   const halfW = (markerLabel.length * 6.5) / 2;
-  const labelX = Math.max(plot.left + halfW, Math.min(marker, right - halfW));
+  const labelX = Math.max(plot.left + halfW, Math.min(xLim, right - halfW));
+
+  const attText = compactDollars(attach);
+  const attHalfW = (attText.length * 6.5) / 2;
+  const attLabelX = Math.max(plot.left + attHalfW, Math.min(xAtt, right - attHalfW));
+  const showAttLabel = Math.abs(labelX - attLabelX) > halfW + attHalfW + 8;
 
   svg.innerHTML = `
-    ${chartLabels('Increased limits factor by coverage limit', `The selected ${TAILS[tail].toLowerCase()} tail has an ILF of ${ilf.toFixed(2)} at a ${dollars.format(limit)} limit. All three curves use a ${dollars.format(ATTACHMENT)} base limit.`)}
-    ${axes(plot, ticks, [1, 1.25, 1.5, 1.75, 2])}
-    <line class="chart-marker" x1="${marker.toFixed(1)}" y1="${top}" x2="${marker.toFixed(1)}" y2="${bottom}"/>
+    ${chartLabels('Increased limits factor by coverage limit', `The selected ${TAILS[tail].toLowerCase()} tail has an ILF of ${ilf.toFixed(2)} for ${compactDollars(limit - attach)} excess of ${compactDollars(attach)}.`)}
+    ${axes(plot, xTicks, yTicks)}
+    <rect class="chart-layer-band" x="${xAtt.toFixed(1)}" y="${top}" width="${Math.max(0, xLim - xAtt).toFixed(1)}" height="${(bottom - top).toFixed(1)}"/>
+    <line class="chart-marker attachment" x1="${xAtt.toFixed(1)}" y1="${top}" x2="${xAtt.toFixed(1)}" y2="${bottom}"/>
+    <line class="chart-marker" x1="${xLim.toFixed(1)}" y1="${top}" x2="${xLim.toFixed(1)}" y2="${bottom}"/>
     ${comparison}
     <path d="${path(curves[tail], x, y)}" class="chart-curve is-active"/>
     ${labels}
-    <circle class="chart-dot-ring" cx="${marker.toFixed(1)}" cy="${markerY.toFixed(1)}" r="8.5"/>
-    <circle class="chart-dot" cx="${marker.toFixed(1)}" cy="${markerY.toFixed(1)}" r="4.4"/>
+    <circle class="chart-dot-attach" cx="${xAtt.toFixed(1)}" cy="${bottom.toFixed(1)}" r="3.6"/>
+    <circle class="chart-dot-ring" cx="${xLim.toFixed(1)}" cy="${markerY.toFixed(1)}" r="8.5"/>
+    <circle class="chart-dot" cx="${xLim.toFixed(1)}" cy="${markerY.toFixed(1)}" r="4.4"/>
+    ${showAttLabel ? `<text class="chart-text is-attachment" x="${attLabelX.toFixed(1)}" y="14" text-anchor="middle">${attText}</text>` : ''}
     <text class="chart-text is-active" x="${labelX.toFixed(1)}" y="14" text-anchor="middle">${markerLabel}</text>`;
   return plot;
 }
 
-function renderSeverity(svg, plotWidth, distributions, tailPeaks, density, tail, limit) {
+function renderSeverity(svg, plotWidth, distributions, tailPeaks, density, tail, attach, limit) {
   const narrow = (plotWidth || 540) < 420;
   const plot = getPlot(svg, plotWidth, {
     start: 0,
@@ -800,24 +844,24 @@ function renderSeverity(svg, plotWidth, distributions, tailPeaks, density, tail,
     return `${path(shape, x, y)} Z`;
   }
 
-  const xAtt = x(ATTACHMENT);
+  const xAtt = x(attach);
   const xLim = x(limit);
-  const topLabel = `Top ${compactDollars(limit)}`;
+  const topLabel = `Cap ${compactDollars(limit)}`;
   const placeTopRight = xLim < left + (right - left) * 0.68;
   const topLabelX = placeTopRight ? Math.min(xLim + 6, right) : Math.max(xLim - 6, left);
   const topLabelAnchor = placeTopRight ? 'start' : 'end';
 
   const attLabel =
-    !narrow && xLim - xAtt > 78
-      ? `<text class="chart-text is-attachment" x="${(xAtt + 5).toFixed(1)}" y="14" text-anchor="start">$100k</text>`
+    !narrow && xLim - xAtt > 72
+      ? `<text class="chart-text is-attachment" x="${(xAtt + 5).toFixed(1)}" y="14" text-anchor="start">${compactDollars(attach)}</text>`
       : '';
 
   svg.innerHTML = `
-    ${chartLabels('Severity distribution', `The ${TAILS[tail].toLowerCase()} tail has a fixed $100,000 mean. Shaded regions show Primary ($0 to $100,000) and Excess Layer ($100,000 to ${dollars.format(limit)}).`)}
+    ${chartLabels('Severity distribution', `The ${TAILS[tail].toLowerCase()} tail has a fixed $100,000 mean. Shaded regions show Primary ($0 to ${dollars.format(attach)}) and Excess Layer (${dollars.format(attach)} to ${dollars.format(limit)}).`)}
     <line class="chart-grid" x1="${left}" y1="${(top + (bottom - top) * 0.35).toFixed(1)}" x2="${right}" y2="${(top + (bottom - top) * 0.35).toFixed(1)}"/>
     <line class="chart-grid" x1="${left}" y1="${(top + (bottom - top) * 0.7).toFixed(1)}" x2="${right}" y2="${(top + (bottom - top) * 0.7).toFixed(1)}"/>
-    <path d="${area(0, ATTACHMENT)}" class="area-primary"/>
-    <path d="${area(ATTACHMENT, limit)}" class="area-excess"/>
+    <path d="${area(0, attach)}" class="area-primary"/>
+    <path d="${area(attach, limit)}" class="area-excess"/>
     ${axes(plot, ticks)}
     <path d="${path(points, x, y)}" class="chart-curve is-active"/>
     <line class="chart-marker attachment" x1="${xAtt.toFixed(1)}" y1="${top}" x2="${xAtt.toFixed(1)}" y2="${bottom}"/>
@@ -829,6 +873,7 @@ function renderSeverity(svg, plotWidth, distributions, tailPeaks, density, tail,
 
 function showModel(exports) {
   const {
+    limited_expected_value: lev,
     expected_layer: expectedLayer,
     simulated_layer: simulatedLayer,
     exceedance_prob: exceedanceProb,
@@ -836,7 +881,9 @@ function showModel(exports) {
   } = exports;
 
   const shell = byId('excess-layers');
-  const slider = byId('layer-top');
+  const dualRange = byId('dual-range');
+  const attachSlider = byId('layer-attach');
+  const limitSlider = byId('layer-top');
   const svg = byId('severity-chart');
   const chartTitleLabel = byId('chart-title-label');
   const takeawayEl = byId('takeaway-text');
@@ -845,12 +892,6 @@ function showModel(exports) {
   const presetButtons = [...document.querySelectorAll('[data-preset]')];
   const tickButtons = [...document.querySelectorAll('[data-limit-jump]')];
   const layerRows = [...document.querySelectorAll('[data-layer-row]')];
-
-  const limits = Array.from({ length: 27 }, (_, index) => ATTACHMENT + index * LIMIT_STEP);
-  const curves = TAILS.map((_, tailIndex) => {
-    const base = expectedLayer(tailIndex, ATTACHMENT, 0);
-    return limits.map(limit => [limit, 1 + expectedLayer(tailIndex, limit, 1) / base]);
-  });
 
   let distributions = null;
   let tailPeaks = null;
@@ -869,22 +910,30 @@ function showModel(exports) {
 
   let tail = 1;
   let view = 'ilf';
-  let ilf = 1 + expectedLayer(1, 350_000, 1) / expectedLayer(1, 350_000, 0);
+  let ilf = 1 + expectedLayer(1, 100_000, 350_000, 1) / expectedLayer(1, 100_000, 350_000, 0);
   let plotWidth = 540;
-  let lastPlot = { width: 540, left: 44, right: 474, start: ATTACHMENT, end: MAX_LIMIT };
+  let lastPlot = { width: 540, left: 44, right: 474, start: MIN_VALUE, end: MAX_LIMIT };
   const simPrimaryCache = new Map();
   const simExcessCache = new Map();
   let announcement;
   let sliderTrackTimer;
 
-  function syncSliderVisual(limit) {
-    const pct = ((limit - MIN_LIMIT) / (MAX_LIMIT - MIN_LIMIT)) * 100;
-    slider.style.setProperty('--slider-pct', `${pct.toFixed(2)}%`);
+  function syncSliderVisual(attach, limit) {
+    const span = MAX_LIMIT - MIN_VALUE;
+    const attachPct = ((attach - MIN_VALUE) / span) * 100;
+    const limitPct = ((limit - MIN_VALUE) / span) * 100;
+    if (dualRange) {
+      dualRange.style.setProperty('--attach-pct', `${attachPct.toFixed(2)}%`);
+      dualRange.style.setProperty('--limit-pct', `${limitPct.toFixed(2)}%`);
+    }
+    // Keep the attachment thumb on top if it approaches the right end so it stays grabbable
+    attachSlider.classList.toggle('is-top-thumb', attach >= MAX_LIMIT - LIMIT_STEP * 3);
   }
 
-  function syncPresetChips(limit) {
+  function syncPresetChips(attach, limit) {
     presetButtons.forEach(btn => {
       const match =
+        Number(btn.dataset.presetAttach) === attach &&
         Number(btn.dataset.presetLimit) === limit &&
         Number(btn.dataset.presetTail) === tail;
       btn.setAttribute('aria-pressed', String(match));
@@ -892,43 +941,59 @@ function showModel(exports) {
   }
 
   function draw() {
-    const limit = slider.valueAsNumber;
+    const attach = attachSlider.valueAsNumber;
+    const limit = limitSlider.valueAsNumber;
     if (view === 'ilf') {
-      lastPlot = renderIlf(svg, plotWidth, curves, tail, limit, ilf);
-      chartTitleLabel.textContent = 'ILF Curve · $100k Base';
+      lastPlot = renderIlf(svg, plotWidth, lev, tail, attach, limit, ilf);
+      chartTitleLabel.textContent = `ILF Curve · ${compactDollars(attach)} Base`;
     } else {
       ensurePdfData();
-      lastPlot = renderSeverity(svg, plotWidth, distributions, tailPeaks, density, tail, limit);
+      lastPlot = renderSeverity(svg, plotWidth, distributions, tailPeaks, density, tail, attach, limit);
       chartTitleLabel.textContent = `Severity PDF · ${TAILS[tail]} Tail`;
     }
   }
 
   function update(announce = false) {
-    const limit = slider.valueAsNumber;
-    syncSliderVisual(limit);
-    syncPresetChips(limit);
+    const attach = attachSlider.valueAsNumber;
+    const limit = limitSlider.valueAsNumber;
+    const width = Math.max(LIMIT_STEP, limit - attach);
+    syncSliderVisual(attach, limit);
+    syncPresetChips(attach, limit);
 
-    const primary = expectedLayer(tail, limit, 0);
-    const excess = expectedLayer(tail, limit, 1);
+    const primary = expectedLayer(tail, attach, limit, 0);
+    const excess = expectedLayer(tail, attach, limit, 1);
     const above = Math.max(0, GROUND_UP_MEAN - primary - excess);
     ilf = 1 + excess / primary;
 
-    const pAtt = exceedanceProb(tail, ATTACHMENT);
+    const pAtt = exceedanceProb(tail, attach);
     const pTop = exceedanceProb(tail, limit);
+    const layerRate = excess / width;
+    const avgHit = pAtt > 1e-9 ? excess / pAtt : 0;
+    const shorthand = `${compactDollars(width)} xs ${compactDollars(attach)}`;
 
-    byId('top-value').textContent = dollars.format(limit);
-    slider.setAttribute('aria-valuetext', dollars.format(limit));
-    byId('excess-range').textContent = `$100k–${compactDollars(limit)}`;
+    byId('layer-shorthand').textContent = shorthand;
+    byId('attach-value').textContent = compactDollars(attach);
+    byId('top-value').textContent = compactDollars(limit);
+    attachSlider.setAttribute('aria-valuetext', dollars.format(attach));
+    limitSlider.setAttribute('aria-valuetext', dollars.format(limit));
+
+    byId('primary-range').textContent = `$0–${compactDollars(attach)}`;
+    byId('excess-range').textContent = `${compactDollars(attach)}–${compactDollars(limit)}`;
     byId('above-range').textContent = `>${compactDollars(limit)}`;
     byId('tail-sigma').textContent = TAIL_SIGMAS[tail];
 
     byId('loss-primary').textContent = dollars.format(primary);
     byId('loss-excess').textContent = dollars.format(excess);
     byId('loss-above').textContent = dollars.format(above);
-    byId('relativity').textContent = percent.format(excess / primary);
-    byId('ilf').textContent = ratio(ilf);
     byId('pierce-att').textContent = percent.format(pAtt);
     byId('pierce-top').textContent = percent.format(pTop);
+
+    byId('ilf').textContent = ratio(ilf);
+    byId('ilf-sub').textContent = `${compactDollars(limit)} / ${compactDollars(attach)}`;
+    byId('layer-rate').textContent = percent.format(layerRate);
+    byId('burn-sub').textContent = `of ${compactDollars(width)} width`;
+    byId('avg-hit').textContent = dollars.format(avgHit);
+    byId('avg-hit-sub').textContent = `given X>${compactDollars(attach)}`;
 
     const pctPrimary = (primary / GROUND_UP_MEAN) * 100;
     const pctExcess = (excess / GROUND_UP_MEAN) * 100;
@@ -941,27 +1006,31 @@ function showModel(exports) {
     byId('pct-above').textContent = `${pctAbove.toFixed(1)}%`;
 
     if (takeawayEl) {
-      takeawayEl.innerHTML = `Under a <strong>${TAILS[tail].toLowerCase()} tail</strong> (${TAIL_SIGMAS[tail]}) at a <strong>${compactDollars(limit)}</strong> limit, <strong>${pctExcess.toFixed(1)}%</strong> of expected loss sits in the excess layer and <strong>${percent.format(pTop)}</strong> of claims pierce above—giving an ILF of <strong>${ratio(ilf)}</strong>.`;
+      takeawayEl.innerHTML = `For <strong>${shorthand}</strong> under a <strong>${TAILS[tail].toLowerCase()} tail</strong> (${TAIL_SIGMAS[tail]}), <strong>${pctExcess.toFixed(1)}%</strong> of expected loss sits in the excess layer and <strong>${percent.format(pTop)}</strong> of claims pierce the cap—an ILF of <strong>${ratio(ilf)}</strong>.`;
     }
 
     if (typeof simulatedLayer === 'function') {
-      let simPrimary = simPrimaryCache.get(tail);
+      const priKey = `${tail}:${attach}`;
+      let simPrimary = simPrimaryCache.get(priKey);
       if (simPrimary === undefined) {
-        simPrimary = simulatedLayer(tail, ATTACHMENT, 0);
-        simPrimaryCache.set(tail, simPrimary);
+        simPrimary = simulatedLayer(tail, attach, limit, 0);
+        simPrimaryCache.set(priKey, simPrimary);
       }
-      const excessKey = `${tail}:${limit}`;
-      let simExcess = simExcessCache.get(excessKey);
+      const exKey = `${tail}:${attach}:${limit}`;
+      let simExcess = simExcessCache.get(exKey);
       if (simExcess === undefined) {
-        simExcess = simulatedLayer(tail, limit, 1);
-        simExcessCache.set(excessKey, simExcess);
+        simExcess = simulatedLayer(tail, attach, limit, 1);
+        simExcessCache.set(exKey, simExcess);
       }
-      const simIlf = 1 + simExcess / simPrimary;
       const diffExcess = simExcess - excess;
       const sign = diffExcess >= 0 ? '+' : '−';
-      const simCell = byId('sim-ilf');
-      simCell.innerHTML = `${ratio(simIlf)} <small id="sim-diff">${sign}${dollars.format(Math.abs(diffExcess))}</small>`;
-      simCell.title = `65,536-draw fixed-seed Rust MC: Primary ${dollars.format(simPrimary)}, Excess ${dollars.format(simExcess)} (${sign}${dollars.format(Math.abs(diffExcess))} vs. closed-form)`;
+      const diffPct = excess > 1 ? Math.abs((diffExcess / excess) * 100) : 0;
+      const simCheck = byId('sim-check');
+      const mcVerify = byId('mc-verify');
+      simCheck.innerHTML = `Excess ${dollars.format(simExcess)} <small>(${sign}${dollars.format(Math.abs(diffExcess))} · ${sign}${diffPct.toFixed(1)}%)</small>`;
+      if (mcVerify) {
+        mcVerify.title = `65,536-draw fixed-seed Rust MC: Primary ${dollars.format(simPrimary)}, Excess ${dollars.format(simExcess)} (${sign}${dollars.format(Math.abs(diffExcess))} vs. closed-form)`;
+      }
     }
 
     draw();
@@ -970,29 +1039,42 @@ function showModel(exports) {
     if (announce) {
       announcement = setTimeout(() => {
         byId('results-summary').textContent =
-          `${TAILS[tail]} tail at ${dollars.format(limit)}. Primary ${dollars.format(primary)}, Excess ${dollars.format(excess)}, above limit ${dollars.format(above)}, relativity ${percent.format(excess / primary)}, increased limits factor ${ratio(ilf)}.`;
+          `${TAILS[tail]} tail for ${shorthand}. Primary ${dollars.format(primary)}, Excess ${dollars.format(excess)}, above limit ${dollars.format(above)}, ILF ${ratio(ilf)}, layer burn ${percent.format(layerRate)}, average attached claim ${dollars.format(avgHit)}.`;
       }, 220);
     }
   }
 
-  function applyLimit(nextLimit, control) {
-    const snapped = Math.min(
-      MAX_LIMIT,
-      Math.max(MIN_LIMIT, Math.round(nextLimit / LIMIT_STEP) * LIMIT_STEP),
-    );
-    if (snapped === slider.valueAsNumber) return;
-    slider.value = String(snapped);
-    update(true);
-    trackLabEngagement(control);
+  function scheduleSliderTrack(control) {
+    const attach = attachSlider.valueAsNumber;
+    const limit = limitSlider.valueAsNumber;
     clearTimeout(sliderTrackTimer);
     sliderTrackTimer = setTimeout(() => {
       track('lab_interact', {
         control,
-        value: compactDollars(snapped),
+        value: `${compactDollars(limit - attach)} xs ${compactDollars(attach)}`,
         tail: TAILS[tail].toLowerCase(),
-        limit: compactDollars(snapped),
+        limit: compactDollars(limit),
       });
     }, 600);
+  }
+
+  function setHandle(which, rawValue, control) {
+    const snapped = Math.min(
+      MAX_LIMIT,
+      Math.max(MIN_VALUE, Math.round(rawValue / LIMIT_STEP) * LIMIT_STEP),
+    );
+    if (which === 'attach') {
+      const clamped = Math.min(snapped, limitSlider.valueAsNumber - LIMIT_STEP);
+      if (clamped === attachSlider.valueAsNumber) return;
+      attachSlider.value = String(clamped);
+    } else {
+      const clamped = Math.max(snapped, attachSlider.valueAsNumber + LIMIT_STEP);
+      if (clamped === limitSlider.valueAsNumber) return;
+      limitSlider.value = String(clamped);
+    }
+    update(true);
+    trackLabEngagement(control);
+    scheduleSliderTrack(control);
   }
 
   function applyTail(nextTail) {
@@ -1000,23 +1082,45 @@ function showModel(exports) {
     tailButtons.forEach(option => option.setAttribute('aria-pressed', String(Number(option.dataset.tail) === tail)));
   }
 
-  slider.addEventListener('input', () => {
+  attachSlider.addEventListener('input', () => {
+    const maxAttach = limitSlider.valueAsNumber - LIMIT_STEP;
+    if (attachSlider.valueAsNumber > maxAttach) {
+      attachSlider.value = String(maxAttach);
+    }
     update(true);
-    trackLabEngagement('slider');
-    clearTimeout(sliderTrackTimer);
-    sliderTrackTimer = setTimeout(() => {
-      track('lab_interact', {
-        control: 'slider',
-        value: compactDollars(slider.valueAsNumber),
-        tail: TAILS[tail].toLowerCase(),
-        limit: compactDollars(slider.valueAsNumber),
-      });
-    }, 600);
+    trackLabEngagement('slider_attach');
+    scheduleSliderTrack('slider_attach');
+  });
+
+  limitSlider.addEventListener('input', () => {
+    const minLimit = attachSlider.valueAsNumber + LIMIT_STEP;
+    if (limitSlider.valueAsNumber < minLimit) {
+      limitSlider.value = String(minLimit);
+    }
+    update(true);
+    trackLabEngagement('slider_limit');
+    scheduleSliderTrack('slider_limit');
+  });
+
+  // Click anywhere on dual-range track to snap the nearer thumb
+  dualRange?.addEventListener('pointerdown', event => {
+    if (event.target === attachSlider || event.target === limitSlider) return;
+    const rect = dualRange.getBoundingClientRect();
+    if (!rect.width) return;
+    const frac = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+    const val = MIN_VALUE + frac * (MAX_LIMIT - MIN_VALUE);
+    const dAttach = Math.abs(val - attachSlider.valueAsNumber);
+    const dLimit = Math.abs(val - limitSlider.valueAsNumber);
+    setHandle(dAttach <= dLimit ? 'attach' : 'limit', val, 'slider_track');
   });
 
   tickButtons.forEach(btn => {
     btn.addEventListener('click', () => {
-      applyLimit(Number(btn.dataset.limitJump), 'slider');
+      const val = Number(btn.dataset.limitJump);
+      const dAttach = Math.abs(val - attachSlider.valueAsNumber);
+      const dLimit = Math.abs(val - limitSlider.valueAsNumber);
+      const target = val === MIN_VALUE ? 'attach' : val === MAX_LIMIT ? 'limit' : dAttach <= dLimit ? 'attach' : 'limit';
+      setHandle(target, val, 'slider_tick');
     });
   });
 
@@ -1028,7 +1132,7 @@ function showModel(exports) {
         control: 'tail',
         value: TAILS[tail].toLowerCase(),
         tail: TAILS[tail].toLowerCase(),
-        limit: compactDollars(slider.valueAsNumber),
+        limit: compactDollars(limitSlider.valueAsNumber),
       });
       update(true);
     }),
@@ -1036,11 +1140,13 @@ function showModel(exports) {
 
   presetButtons.forEach(btn => {
     btn.addEventListener('click', () => {
+      const attach = Number(btn.dataset.presetAttach);
       const limit = Number(btn.dataset.presetLimit);
       const nextTail = Number(btn.dataset.presetTail);
       const name = btn.dataset.preset;
       applyTail(nextTail);
-      slider.value = String(limit);
+      attachSlider.value = String(attach);
+      limitSlider.value = String(limit);
       trackLabEngagement('preset');
       track('lab_interact', {
         control: 'preset',
@@ -1061,7 +1167,7 @@ function showModel(exports) {
         control: 'view',
         value: view,
         tail: TAILS[tail].toLowerCase(),
-        limit: compactDollars(slider.valueAsNumber),
+        limit: compactDollars(limitSlider.valueAsNumber),
       });
     }
     draw();
@@ -1071,9 +1177,9 @@ function showModel(exports) {
     button.addEventListener('click', () => setView(button.dataset.chartView, true)),
   );
 
-  // Direct pointer scrubbing on the SVG plot (touch requires horizontal drag intent to preserve page scroll)
+  // Direct pointer scrubbing on the SVG plot for BOTH Attachment & Limit handles
   let dragState = null;
-  function limitFromPointer(event) {
+  function valueFromPointer(event) {
     const rect = svg.getBoundingClientRect();
     if (!rect.width) return null;
     const svgX = ((event.clientX - rect.left) / rect.width) * lastPlot.width;
@@ -1084,9 +1190,15 @@ function showModel(exports) {
 
   svg.addEventListener('pointerdown', event => {
     if (event.button !== 0 && event.pointerType === 'mouse') return;
+    const val = valueFromPointer(event);
+    if (val === null) return;
+    const dAttach = Math.abs(val - attachSlider.valueAsNumber);
+    const dLimit = Math.abs(val - limitSlider.valueAsNumber);
+    const handle = dAttach <= dLimit ? 'attach' : 'limit';
     const isTouch = event.pointerType === 'touch';
     dragState = {
       pointerId: event.pointerId,
+      handle,
       startX: event.clientX,
       startY: event.clientY,
       active: !isTouch,
@@ -1095,8 +1207,7 @@ function showModel(exports) {
       try {
         svg.setPointerCapture(event.pointerId);
       } catch {}
-      const next = limitFromPointer(event);
-      if (next !== null) applyLimit(next, 'chart_drag');
+      setHandle(handle, val, 'chart_drag');
     }
   });
 
@@ -1107,7 +1218,6 @@ function showModel(exports) {
       const dy = Math.abs(event.clientY - dragState.startY);
       if (dx < 6 && dy < 6) return;
       if (dy >= dx) {
-        // Vertical scroll gesture: release tracking so native scroll stays smooth
         dragState = null;
         return;
       }
@@ -1116,8 +1226,8 @@ function showModel(exports) {
         svg.setPointerCapture(event.pointerId);
       } catch {}
     }
-    const next = limitFromPointer(event);
-    if (next !== null) applyLimit(next, 'chart_drag');
+    const next = valueFromPointer(event);
+    if (next !== null) setHandle(dragState.handle, next, 'chart_drag');
   });
 
   const endDrag = event => {
@@ -1140,9 +1250,10 @@ function showModel(exports) {
   });
 
   labController = {
-    applyPreset(limit, tailIndex, name, control = 'preset') {
+    applyPreset(attach, limit, tailIndex, name, control = 'preset') {
       applyTail(tailIndex);
-      slider.value = String(limit);
+      attachSlider.value = String(attach);
+      limitSlider.value = String(limit);
       trackLabEngagement(control);
       track('lab_interact', {
         control,
@@ -1157,8 +1268,8 @@ function showModel(exports) {
     },
   };
 
-  // Default $350k Moderate state is pre-rendered in HTML; avoid 131k-draw MC work on initial paint.
-  syncSliderVisual(slider.valueAsNumber);
+  // Default $250k xs $100k Moderate state is pre-rendered in HTML; avoid 131k-draw MC work on initial paint.
+  syncSliderVisual(attachSlider.valueAsNumber, limitSlider.valueAsNumber);
   let lastWidth = 0;
   new ResizeObserver(entries => {
     const nextWidth = Math.round(entries[0]?.contentRect.width || 0);

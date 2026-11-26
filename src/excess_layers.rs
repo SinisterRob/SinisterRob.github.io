@@ -1,38 +1,43 @@
 use std::f64::consts::TAU;
 
 const GROUND_UP_MEAN: f64 = 100_000.0;
-const ATTACHMENT: f64 = 100_000.0;
 const SAMPLE_SIZE: u32 = 65_536;
 const SEED: u64 = 2026;
 const INV_SQRT_TAU: f64 = 0.3989422804014327;
 
 #[no_mangle]
-pub extern "C" fn expected_layer(tail: u32, top: f64, layer: u32) -> f64 {
+pub extern "C" fn limited_expected_value(tail: u32, limit: f64) -> f64 {
+    limited_mean(limit, log_sd(tail))
+}
+
+#[no_mangle]
+pub extern "C" fn expected_layer(tail: u32, attach: f64, limit: f64, layer: u32) -> f64 {
     let sigma = log_sd(tail);
-    let lower = limited_mean(ATTACHMENT, sigma);
+    let lower = limited_mean(attach, sigma);
     if layer == 0 {
         lower
     } else {
-        limited_mean(top, sigma) - lower
+        (limited_mean(limit, sigma) - lower).max(0.0)
     }
 }
 
 #[no_mangle]
-pub extern "C" fn simulated_layer(tail: u32, top: f64, layer: u32) -> f64 {
+pub extern "C" fn simulated_layer(tail: u32, attach: f64, limit: f64, layer: u32) -> f64 {
     let sigma = log_sd(tail);
     let log_mean = GROUND_UP_MEAN.ln() - sigma * sigma / 2.0;
     let mut state = SEED;
     let mut total = 0.0;
+    let upper_cap = limit.max(attach);
     for _ in 0..SAMPLE_SIZE {
         let radius = (-2.0 * uniform(&mut state).ln()).sqrt();
         let angle = TAU * uniform(&mut state);
         let severity = (log_mean + sigma * radius * angle.cos()).exp();
-        let lower = severity.min(ATTACHMENT);
-        // Use the same severity draws across primary and excess layers, tails, and limits.
+        let lower = severity.min(attach);
+        // Reuse the same fixed-seed severity draws across layers, attachments, tails, and limits.
         total += if layer == 0 {
             lower
         } else {
-            severity.min(top) - lower
+            severity.min(upper_cap) - lower
         };
     }
     total / f64::from(SAMPLE_SIZE)
@@ -109,53 +114,60 @@ mod tests {
     #[test]
     fn primary_layer_matches_reference_values() {
         for (tail, reference) in [78_331.62, 61_707.51, 43_833.97].into_iter().enumerate() {
-            assert!((expected_layer(tail as u32, 350_000.0, 0) - reference).abs() < 0.03);
+            assert!((expected_layer(tail as u32, 100_000.0, 350_000.0, 0) - reference).abs() < 0.03);
+            assert!((limited_expected_value(tail as u32, 100_000.0) - reference).abs() < 0.03);
         }
     }
 
     #[test]
-    fn layer_width_and_tail_change_relativities() {
-        let mut previous_ilf = 1.0;
-        for tail in 0..=2 {
-            let lower = expected_layer(tail, 350_000.0, 0);
-            assert_eq!(expected_layer(tail, ATTACHMENT, 1), 0.0);
-            let mut previous_upper = 0.0;
-            for top in (150_000..=750_000).step_by(25_000) {
-                let upper = expected_layer(tail, f64::from(top), 1);
-                assert!(upper > previous_upper);
-                assert!(lower + upper <= GROUND_UP_MEAN);
-                previous_upper = upper;
+    fn variable_attachment_and_limit_change_relativities() {
+        for attach in [50_000.0, 100_000.0, 250_000.0] {
+            let mut previous_ilf = 1.0;
+            for tail in 0..=2 {
+                let lower = expected_layer(tail, attach, 350_000.0, 0);
+                assert_eq!(expected_layer(tail, attach, attach, 1), 0.0);
+                let mut previous_upper = 0.0;
+                let start = (attach as u32) + 25_000;
+                for top in (start..=750_000).step_by(25_000) {
+                    let upper = expected_layer(tail, attach, f64::from(top), 1);
+                    assert!(upper > previous_upper);
+                    assert!(lower + upper <= GROUND_UP_MEAN + 1e-6);
+                    previous_upper = upper;
+                }
+                let ilf = 1.0 + expected_layer(tail, attach, 500_000.0, 1) / lower;
+                assert!(ilf > previous_ilf);
+                previous_ilf = ilf;
             }
-            let ilf = 1.0 + expected_layer(tail, 350_000.0, 1) / lower;
-            assert!(ilf > previous_ilf);
-            previous_ilf = ilf;
         }
     }
 
     #[test]
     fn fixed_seed_simulation_agrees_with_limited_expectations() {
         for tail in 0..=2 {
-            for top in (150_000..=750_000).step_by(25_000) {
-                for layer in 0..=1 {
-                    let exact = expected_layer(tail, f64::from(top), layer);
-                    let simulated = simulated_layer(tail, f64::from(top), layer);
-                    assert!(
-                        (exact - simulated).abs() < 1_000.0,
-                        "tail {tail}, top {top}, layer {layer}: {exact} vs. {simulated}"
-                    );
+            for attach in [50_000, 100_000, 250_000] {
+                for top in (attach + 50_000..=750_000).step_by(100_000) {
+                    for layer in 0..=1 {
+                        let exact = expected_layer(tail, f64::from(attach), f64::from(top), layer);
+                        let simulated =
+                            simulated_layer(tail, f64::from(attach), f64::from(top), layer);
+                        assert!(
+                            (exact - simulated).abs() < 1_000.0,
+                            "tail {tail}, attach {attach}, top {top}, layer {layer}: {exact} vs. {simulated}"
+                        );
+                    }
                 }
             }
         }
         assert_eq!(
-            simulated_layer(1, 350_000.0, 1),
-            simulated_layer(1, 350_000.0, 1)
+            simulated_layer(1, 100_000.0, 350_000.0, 1),
+            simulated_layer(1, 100_000.0, 350_000.0, 1)
         );
     }
 
     #[test]
     fn exceedance_and_pdf_are_consistent() {
         for tail in 0..=2 {
-            let p_att = exceedance_prob(tail, ATTACHMENT);
+            let p_att = exceedance_prob(tail, 100_000.0);
             let p_top = exceedance_prob(tail, 350_000.0);
             assert!(p_att > 0.0 && p_att < 1.0);
             assert!(p_top > 0.0 && p_top < p_att);
