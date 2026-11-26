@@ -177,11 +177,16 @@
           "Monte Carlo Simulation",
           "Economic Capital Modeling",
           "Loss Reserving",
+          "Excess Loss Reserving",
+          "Commercial Liability Pricing",
           "Casualty Excess-of-Loss Reinsurance",
           "Rust Programming Language",
           "Python Programming Language",
+          "TypeScript Programming Language",
           "C# Programming Language",
           "Excel XLL Add-ins",
+          "Arius Reserving Software",
+          "@RISK Simulation",
           "R Statistical Computing"
         ],
         "sameAs": [
@@ -227,7 +232,7 @@
         </span>
       </a>
       <div class="header-right">
-        <nav class="site-nav" aria-label="Main navigation">
+        <nav class="site-nav" id="primary-nav" aria-label="Primary">
           <a href="#lab" data-nav="lab">Lab</a>
           <a href="#work" data-nav="work">Capabilities</a>
           <a href="#experience" data-nav="experience">Experience</a>
@@ -255,7 +260,7 @@
         </div>
       </div>
     </div>
-    <nav class="mobile-nav" aria-label="Section navigation">
+    <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile">
       <div class="wrap mobile-nav-inner">
         <a href="#lab" data-nav="lab">Lab</a>
         <a href="#work" data-nav="work">Capabilities</a>
@@ -285,8 +290,8 @@
             Chicago, Illinois · Captive Insurance &amp; P&amp;C Actuarial
           </p>
           <h1 id="profile-title">Robert Jurgens<span class="credential">, <em>FCAS</em></span></h1>
-          <p class="role">Senior Actuarial Consultant building pricing architecture, capital models, and native actuarial software.</p>
-          <p class="lede">I lead actuarial oversight for Cayman-domiciled captives and engineer the models behind reserving, renewals, and excess pricing—combining frequency–severity modeling, Rust Monte Carlo simulation, and compiled Excel add-ins.</p>
+          <p class="role">Actuarial oversight for Cayman captives and native pricing &amp; capital software.</p>
+          <p class="lede">I engineer frequency–severity models, Rust Monte Carlo engines, and compiled Excel XLLs that turn reserving, renewal, and excess pricing into fast, inspectable systems.</p>
           <div class="actions">
             <a class="button primary" href="#lab" data-nav="hero-lab">
               Explore Rust/WASM lab
@@ -321,8 +326,8 @@
             </div>
             <div class="dossier-item">
               <dt>Focus Areas</dt>
-              <dd class="dossier-val">Pricing &amp; Capital</dd>
-              <dd class="dossier-sub">Captives, ILFs &amp; Reinsurance</dd>
+              <dd class="dossier-val">Pricing, Reserving &amp; Capital</dd>
+              <dd class="dossier-sub">Group Captives, Liability &amp; Excess</dd>
             </div>
           </dl>
           <div class="stack-row">
@@ -330,12 +335,16 @@
             <ul class="stack-chips" aria-label="Core technologies">
               <li>Rust</li>
               <li>Python</li>
+              <li>TypeScript</li>
               <li>C#</li>
               <li>R</li>
+              <li>WASM</li>
               <li>Excel XLL</li>
               <li>VBA / PQ</li>
+              <li>Arius</li>
+              <li>@RISK</li>
               <li>MetaRisk</li>
-              <li>WASM</li>
+              <li>Primary &amp; Excess Reserving</li>
               <li>Statistical &amp; Bayesian Modeling</li>
             </ul>
           </div>
@@ -345,15 +354,12 @@
 
     <section class="section section-lab" id="lab" aria-labelledby="lab-title">
       <div class="wrap">
-        <div class="section-heading">
+        <div class="section-heading lab-heading">
           <div>
-            <p class="eyebrow">Interactive Exhibit · Rust → WebAssembly</p>
-            <h2 id="lab-title">How severity tails drive excess layer costs &amp; ILFs</h2>
+            <p class="eyebrow">Rust → WASM · 9.5 KB</p>
+            <h2 id="lab-title">Excess Layer &amp; ILF Simulator</h2>
           </div>
-          <div class="heading-meta">
-            <span class="tech-badge is-illustrative">Illustrative · $100k fixed mean</span>
-            <span class="tech-badge">9.5 KB WASM</span>
-          </div>
+          <p class="lab-subtitle">Synthetic lognormal · $100k mean</p>
         </div>
 
         <article class="lab-shell" id="excess-layers">
@@ -361,19 +367,19 @@
           <noscript><p class="model-status">Showing baseline values ($350k limit, moderate tail). Enable JavaScript to run the interactive WebAssembly model.</p></noscript>
 
           <div class="calculator" id="layer-calculator">
-            <div class="lab-presets" role="group" aria-label="Illustrative layer scenarios">
-              <span class="mono-label preset-heading">Scenarios</span>
-              <div class="preset-chips">
-                <button type="button" class="preset-chip" data-preset="working" data-preset-attach="50000" data-preset-limit="250000" data-preset-tail="0" aria-pressed="false">Working layer <span>$200k xs $50k · σ 0.55</span></button>
-                <button type="button" class="preset-chip" data-preset="baseline" data-preset-attach="100000" data-preset-limit="350000" data-preset-tail="1" aria-pressed="true">Baseline excess <span>$250k xs $100k · σ 1.00</span></button>
-                <button type="button" class="preset-chip" data-preset="excess" data-preset-attach="250000" data-preset-limit="1000000" data-preset-tail="2" aria-pressed="false">High excess <span>$750k xs $250k · σ 1.55</span></button>
-              </div>
-            </div>
-
             <div class="lab-controls-bar">
+              <div class="control-group preset-group">
+                <span class="control-label" id="preset-label">Presets</span>
+                <div class="preset-chips" role="group" aria-labelledby="preset-label">
+                  <button type="button" class="preset-chip" data-preset="working" data-preset-attach="50000" data-preset-limit="250000" data-preset-tail="0" aria-pressed="false" title="Working layer: $200k xs $50k · σ 0.55">Working</button>
+                  <button type="button" class="preset-chip" data-preset="baseline" data-preset-attach="100000" data-preset-limit="350000" data-preset-tail="1" aria-pressed="true" title="Baseline excess: $250k xs $100k · σ 1.00">Baseline</button>
+                  <button type="button" class="preset-chip" data-preset="excess" data-preset-attach="250000" data-preset-limit="1000000" data-preset-tail="2" aria-pressed="false" title="High excess: $750k xs $250k · σ 1.55">High</button>
+                </div>
+              </div>
+
               <div class="control-group slider-group">
                 <div class="range-label">
-                  <span class="control-label">Excess layer <span class="layer-shorthand" id="layer-shorthand">$250k xs $100k</span></span>
+                  <span class="control-label">Layer <span class="layer-shorthand" id="layer-shorthand">$250k xs $100k</span></span>
                   <span class="range-pair" aria-live="off">
                     <span class="attach-readout" id="attach-value" title="Attachment point">$100k</span>
                     <span class="range-sep" aria-hidden="true">→</span>
@@ -387,22 +393,19 @@
                 </div>
                 <div class="range-ends">
                   <button type="button" class="tick-btn" data-limit-jump="25000">$25k</button>
-                  <button type="button" class="tick-btn" data-limit-jump="250000">$250k</button>
-                  <button type="button" class="tick-btn" data-limit-jump="500000">$500k</button>
-                  <button type="button" class="tick-btn" data-limit-jump="750000">$750k</button>
                   <button type="button" class="tick-btn" data-limit-jump="1000000">$1M</button>
                 </div>
               </div>
 
               <div class="control-group tail-group">
                 <div class="range-label">
-                  <span class="control-label" id="tail-label">Lognormal tail</span>
-                  <span class="tail-sigma" id="tail-sigma">σ = 1.00</span>
+                  <span class="control-label" id="tail-label">Tail severity</span>
+                  <span class="tail-sigma" id="tail-sigma">Moderate</span>
                 </div>
                 <div class="segmented" role="group" aria-labelledby="tail-label">
-                  <button type="button" data-tail="0" aria-pressed="false">Lighter</button>
-                  <button type="button" data-tail="1" aria-pressed="true">Moderate</button>
-                  <button type="button" data-tail="2" aria-pressed="false">Heavier</button>
+                  <button type="button" data-tail="0" aria-pressed="false" title="Lighter tail (σ = 0.55)" aria-label="Lighter tail, sigma 0.55">σ 0.55</button>
+                  <button type="button" data-tail="1" aria-pressed="true" title="Moderate tail (σ = 1.00)" aria-label="Moderate tail, sigma 1.00">1.00</button>
+                  <button type="button" data-tail="2" aria-pressed="false" title="Heavier tail (σ = 1.55)" aria-label="Heavier tail, sigma 1.55">1.55</button>
                 </div>
               </div>
             </div>
@@ -449,9 +452,11 @@
                   <text class="chart-text" x="482" y="88.9">Lighter</text>
                   <text class="chart-text is-active" x="482" y="64.5">Moderate</text>
                   <text class="chart-text" x="482" y="34.3">Heavier</text>
-                  <circle class="chart-dot-attach" cx="87.0" cy="105.5" r="3.8"/>
-                  <circle class="chart-dot-ring" cx="194.5" cy="69.7" r="8.5"/>
-                  <circle class="chart-dot" cx="194.5" cy="69.7" r="4.4"/>
+                  <circle class="chart-dot-attach" cx="87.0" cy="105.5" r="3.8" aria-hidden="true"/>
+                  <circle class="chart-dot-ring" cx="194.5" cy="69.7" r="8.5" aria-hidden="true"/>
+                  <circle class="chart-dot" cx="194.5" cy="69.7" r="4.4" aria-hidden="true"/>
+                  <circle class="chart-handle-hit" data-handle="attach" cx="87.0" cy="105.5" r="22" aria-hidden="true"/>
+                  <circle class="chart-handle-hit" data-handle="limit" cx="194.5" cy="69.7" r="22" aria-hidden="true"/>
                   <text class="chart-text is-attachment" x="87.0" y="14" text-anchor="middle">$100k</text>
                   <text class="chart-text is-active" x="194.5" y="14" text-anchor="middle">$350k · 1.48×</text>
                 </svg>
@@ -501,33 +506,27 @@
                     <dd id="ilf">1.48×</dd>
                   </div>
                   <div class="kpi-tile">
-                    <dt>Layer Burn <span id="burn-sub">of $250k width</span></dt>
+                    <dt>Layer Burn <span id="burn-sub">of $250k</span></dt>
                     <dd id="layer-rate">11.9%</dd>
                   </div>
                   <div class="kpi-tile">
-                    <dt>Avg Attached <span id="avg-hit-sub">given X&gt;$100k</span></dt>
-                    <dd id="avg-hit">$96,100</dd>
+                    <dt>Avg Attached <span id="avg-hit-sub">X&gt;$100k</span></dt>
+                    <dd id="avg-hit">$96.1k</dd>
+                  </div>
+                  <div class="kpi-tile is-mc" id="mc-verify" title="65,536-draw fixed-seed Rust MC: Primary $61,650, Excess $29,747 (+$96 vs. closed-form)">
+                    <dt><span class="mc-dt-head"><i class="mc-dot" aria-hidden="true"></i>65k MC</span> <span id="sim-delta">+0.3%</span></dt>
+                    <dd id="sim-check">$29,747</dd>
                   </div>
                 </dl>
-
-                <div class="mc-verify" id="mc-verify" title="65,536-draw fixed-seed Rust MC: Primary $61,650, Excess $29,747 (+$96 vs. closed-form)">
-                  <span class="mc-dot" aria-hidden="true"></span>
-                  <span class="mc-label">Rust 65k MC</span>
-                  <span class="mc-value" id="sim-check">Excess $29,747 <small>(+$96 · +0.3%)</small></span>
-                </div>
               </div>
             </div>
 
-            <div class="lab-takeaway" id="lab-takeaway">
-              <span class="takeaway-tag">Reading</span>
-              <p id="takeaway-text">For <strong>$250k xs $100k</strong> under a <strong>moderate tail</strong> (σ = 1.00), <strong>29.7%</strong> of expected loss sits in the excess layer and <strong>4.0%</strong> of claims pierce the cap—an ILF of <strong>1.48×</strong>.</p>
-            </div>
-            <p class="sr-only" id="results-summary" role="status"></p>
+            <p class="sr-only" id="results-summary" role="status" aria-live="polite"></p>
           </div>
         </article>
 
         <div class="lab-micro-note">
-          <p><strong>Illustrative only:</strong> synthetic lognormal severities (σ = 0.55 / 1.00 / 1.55, $100k mean) via closed-form <var>L</var>(<var>x</var>) &amp; SplitMix64 Box–Muller in Rust/WASM—excludes client data, ALAE, and treaty terms.</p>
+          <p>Synthetic lognormal ($100k mean); excludes client data, ALAE, and treaty terms.</p>
           <span class="lab-meta-links">
             <button type="button" class="text-link method-toggle" id="method-toggle" aria-expanded="false" aria-controls="method-drawer">Model notes ▾</button>
             <a class="text-link" href="https://github.com/SinisterRob/SinisterRob.github.io/blob/main/src/excess_layers.rs" target="_blank" rel="noopener noreferrer" data-track="rust-source">Source ↗</a>
@@ -536,20 +535,11 @@
         </div>
 
         <div class="method-drawer" id="method-drawer" hidden>
-          <div class="method-grid">
-            <div>
-              <p class="mono-label">Severity Parameterization</p>
-              <p>Each tail scenario holds ground-up expected severity fixed at <code>E[X] = $100,000</code> by setting <code>μ = ln(100,000) − σ²/2</code>, isolating how tail thickness alone shifts loss cost out of primary retention into excess layers.</p>
-            </div>
-            <div>
-              <p class="mono-label">Closed-Form Layer Loss</p>
-              <p>Limited expected value is evaluated directly via <code>L(x) = E[X]·Φ(z − σ) + x·Φ(−z)</code> where <code>z = (ln x − μ)/σ</code>, using Abramowitz &amp; Stegun 26.2.17 (max CDF error &lt; 7.5×10⁻⁸).</p>
-            </div>
-            <div>
-              <p class="mono-label">Deterministic Verification</p>
-              <p>Every slider or tail change cross-checks closed-form expectations against a <code>65,536</code>-draw SplitMix64 Box–Muller simulation (fixed seed <code>2026</code>) compiled with zero external Rust crates to <code>wasm32-unknown-unknown</code>.</p>
-            </div>
-          </div>
+          <ul class="method-list">
+            <li><strong>Severity:</strong> <code>μ = ln(100k) − σ²/2</code> (fixed <code>E[X] = $100k</code>)</li>
+            <li><strong>Closed-form:</strong> <code>L(x) = E[X]Φ(z−σ) + xΦ(−z)</code> via A&amp;S 26.2.17 (<code>&lt;7.5×10⁻⁸</code> error)</li>
+            <li><strong>MC check:</strong> 65,536-draw SplitMix64 Box–Muller, seed <code>2026</code>, zero-crate <code>wasm32</code></li>
+          </ul>
         </div>
       </div>
     </section>
@@ -567,28 +557,28 @@
           <article class="ed-col">
             <div class="ed-col-head">
               <span class="ed-index" aria-hidden="true">01</span>
-              <p class="card-kicker">Pricing Systems</p>
+              <p class="card-kicker">Pricing &amp; Architecture</p>
             </div>
-            <h3>Renewal Pricing &amp; Native Excel XLLs</h3>
-            <p>Led the redesign and technical architecture of renewal pricing models—pairing Excel, VBA, and Power Query with compiled native <code>.xll</code> extensions so actuaries get native speed inside the workbooks they already trust.</p>
+            <h3>Commercial Liability Pricing &amp; Excel XLLs</h3>
+            <p>Led the redesign and technical architecture of commercial liability and renewal pricing models—pairing Excel, VBA, and Power Query with compiled native <code>.xll</code> extensions so actuaries get native speed inside the workbooks they already trust.</p>
             <ul class="domain-tags" aria-label="Pricing systems skills">
+              <li>Liability Pricing</li>
               <li>Excel XLL</li>
-              <li>VBA</li>
-              <li>Power Query</li>
+              <li>VBA · PQ</li>
             </ul>
           </article>
 
           <article class="ed-col">
             <div class="ed-col-head">
               <span class="ed-index" aria-hidden="true">02</span>
-              <p class="card-kicker">Simulation &amp; Layering</p>
+              <p class="card-kicker">Reserving &amp; Excess</p>
             </div>
-            <h3>Frequency–Severity &amp; Rust Monte Carlo</h3>
-            <p>Separating claim counts from severity distributions clarifies how exposure growth, inflation, and retentions drive loss cost. I build deterministic Rust simulation engines for Auto/GL Increased Limit Factors and multi-layer excess structures.</p>
-            <ul class="domain-tags" aria-label="Simulation skills">
-              <li>Rust</li>
-              <li>Monte Carlo</li>
-              <li>AL / GL ILFs</li>
+            <h3>Primary &amp; Excess Reserving, ILFs &amp; Simulation</h3>
+            <p>Combine primary and excess loss reserving across Arius and @RISK with deterministic Rust Monte Carlo engines—separating claim frequency, severity tails, and retentions for Auto/GL Increased Limit Factors and multi-layer excess structures.</p>
+            <ul class="domain-tags" aria-label="Reserving and simulation skills">
+              <li>Arius · @RISK</li>
+              <li>Excess Reserving</li>
+              <li>Rust · AL/GL ILFs</li>
               <li>Statistical &amp; Bayesian</li>
             </ul>
           </article>
@@ -636,7 +626,7 @@
               </div>
               <p class="organization">Edgewater Actuarial Insights, LLC</p>
               <ul class="impact-list">
-                <li>Lead actuarial oversight across <strong>Cayman-domiciled group and single-parent captives</strong>, directing actuarial staff across reserving, renewal pricing, new-business pricing, and NCCI Excess Loss Factor benchmarking.</li>
+                <li>Lead actuarial oversight across <strong>Cayman-domiciled member-owned group captives</strong>, directing actuarial staff across reserving, renewal pricing, new-business pricing, and NCCI Excess Loss Factor benchmarking.</li>
                 <li>Present reserve studies, renewal projections, and custom model-driven diagnostics directly to captive boards, executives, captive managers, and auditors.</li>
                 <li>Led renewal pricing model architecture (Excel, VBA, Power Query, compiled <code>.xll</code> add-ins) and engineered a <strong>Rust-based Monte Carlo ILF simulation engine</strong> for Auto and General Liability.</li>
               </ul>
@@ -699,7 +689,7 @@
 
         <p class="section-intro">I like turning mathematical ideas into fast, inspectable software. Outside of P&amp;C consulting, my independent projects span actuarial tooling, numerical computing, and quantitative finance self-study.</p>
 
-        <div class="card-grid two-up">
+        <div class="card-grid three-up">
           <article class="interest-card">
             <span class="interest-tag">Actuarial Tooling</span>
             <h3>Open Reserving Kernels</h3>
@@ -716,15 +706,6 @@
             <span class="interest-tag">Statistics</span>
             <h3>Bayesian Modeling &amp; Calibration</h3>
             <p>Bayesian forecasting with calibration scorecards and deterministic, reproducible numerical experiments—the same toolkit behind credibility weighting, reserve variability, and model validation.</p>
-          </article>
-
-          <article class="interest-card is-featured">
-            <div class="interest-card-top">
-              <span class="interest-tag">Excess &amp; Severity Layers</span>
-              <span class="live-pill">Live on page</span>
-            </div>
-            <h3>Excess Layer &amp; ILF Lab</h3>
-            <p>A client-side Rust + WebAssembly simulator for lognormal severity tails, limited expected values, and layer ILFs on synthetic data—<a class="text-link" href="#lab" data-nav="interests-lab">try it above ↑</a>.</p>
           </article>
         </div>
       </div>

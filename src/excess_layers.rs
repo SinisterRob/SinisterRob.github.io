@@ -1,9 +1,44 @@
 use std::f64::consts::TAU;
 
 const GROUND_UP_MEAN: f64 = 100_000.0;
-const SAMPLE_SIZE: u32 = 65_536;
+const SAMPLE_SIZE: usize = 65_536;
 const SEED: u64 = 2026;
 const INV_SQRT_TAU: f64 = 0.3989422804014327;
+
+static mut STANDARD_NORMALS: [f64; SAMPLE_SIZE] = [0.0; SAMPLE_SIZE];
+
+fn populate_normals(buf: &mut [f64; SAMPLE_SIZE]) {
+    let mut state = SEED;
+    for slot in buf.iter_mut() {
+        let radius = (-2.0 * uniform(&mut state).ln()).sqrt();
+        let angle = TAU * uniform(&mut state);
+        *slot = radius * angle.cos();
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+fn standard_normals() -> &'static [f64; SAMPLE_SIZE] {
+    static mut READY: bool = false;
+    // SAFETY: wasm32-unknown-unknown is single-threaded; initialized once before shared reads.
+    unsafe {
+        if !READY {
+            populate_normals(&mut *std::ptr::addr_of_mut!(STANDARD_NORMALS));
+            READY = true;
+        }
+        &*std::ptr::addr_of!(STANDARD_NORMALS)
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn standard_normals() -> &'static [f64; SAMPLE_SIZE] {
+    use std::sync::Once;
+    static INIT: Once = Once::new();
+    INIT.call_once(|| unsafe {
+        populate_normals(&mut *std::ptr::addr_of_mut!(STANDARD_NORMALS));
+    });
+    // SAFETY: STANDARD_NORMALS is initialized exactly once and never mutated afterward.
+    unsafe { &*std::ptr::addr_of!(STANDARD_NORMALS) }
+}
 
 #[no_mangle]
 pub extern "C" fn limited_expected_value(tail: u32, limit: f64) -> f64 {
@@ -25,13 +60,10 @@ pub extern "C" fn expected_layer(tail: u32, attach: f64, limit: f64, layer: u32)
 pub extern "C" fn simulated_layer(tail: u32, attach: f64, limit: f64, layer: u32) -> f64 {
     let sigma = log_sd(tail);
     let log_mean = GROUND_UP_MEAN.ln() - sigma * sigma / 2.0;
-    let mut state = SEED;
     let mut total = 0.0;
     let upper_cap = limit.max(attach);
-    for _ in 0..SAMPLE_SIZE {
-        let radius = (-2.0 * uniform(&mut state).ln()).sqrt();
-        let angle = TAU * uniform(&mut state);
-        let severity = (log_mean + sigma * radius * angle.cos()).exp();
+    for &z in standard_normals().iter() {
+        let severity = (log_mean + sigma * z).exp();
         let lower = severity.min(attach);
         // Reuse the same fixed-seed severity draws across layers, attachments, tails, and limits.
         total += if layer == 0 {
@@ -40,7 +72,7 @@ pub extern "C" fn simulated_layer(tail: u32, attach: f64, limit: f64, layer: u32
             severity.min(upper_cap) - lower
         };
     }
-    total / f64::from(SAMPLE_SIZE)
+    total / (SAMPLE_SIZE as f64)
 }
 
 #[no_mangle]

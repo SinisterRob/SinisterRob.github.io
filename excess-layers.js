@@ -25,6 +25,12 @@ const compactDollars = value => {
   }
   return `$${Math.round(value / 1000)}k`;
 };
+
+const compactDollarsPrecise = value => {
+  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(2).replace(/\.?0+$/, '')}M`;
+  if (value >= 1000) return `$${(value / 1000).toFixed(1).replace(/\.0$/, '')}k`;
+  return dollars.format(value);
+};
 const ratio = value => `${value.toFixed(2)}×`;
 const byId = id => document.getElementById(id);
 
@@ -364,8 +370,8 @@ function initCopyEmail() {
 
     if (copied) {
       track('contact_click', { method: 'copy_email' });
-      if (label) label.textContent = 'Copied';
-      else button.textContent = 'Copied';
+      if (label) label.textContent = 'Copied ✓';
+      else button.textContent = 'Copied ✓';
       button.classList.add('is-copied');
       if (status) status.textContent = `Copied ${email} to clipboard.`;
       clearTimeout(resetTimer);
@@ -379,6 +385,23 @@ function initCopyEmail() {
   };
 
   button.addEventListener('click', copyEmailFn);
+}
+
+function initNavInert() {
+  const primary = byId('primary-nav');
+  const mobile = byId('mobile-nav');
+  if (!primary || !mobile) return;
+  const mq = window.matchMedia('(max-width: 48rem)');
+  function sync() {
+    const isMobile = mq.matches;
+    primary.inert = isMobile;
+    primary.setAttribute('aria-hidden', String(isMobile));
+    mobile.inert = !isMobile;
+    mobile.setAttribute('aria-hidden', String(!isMobile));
+  }
+  if (typeof mq.addEventListener === 'function') mq.addEventListener('change', sync);
+  else if (typeof mq.addListener === 'function') mq.addListener(sync);
+  sync();
 }
 
 function initScrollOrientation() {
@@ -624,20 +647,33 @@ function initCommandPalette() {
     input.setAttribute('aria-activedescendant', `cmd-opt-${selectedIndex}`);
   }
 
+  let restoreFocusEl = null;
+  let skipRestoreFocus = false;
+
   function execute(idx) {
     const item = filtered[idx];
     if (!item) return;
+    skipRestoreFocus = true;
     dialog.close();
     item.run();
   }
 
   function openPalette() {
     if (dialog.open) return;
+    restoreFocusEl = document.activeElement instanceof HTMLElement ? document.activeElement : trigger;
+    skipRestoreFocus = false;
     input.value = '';
     renderList('');
     dialog.showModal();
     input.focus();
   }
+
+  dialog.addEventListener('close', () => {
+    if (!skipRestoreFocus) {
+      (restoreFocusEl || trigger).focus();
+    }
+    skipRestoreFocus = false;
+  });
 
   trigger.addEventListener('click', openPalette);
   closeBtn?.addEventListener('click', () => dialog.close());
@@ -674,7 +710,16 @@ function initCommandPalette() {
 }
 
 async function loadModel() {
-  const response = await fetch(new URL('./excess_layers.wasm', import.meta.url));
+  const url = new URL('./excess_layers.wasm', import.meta.url);
+  if (typeof WebAssembly.instantiateStreaming === 'function') {
+    try {
+      const { instance } = await WebAssembly.instantiateStreaming(fetch(url));
+      return instance.exports;
+    } catch {
+      // Fallback when server lacks application/wasm MIME type.
+    }
+  }
+  const response = await fetch(url);
   if (!response.ok) throw new Error(`Model request returned ${response.status}`);
   const { instance } = await WebAssembly.instantiate(await response.arrayBuffer());
   return instance.exports;
@@ -825,9 +870,11 @@ function renderIlf(svg, plotWidth, lev, tail, attach, limit, ilf) {
     <path d="${path(activePrimary, x, y)}" class="chart-curve is-primary"/>
     <path d="${path(activeExcess, x, y)}" class="chart-curve is-active"/>
     ${labels}
-    <circle class="chart-dot-attach" cx="${xAtt.toFixed(1)}" cy="${yPivot.toFixed(1)}" r="3.8"/>
-    <circle class="chart-dot-ring" cx="${xLim.toFixed(1)}" cy="${markerY.toFixed(1)}" r="8.5"/>
-    <circle class="chart-dot" cx="${xLim.toFixed(1)}" cy="${markerY.toFixed(1)}" r="4.4"/>
+    <circle class="chart-dot-attach" cx="${xAtt.toFixed(1)}" cy="${yPivot.toFixed(1)}" r="3.8" aria-hidden="true"/>
+    <circle class="chart-dot-ring" cx="${xLim.toFixed(1)}" cy="${markerY.toFixed(1)}" r="8.5" aria-hidden="true"/>
+    <circle class="chart-dot" cx="${xLim.toFixed(1)}" cy="${markerY.toFixed(1)}" r="4.4" aria-hidden="true"/>
+    <circle class="chart-handle-hit" data-handle="attach" cx="${xAtt.toFixed(1)}" cy="${yPivot.toFixed(1)}" r="22" aria-hidden="true"/>
+    <circle class="chart-handle-hit" data-handle="limit" cx="${xLim.toFixed(1)}" cy="${markerY.toFixed(1)}" r="22" aria-hidden="true"/>
     ${showAttLabel ? `<text class="chart-text is-attachment" x="${attLabelX.toFixed(1)}" y="14" text-anchor="middle">${attText}</text>` : ''}
     <text class="chart-text is-active" x="${labelX.toFixed(1)}" y="14" text-anchor="middle">${markerLabel}</text>`;
   return plot;
@@ -883,6 +930,8 @@ function renderSeverity(svg, plotWidth, distributions, tailPeaks, density, tail,
     <path d="${path(points, x, y)}" class="chart-curve is-active"/>
     <line class="chart-marker attachment" x1="${xAtt.toFixed(1)}" y1="${top}" x2="${xAtt.toFixed(1)}" y2="${bottom}"/>
     <line class="chart-marker" x1="${xLim.toFixed(1)}" y1="${top}" x2="${xLim.toFixed(1)}" y2="${bottom}"/>
+    <circle class="chart-handle-hit" data-handle="attach" cx="${xAtt.toFixed(1)}" cy="${((top + bottom) * 0.5).toFixed(1)}" r="22" aria-hidden="true"/>
+    <circle class="chart-handle-hit" data-handle="limit" cx="${xLim.toFixed(1)}" cy="${((top + bottom) * 0.5).toFixed(1)}" r="22" aria-hidden="true"/>
     ${attLabel}
     <text class="chart-text is-active" x="${topLabelX.toFixed(1)}" y="14" text-anchor="${topLabelAnchor}">${topLabel}</text>`;
   return plot;
@@ -903,7 +952,6 @@ function showModel(exports) {
   const limitSlider = byId('layer-top');
   const svg = byId('severity-chart');
   const chartTitleLabel = byId('chart-title-label');
-  const takeawayEl = byId('takeaway-text');
   const tailButtons = [...document.querySelectorAll('[data-tail]')];
   const viewButtons = [...document.querySelectorAll('[data-chart-view]')];
   const presetButtons = [...document.querySelectorAll('[data-preset]')];
@@ -932,8 +980,10 @@ function showModel(exports) {
   let lastPlot = { width: 540, left: 44, right: 474, start: 0, end: MAX_LIMIT };
   const simPrimaryCache = new Map();
   const simExcessCache = new Map();
-  let announcement;
+  let mcTimer = null;
+  let rafId = null;
   let sliderTrackTimer;
+  let latestSummary = '';
 
   function syncSliderVisual(attach, limit) {
     const span = MAX_LIMIT - MIN_VALUE;
@@ -970,7 +1020,41 @@ function showModel(exports) {
     }
   }
 
-  function update(announce = false) {
+  function updateMc(attach, limit, excess) {
+    if (typeof simulatedLayer !== 'function') return;
+    const priKey = `${tail}:${attach}`;
+    let simPrimary = simPrimaryCache.get(priKey);
+    if (simPrimary === undefined) {
+      simPrimary = simulatedLayer(tail, attach, limit, 0);
+      simPrimaryCache.set(priKey, simPrimary);
+    }
+    const exKey = `${tail}:${attach}:${limit}`;
+    let simExcess = simExcessCache.get(exKey);
+    if (simExcess === undefined) {
+      simExcess = simulatedLayer(tail, attach, limit, 1);
+      simExcessCache.set(exKey, simExcess);
+    }
+    const diffExcess = simExcess - excess;
+    const sign = diffExcess >= 0 ? '+' : '−';
+    const diffPct = excess > 1 ? Math.abs((diffExcess / excess) * 100) : 0;
+    const simCheck = byId('sim-check');
+    const simDelta = byId('sim-delta');
+    const mcVerify = byId('mc-verify');
+    if (simCheck) simCheck.textContent = dollars.format(simExcess);
+    if (simDelta) simDelta.textContent = `${sign}${diffPct.toFixed(1)}%`;
+    if (mcVerify) {
+      mcVerify.title = `65,536-draw fixed-seed Rust MC: Primary ${dollars.format(simPrimary)}, Excess ${dollars.format(simExcess)} (${sign}${dollars.format(Math.abs(diffExcess))} vs. closed-form)`;
+    }
+  }
+
+  function announceResults() {
+    const summaryEl = byId('results-summary');
+    if (summaryEl && latestSummary) {
+      summaryEl.textContent = latestSummary;
+    }
+  }
+
+  function update({ announce = false, immediateMc = true } = {}) {
     const attach = attachSlider.valueAsNumber;
     const limit = limitSlider.valueAsNumber;
     const width = Math.max(LIMIT_STEP, limit - attach);
@@ -997,7 +1081,7 @@ function showModel(exports) {
     byId('primary-range').textContent = `$0–${compactDollars(attach)}`;
     byId('excess-range').textContent = `${compactDollars(attach)}–${compactDollars(limit)}`;
     byId('above-range').textContent = `>${compactDollars(limit)}`;
-    byId('tail-sigma').textContent = TAIL_SIGMAS[tail];
+    byId('tail-sigma').textContent = TAILS[tail];
 
     byId('loss-primary').textContent = dollars.format(primary);
     byId('loss-excess').textContent = dollars.format(excess);
@@ -1008,9 +1092,9 @@ function showModel(exports) {
     byId('ilf').textContent = ratio(ilf);
     byId('ilf-sub').textContent = `${compactDollars(limit)} / ${compactDollars(attach)}`;
     byId('layer-rate').textContent = percent.format(layerRate);
-    byId('burn-sub').textContent = `of ${compactDollars(width)} width`;
-    byId('avg-hit').textContent = dollars.format(avgHit);
-    byId('avg-hit-sub').textContent = `given X>${compactDollars(attach)}`;
+    byId('burn-sub').textContent = `of ${compactDollars(width)}`;
+    byId('avg-hit').textContent = compactDollarsPrecise(avgHit);
+    byId('avg-hit-sub').textContent = `X>${compactDollars(attach)}`;
 
     const pctPrimary = (primary / GROUND_UP_MEAN) * 100;
     const pctExcess = (excess / GROUND_UP_MEAN) * 100;
@@ -1022,43 +1106,35 @@ function showModel(exports) {
     byId('pct-excess').textContent = `${pctExcess.toFixed(1)}%`;
     byId('pct-above').textContent = `${pctAbove.toFixed(1)}%`;
 
-    if (takeawayEl) {
-      takeawayEl.innerHTML = `For <strong>${shorthand}</strong> under a <strong>${TAILS[tail].toLowerCase()} tail</strong> (${TAIL_SIGMAS[tail]}), <strong>${pctExcess.toFixed(1)}%</strong> of expected loss sits in the excess layer and <strong>${percent.format(pTop)}</strong> of claims pierce the cap—an ILF of <strong>${ratio(ilf)}</strong>.`;
-    }
-
-    if (typeof simulatedLayer === 'function') {
-      const priKey = `${tail}:${attach}`;
-      let simPrimary = simPrimaryCache.get(priKey);
-      if (simPrimary === undefined) {
-        simPrimary = simulatedLayer(tail, attach, limit, 0);
-        simPrimaryCache.set(priKey, simPrimary);
-      }
-      const exKey = `${tail}:${attach}:${limit}`;
-      let simExcess = simExcessCache.get(exKey);
-      if (simExcess === undefined) {
-        simExcess = simulatedLayer(tail, attach, limit, 1);
-        simExcessCache.set(exKey, simExcess);
-      }
-      const diffExcess = simExcess - excess;
-      const sign = diffExcess >= 0 ? '+' : '−';
-      const diffPct = excess > 1 ? Math.abs((diffExcess / excess) * 100) : 0;
-      const simCheck = byId('sim-check');
-      const mcVerify = byId('mc-verify');
-      simCheck.innerHTML = `Excess ${dollars.format(simExcess)} <small>(${sign}${dollars.format(Math.abs(diffExcess))} · ${sign}${diffPct.toFixed(1)}%)</small>`;
-      if (mcVerify) {
-        mcVerify.title = `65,536-draw fixed-seed Rust MC: Primary ${dollars.format(simPrimary)}, Excess ${dollars.format(simExcess)} (${sign}${dollars.format(Math.abs(diffExcess))} vs. closed-form)`;
-      }
+    clearTimeout(mcTimer);
+    if (immediateMc) {
+      updateMc(attach, limit, excess);
+    } else {
+      mcTimer = setTimeout(() => updateMc(attach, limit, excess), 75);
     }
 
     draw();
 
-    clearTimeout(announcement);
+    latestSummary = `${TAILS[tail]} tail (${TAIL_SIGMAS[tail]}) for ${shorthand}. Primary ${dollars.format(primary)}, Excess ${dollars.format(excess)}, above limit ${dollars.format(above)}, ILF ${ratio(ilf)}, layer burn ${percent.format(layerRate)}, average attached claim ${dollars.format(avgHit)}.`;
     if (announce) {
-      announcement = setTimeout(() => {
-        byId('results-summary').textContent =
-          `${TAILS[tail]} tail for ${shorthand}. Primary ${dollars.format(primary)}, Excess ${dollars.format(excess)}, above limit ${dollars.format(above)}, ILF ${ratio(ilf)}, layer burn ${percent.format(layerRate)}, average attached claim ${dollars.format(avgHit)}.`;
-      }, 220);
+      announceResults();
     }
+  }
+
+  function scheduleDragUpdate() {
+    if (rafId !== null) return;
+    rafId = window.requestAnimationFrame(() => {
+      rafId = null;
+      update({ announce: false, immediateMc: false });
+    });
+  }
+
+  function flushCommit() {
+    if (rafId !== null) {
+      window.cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+    update({ announce: true, immediateMc: true });
   }
 
   function scheduleSliderTrack(control) {
@@ -1075,7 +1151,7 @@ function showModel(exports) {
     }, 600);
   }
 
-  function setHandle(which, rawValue, control) {
+  function setHandle(which, rawValue, control, commit = false) {
     const snapped = Math.min(
       MAX_LIMIT,
       Math.max(MIN_VALUE, Math.round(rawValue / LIMIT_STEP) * LIMIT_STEP),
@@ -1089,7 +1165,8 @@ function showModel(exports) {
       if (clamped === limitSlider.valueAsNumber) return;
       limitSlider.value = String(clamped);
     }
-    update(true);
+    if (commit) flushCommit();
+    else scheduleDragUpdate();
     trackLabEngagement(control);
     scheduleSliderTrack(control);
   }
@@ -1104,20 +1181,22 @@ function showModel(exports) {
     if (attachSlider.valueAsNumber > maxAttach) {
       attachSlider.value = String(maxAttach);
     }
-    update(true);
+    scheduleDragUpdate();
     trackLabEngagement('slider_attach');
     scheduleSliderTrack('slider_attach');
   });
+  attachSlider.addEventListener('change', flushCommit);
 
   limitSlider.addEventListener('input', () => {
     const minLimit = attachSlider.valueAsNumber + LIMIT_STEP;
     if (limitSlider.valueAsNumber < minLimit) {
       limitSlider.value = String(minLimit);
     }
-    update(true);
+    scheduleDragUpdate();
     trackLabEngagement('slider_limit');
     scheduleSliderTrack('slider_limit');
   });
+  limitSlider.addEventListener('change', flushCommit);
 
   // Click anywhere on dual-range track to snap the nearer thumb
   dualRange?.addEventListener('pointerdown', event => {
@@ -1128,7 +1207,7 @@ function showModel(exports) {
     const val = MIN_VALUE + frac * (MAX_LIMIT - MIN_VALUE);
     const dAttach = Math.abs(val - attachSlider.valueAsNumber);
     const dLimit = Math.abs(val - limitSlider.valueAsNumber);
-    setHandle(dAttach <= dLimit ? 'attach' : 'limit', val, 'slider_track');
+    setHandle(dAttach <= dLimit ? 'attach' : 'limit', val, 'slider_track', true);
   });
 
   tickButtons.forEach(btn => {
@@ -1137,7 +1216,7 @@ function showModel(exports) {
       const dAttach = Math.abs(val - attachSlider.valueAsNumber);
       const dLimit = Math.abs(val - limitSlider.valueAsNumber);
       const target = val === MIN_VALUE ? 'attach' : val === MAX_LIMIT ? 'limit' : dAttach <= dLimit ? 'attach' : 'limit';
-      setHandle(target, val, 'slider_tick');
+      setHandle(target, val, 'slider_tick', true);
     });
   });
 
@@ -1151,7 +1230,7 @@ function showModel(exports) {
         tail: TAILS[tail].toLowerCase(),
         limit: compactDollars(limitSlider.valueAsNumber),
       });
-      update(true);
+      flushCommit();
     }),
   );
 
@@ -1171,7 +1250,7 @@ function showModel(exports) {
         tail: TAILS[tail].toLowerCase(),
         limit: compactDollars(limit),
       });
-      update(true);
+      flushCommit();
     });
   });
 
@@ -1209,22 +1288,27 @@ function showModel(exports) {
     if (event.button !== 0 && event.pointerType === 'mouse') return;
     const val = valueFromPointer(event);
     if (val === null) return;
+    const hitTarget = event.target.closest?.('.chart-handle-hit');
+    const explicitHandle = hitTarget?.dataset.handle;
     const dAttach = Math.abs(val - attachSlider.valueAsNumber);
     const dLimit = Math.abs(val - limitSlider.valueAsNumber);
-    const handle = dAttach <= dLimit ? 'attach' : 'limit';
+    const handle = explicitHandle || (dAttach <= dLimit ? 'attach' : 'limit');
     const isTouch = event.pointerType === 'touch';
+    const immediate = !isTouch || Boolean(explicitHandle);
     dragState = {
       pointerId: event.pointerId,
       handle,
       startX: event.clientX,
       startY: event.clientY,
-      active: !isTouch,
+      active: immediate,
+      moved: false,
     };
-    if (!isTouch) {
+    if (immediate) {
       try {
         svg.setPointerCapture(event.pointerId);
       } catch {}
-      setHandle(handle, val, 'chart_drag');
+      setHandle(handle, val, 'chart_drag', false);
+      dragState.moved = true;
     }
   });
 
@@ -1244,12 +1328,17 @@ function showModel(exports) {
       } catch {}
     }
     const next = valueFromPointer(event);
-    if (next !== null) setHandle(dragState.handle, next, 'chart_drag');
+    if (next !== null) {
+      setHandle(dragState.handle, next, 'chart_drag', false);
+      dragState.moved = true;
+    }
   });
 
   const endDrag = event => {
     if (dragState && event.pointerId === dragState.pointerId) {
+      const shouldCommit = dragState.moved;
       dragState = null;
+      if (shouldCommit) flushCommit();
     }
   };
   svg.addEventListener('pointerup', endDrag);
@@ -1278,7 +1367,7 @@ function showModel(exports) {
         tail: TAILS[tail].toLowerCase(),
         limit: compactDollars(limit),
       });
-      update(true);
+      flushCommit();
     },
     toggleView() {
       setView(view === 'ilf' ? 'pdf' : 'ilf', true);
@@ -1302,6 +1391,7 @@ function showModel(exports) {
 initTheme();
 initAnalytics();
 initCopyEmail();
+initNavInert();
 initScrollOrientation();
 initReveal();
 initMethodologyDrawer();

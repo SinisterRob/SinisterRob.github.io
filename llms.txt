@@ -1,6 +1,6 @@
 # Robert Jurgens, FCAS
 
-> Chicago-based Property & Casualty Actuary (FCAS) specializing in Cayman-domiciled captive insurance, pricing architecture, increased limit factors (ILFs), economic capital modeling, and native Rust / Excel XLL software.
+> Chicago-based Property & Casualty Actuary (FCAS) specializing in Cayman-domiciled member-owned group captives, commercial liability pricing, primary and excess loss reserving, increased limit factors (ILFs), economic capital modeling, and native Rust / Excel XLL software.
 
 - Canonical URL: https://sinisterrob.github.io/
 - Full Name: Robert Daniel Jurgens, FCAS
@@ -8,14 +8,14 @@
 - Current Role: Senior Actuarial Consultant, Edgewater Actuarial Insights, LLC (Jul 2023 – Present; promoted Aug 2025)
 - Credentials: Fellow of the Casualty Actuarial Society (FCAS, 2022); Associate of the Casualty Actuarial Society (ACAS, 2021)
 - Education: B.S. in Mathematics (Highest Honors), The University of Texas at Austin (2018); Eugene Wisdom Memorial Endowed Scholarship in Actuarial Studies
-- Technical Core: Rust, Python, C#, R, Excel XLLs, VBA / Power Query, MetaRisk, WebAssembly, Statistical & Bayesian Modeling
+- Technical Core: Rust, Python, TypeScript, C#, R, WebAssembly, Excel XLLs, VBA / Power Query, Arius, @RISK, MetaRisk, Primary & Excess Reserving, Commercial Liability Pricing, Statistical & Bayesian Modeling
 - LinkedIn: https://www.linkedin.com/in/robert-jurgens-fcas-352017143/
 - GitHub: https://github.com/SinisterRob
 - Contact: robertdjurgens@gmail.com
 
 ## Core Experience
 
-- **Edgewater Actuarial Insights, LLC (2023–Present)**: Leads actuarial oversight across Cayman-domiciled group and single-parent captives; directs actuarial staff across reserving, renewal pricing, new-business pricing, and NCCI Excess Loss Factor benchmarking; led renewal pricing model architecture (Excel, VBA, Power Query, compiled `.xll` add-ins) and engineered a Rust Monte Carlo ILF simulation engine for Auto and General Liability.
+- **Edgewater Actuarial Insights, LLC (2023–Present)**: Leads actuarial oversight across Cayman-domiciled member-owned group captives; directs actuarial staff across primary and excess reserving, commercial liability renewal and new-business pricing, and NCCI Excess Loss Factor benchmarking; led renewal pricing model architecture (Excel, VBA, Power Query, compiled `.xll` add-ins) and engineered a Rust Monte Carlo ILF simulation engine for Auto and General Liability.
 - **Oliver Wyman Actuarial Consulting (2022–2023)**: Manager estimating unpaid loss and ALAE reserves for captive and self-insured clients; led client delivery and executive presentations; Central Zone Values Ambassador.
 - **Tokio Marine HCC (2018–2022)**: Assistant Actuarial Analyst to Actuarial Supervisor; analyzed S&P Risk-Based Capital Adequacy Model changes, maintained quarterly internal economic capital model, evaluated S&P and Fitch capital impacts, supported casualty XOL reinsurance pricing in MetaRisk and R, built an R-backed Maximum Foreseeable Loss web application, and reserved Aviation and Trade Credit lines.
 
