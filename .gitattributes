@@ -1,0 +1,6 @@
+*.html linguist-generated=true
+*.css linguist-generated=true
+*.js linguist-generated=true
+*.svg linguist-generated=true
+dist/** linguist-vendored=true
+src/*.rs linguist-detectable=true
