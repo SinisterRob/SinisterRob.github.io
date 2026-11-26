@@ -543,10 +543,14 @@ function initCommandPalette() {
     { group: 'External', label: 'Inspect Rust WASM Kernel Source', sub: 'excess_layers.rs ↗', keywords: 'rust wasm source', run: () => openExternal('https://github.com/SinisterRob/SinisterRob.github.io/blob/main/src/excess_layers.rs', 'rust_source') },
   ];
 
+  function scrollBehavior() {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+  }
+
   function jumpTo(hash, target) {
     track('nav_click', { target, source: 'command_palette' });
     const el = document.querySelector(hash);
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
+    if (el) el.scrollIntoView({ behavior: scrollBehavior() });
     else window.location.hash = hash;
   }
 
@@ -554,14 +558,14 @@ function initCommandPalette() {
     if (labController) {
       labController.applyPreset(limit, tailIndex, name, 'command_palette');
     }
-    byId('lab')?.scrollIntoView({ behavior: 'smooth' });
+    byId('lab')?.scrollIntoView({ behavior: scrollBehavior() });
   }
 
   function toggleLabView() {
     if (labController) {
       labController.toggleView();
     }
-    byId('lab')?.scrollIntoView({ behavior: 'smooth' });
+    byId('lab')?.scrollIntoView({ behavior: scrollBehavior() });
   }
 
   function openExternal(url, target) {
@@ -582,7 +586,8 @@ function initCommandPalette() {
     selectedIndex = 0;
 
     if (!filtered.length) {
-      list.innerHTML = '<p class="cmd-empty">No matching sections or actions.</p>';
+      list.innerHTML = '<p class="cmd-empty" role="presentation">No matching sections or actions.</p>';
+      input.removeAttribute('aria-activedescendant');
       return;
     }
 
@@ -591,13 +596,14 @@ function initCommandPalette() {
     filtered.forEach((item, idx) => {
       if (item.group !== lastGroup) {
         lastGroup = item.group;
-        html.push(`<div class="cmd-group-label">${item.group}</div>`);
+        html.push(`<div class="cmd-group-label" role="presentation">${item.group}</div>`);
       }
       html.push(
-        `<button type="button" class="cmd-item ${idx === selectedIndex ? 'is-selected' : ''}" role="option" aria-selected="${idx === selectedIndex}" data-cmd-idx="${idx}"><span>${item.label}</span><span class="cmd-item-sub">${item.sub}</span></button>`,
+        `<button type="button" id="cmd-opt-${idx}" class="cmd-item ${idx === selectedIndex ? 'is-selected' : ''}" role="option" aria-selected="${idx === selectedIndex}" data-cmd-idx="${idx}"><span>${item.label}</span><span class="cmd-item-sub">${item.sub}</span></button>`,
       );
     });
     list.innerHTML = html.join('');
+    input.setAttribute('aria-activedescendant', `cmd-opt-${selectedIndex}`);
   }
 
   function updateSelection(next) {
@@ -610,6 +616,7 @@ function initCommandPalette() {
       btn.setAttribute('aria-selected', String(sel));
       if (sel) btn.scrollIntoView({ block: 'nearest' });
     });
+    input.setAttribute('aria-activedescendant', `cmd-opt-${selectedIndex}`);
   }
 
   function execute(idx) {
@@ -865,6 +872,8 @@ function showModel(exports) {
   let ilf = 1 + expectedLayer(1, 350_000, 1) / expectedLayer(1, 350_000, 0);
   let plotWidth = 540;
   let lastPlot = { width: 540, left: 44, right: 474, start: ATTACHMENT, end: MAX_LIMIT };
+  const simPrimaryCache = new Map();
+  const simExcessCache = new Map();
   let announcement;
   let sliderTrackTimer;
 
@@ -936,8 +945,17 @@ function showModel(exports) {
     }
 
     if (typeof simulatedLayer === 'function') {
-      const simPrimary = simulatedLayer(tail, limit, 0);
-      const simExcess = simulatedLayer(tail, limit, 1);
+      let simPrimary = simPrimaryCache.get(tail);
+      if (simPrimary === undefined) {
+        simPrimary = simulatedLayer(tail, ATTACHMENT, 0);
+        simPrimaryCache.set(tail, simPrimary);
+      }
+      const excessKey = `${tail}:${limit}`;
+      let simExcess = simExcessCache.get(excessKey);
+      if (simExcess === undefined) {
+        simExcess = simulatedLayer(tail, limit, 1);
+        simExcessCache.set(excessKey, simExcess);
+      }
       const simIlf = 1 + simExcess / simPrimary;
       const diffExcess = simExcess - excess;
       const sign = diffExcess >= 0 ? '+' : '−';
@@ -1053,8 +1071,8 @@ function showModel(exports) {
     button.addEventListener('click', () => setView(button.dataset.chartView, true)),
   );
 
-  // Direct pointer scrubbing on the SVG plot (Bartosz Ciechanowski / Distill style)
-  let dragging = false;
+  // Direct pointer scrubbing on the SVG plot (touch requires horizontal drag intent to preserve page scroll)
+  let dragState = null;
   function limitFromPointer(event) {
     const rect = svg.getBoundingClientRect();
     if (!rect.width) return null;
@@ -1066,22 +1084,46 @@ function showModel(exports) {
 
   svg.addEventListener('pointerdown', event => {
     if (event.button !== 0 && event.pointerType === 'mouse') return;
-    dragging = true;
-    try {
-      svg.setPointerCapture(event.pointerId);
-    } catch {}
-    const next = limitFromPointer(event);
-    if (next !== null) applyLimit(next, 'chart_drag');
+    const isTouch = event.pointerType === 'touch';
+    dragState = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      active: !isTouch,
+    };
+    if (!isTouch) {
+      try {
+        svg.setPointerCapture(event.pointerId);
+      } catch {}
+      const next = limitFromPointer(event);
+      if (next !== null) applyLimit(next, 'chart_drag');
+    }
   });
 
   svg.addEventListener('pointermove', event => {
-    if (!dragging) return;
+    if (!dragState || event.pointerId !== dragState.pointerId) return;
+    if (!dragState.active) {
+      const dx = Math.abs(event.clientX - dragState.startX);
+      const dy = Math.abs(event.clientY - dragState.startY);
+      if (dx < 6 && dy < 6) return;
+      if (dy >= dx) {
+        // Vertical scroll gesture: release tracking so native scroll stays smooth
+        dragState = null;
+        return;
+      }
+      dragState.active = true;
+      try {
+        svg.setPointerCapture(event.pointerId);
+      } catch {}
+    }
     const next = limitFromPointer(event);
     if (next !== null) applyLimit(next, 'chart_drag');
   });
 
-  const endDrag = () => {
-    dragging = false;
+  const endDrag = event => {
+    if (dragState && event.pointerId === dragState.pointerId) {
+      dragState = null;
+    }
   };
   svg.addEventListener('pointerup', endDrag);
   svg.addEventListener('pointercancel', endDrag);

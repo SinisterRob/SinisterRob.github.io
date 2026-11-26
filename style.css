@@ -1273,6 +1273,7 @@ code {
 }
 
 .stat-cell {
+  min-width: 0;
   padding-left: 0.55rem;
   border-left: 1px solid var(--line);
 }
@@ -2090,6 +2091,15 @@ code {
 @media (max-width: 32rem) {
   .dossier-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .stat-cell dt {
+    white-space: normal;
+  }
+
+  .stat-cell dt span {
+    display: block;
+    margin-top: 0.08rem;
   }
 
   .stat-cell dd {

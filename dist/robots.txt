@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://sinisterrob.github.io/sitemap.xml

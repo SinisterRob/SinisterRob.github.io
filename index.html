@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Robert Jurgens, FCAS — Captive &amp; P&amp;C Actuary | Chicago</title>
-  <meta name="description" content="Robert Jurgens, FCAS — Chicago P&amp;C actuary specializing in Cayman captives, ILF &amp; excess pricing, economic capital models, and Rust/Excel XLL software.">
+  <meta name="description" content="Robert Jurgens, FCAS — Chicago P&amp;C actuary specializing in Cayman captives, ILFs, economic capital, Bayesian modeling, and Rust/Python/C#/XLL software.">
   <meta name="author" content="Robert Jurgens, FCAS">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
   <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -18,7 +18,7 @@
   <meta property="og:site_name" content="Robert Jurgens, FCAS">
   <meta property="og:locale" content="en_US">
   <meta property="og:title" content="Robert Jurgens, FCAS — Captive &amp; P&amp;C Actuary">
-  <meta property="og:description" content="Chicago P&amp;C actuary specializing in Cayman captive oversight, ILF pricing architecture, economic capital modeling, and native Rust &amp; Excel XLL software.">
+  <meta property="og:description" content="Chicago P&amp;C actuary specializing in Cayman captive oversight, ILF pricing, economic capital, statistical &amp; Bayesian modeling, and Rust, Python, C#, and Excel XLL software.">
   <meta property="og:image" content="https://sinisterrob.github.io/og-image.png">
   <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1200">
@@ -497,7 +497,7 @@
               </div>
             </div>
 
-            <div class="lab-takeaway" id="lab-takeaway" aria-live="polite">
+            <div class="lab-takeaway" id="lab-takeaway">
               <span class="takeaway-tag">Reading</span>
               <p id="takeaway-text">Under a <strong>moderate tail</strong> (σ = 1.00) at a <strong>$350k</strong> limit, <strong>29.7%</strong> of expected loss sits in the excess layer and <strong>4.0%</strong> of claims pierce above—giving an ILF of <strong>1.48×</strong>.</p>
             </div>
@@ -682,7 +682,7 @@
           <article class="interest-card">
             <span class="interest-tag">Actuarial Tooling</span>
             <h3>Open Reserving Kernels</h3>
-            <p>Pure-Rust actuarial kernels grounded in CAS/ASTIN literature—chain-ladder, BF/Benktander/Cape Cod/Brosius/Munich CL, Mack standard errors, ODP bootstrap, Iman–Conover dependence, and parametric ILFs—<a class="text-link" href="https://github.com/SinisterRob/reserving-kernels" target="_blank" rel="noopener noreferrer" data-track="reserving-kernels">reserving-kernels ↗</a>.</p>
+            <p>Pure-Rust actuarial reserving kernels grounded in CAS/ASTIN literature—chain-ladder, Bornhuetter–Ferguson, Cape Cod, Mack standard errors, ODP bootstrap, Iman–Conover dependence, and parametric ILFs—<a class="text-link" href="https://github.com/SinisterRob/reserving-kernels" target="_blank" rel="noopener noreferrer" data-track="reserving-kernels">reserving-kernels ↗</a>.</p>
           </article>
 
           <article class="interest-card">
@@ -800,7 +800,7 @@
           <path d="m20 20-3.5-3.5"/>
         </svg>
         <label class="sr-only" for="cmd-input" id="cmd-dialog-title">Jump to section or run action</label>
-        <input id="cmd-input" class="cmd-input" type="search" placeholder="Jump to section, preset, or action…" autocomplete="off" spellcheck="false">
+        <input id="cmd-input" class="cmd-input" type="search" role="combobox" aria-autocomplete="list" aria-expanded="true" aria-controls="cmd-list" placeholder="Jump to section, preset, or action…" autocomplete="off" spellcheck="false">
         <button type="button" class="cmd-esc" id="cmd-close" aria-label="Close quick jump menu">ESC</button>
       </div>
       <div class="cmd-list" id="cmd-list" role="listbox" aria-label="Quick actions"></div>

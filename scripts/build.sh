@@ -50,26 +50,4 @@ if command -v rsvg-convert >/dev/null 2>&1 && [ -f og-image.svg ]; then
   rsvg-convert -w 1200 -h 630 og-image.svg -o og-image.png
 fi
 
-echo "==> Syncing published site files to dist/..."
-rm -rf dist
-mkdir -p dist
-SITE_FILES=(
-  .nojekyll
-  index.html
-  style.css
-  excess-layers.js
-  excess_layers.wasm
-  favicon.svg
-  llms.txt
-  og-image.png
-  og-image.svg
-  robots.txt
-  sitemap.xml
-)
-for f in "${SITE_FILES[@]}"; do
-  if [ -f "$f" ]; then
-    cp -f "$f" "dist/$f"
-  fi
-done
-
-echo "==> Build & sync complete."
+echo "==> Build complete."
