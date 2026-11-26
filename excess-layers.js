@@ -910,6 +910,8 @@ function renderSeverity(svg, plotWidth, distributions, tailPeaks, density, tail,
 
   const xAtt = x(attach);
   const xLim = x(limit);
+  const yAtt = y(density(tail, attach));
+  const yLim = y(density(tail, limit));
   const topLabel = `Cap ${compactDollars(limit)}`;
   const placeTopRight = xLim < left + (right - left) * 0.68;
   const topLabelX = placeTopRight ? Math.min(xLim + 6, right) : Math.max(xLim - 6, left);
@@ -930,8 +932,11 @@ function renderSeverity(svg, plotWidth, distributions, tailPeaks, density, tail,
     <path d="${path(points, x, y)}" class="chart-curve is-active"/>
     <line class="chart-marker attachment" x1="${xAtt.toFixed(1)}" y1="${top}" x2="${xAtt.toFixed(1)}" y2="${bottom}"/>
     <line class="chart-marker" x1="${xLim.toFixed(1)}" y1="${top}" x2="${xLim.toFixed(1)}" y2="${bottom}"/>
-    <circle class="chart-handle-hit" data-handle="attach" cx="${xAtt.toFixed(1)}" cy="${((top + bottom) * 0.5).toFixed(1)}" r="22" aria-hidden="true"/>
-    <circle class="chart-handle-hit" data-handle="limit" cx="${xLim.toFixed(1)}" cy="${((top + bottom) * 0.5).toFixed(1)}" r="22" aria-hidden="true"/>
+    <circle class="chart-dot-attach" cx="${xAtt.toFixed(1)}" cy="${yAtt.toFixed(1)}" r="3.8" aria-hidden="true"/>
+    <circle class="chart-dot-ring" cx="${xLim.toFixed(1)}" cy="${yLim.toFixed(1)}" r="8" aria-hidden="true"/>
+    <circle class="chart-dot" cx="${xLim.toFixed(1)}" cy="${yLim.toFixed(1)}" r="4.2" aria-hidden="true"/>
+    <circle class="chart-handle-hit" data-handle="attach" cx="${xAtt.toFixed(1)}" cy="${yAtt.toFixed(1)}" r="22" aria-hidden="true"/>
+    <circle class="chart-handle-hit" data-handle="limit" cx="${xLim.toFixed(1)}" cy="${yLim.toFixed(1)}" r="22" aria-hidden="true"/>
     ${attLabel}
     <text class="chart-text is-active" x="${topLabelX.toFixed(1)}" y="14" text-anchor="${topLabelAnchor}">${topLabel}</text>`;
   return plot;
