@@ -3,7 +3,7 @@
 #
 # Usage:
 #   ./scripts/install-hooks.sh         # Configure hooks locally
-#   ./scripts/install-hooks.sh --mesh  # Configure hooks on local + robbit-theliomira + robbit-risha-rig
+#   ./scripts/install-hooks.sh --mesh  # Configure hooks locally + hosts in HOOK_MESH_HOSTS
 
 set -euo pipefail
 
@@ -23,9 +23,8 @@ configure_local() {
 configure_local
 
 if [[ "$MESH" == true ]]; then
-  for spec in \
-    "robbit-theliomira:~/Projects/SinisterRob.github.io" \
-    "robbit-risha-rig:~/Projects/SinisterRob.github.io"; do
+  # Pass space-separated "host:remote_dir" specs via HOOK_MESH_HOSTS.
+  for spec in ${HOOK_MESH_HOSTS:-}; do
     HOST="${spec%%:*}"
     REMOTE_DIR="${spec#*:}"
     if ssh -o BatchMode=yes -o ConnectTimeout=5 "$HOST" \
