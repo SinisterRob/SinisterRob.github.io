@@ -7,5 +7,5 @@ cd "$ROOT_DIR"
 echo "pre-push: checking whitespace and conflict markers..."
 git diff --check
 
-echo "pre-push: verifying CSS/JS/WASM appearance and layout in headless Chromium..."
+echo "pre-push: running comprehensive Rust, static, JS/CSS/WASM, and Chromium layout verification..."
 python3 scripts/verify-site.py

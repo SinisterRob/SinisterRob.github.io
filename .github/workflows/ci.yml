@@ -11,10 +11,12 @@ permissions:
 
 jobs:
   verify-site:
-    name: CSS / JS / WASM Appearance Check
+    name: Comprehensive CSS / JS / WASM / Layout Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
 
       - uses: actions/setup-python@v5
         with:
@@ -29,5 +31,5 @@ jobs:
           python -m pip install --upgrade pip playwright
           playwright install chromium
 
-      - name: Run site appearance & WASM checks
+      - name: Run comprehensive site verification
         run: python3 scripts/verify-site.py
