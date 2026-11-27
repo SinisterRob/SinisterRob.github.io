@@ -7,6 +7,7 @@ const DATASETS = {
   raa: {
     name: 'RAA',
     fullName: 'Mack (1993) RAA 10×10 GL reinsurance',
+    basisLabel: 'Incurred emergence · linear 6m',
     unitScale: 1000, // published values in $000s
     aPrioriElr: 0.72,
     triangle: [
@@ -27,6 +28,7 @@ const DATASETS = {
   genins: {
     name: 'GenIns',
     fullName: 'Taylor & Ashe / England & Verrall 10×10 GenIns',
+    basisLabel: 'Paid runoff · linear 6m',
     unitScale: 1, // published values in dollars
     aPrioriElr: 0.70,
     triangle: [
@@ -46,6 +48,7 @@ const DATASETS = {
   auto: {
     name: 'US Auto',
     fullName: 'Friedland (2010) US Industry Auto 10×10 Paid',
+    basisLabel: 'Paid runoff · linear 6m',
     unitScale: 1000, // published values in $000s
     aPrioriElr: 0.68,
     triangle: [
@@ -225,10 +228,36 @@ async function loadReservingWasm() {
   return instance.exports;
 }
 
-function cohortOf(index) {
-  if (index <= 2) return 'mature';
-  if (index <= 6) return 'developing';
-  return 'immature';
+function computeCashFlows(n, resArr, cdfArr) {
+  const pct = cdfArr.map(c => (c > 0 ? Math.min(1, 1 / c) : 1));
+  let cy1 = 0;
+  let cy2 = 0;
+  for (let i = 0; i < n; i++) {
+    const k = n - 1 - i;
+    const unrep = 1 - pct[k];
+    if (unrep <= 1e-12 || !Number.isFinite(resArr[i]) || resArr[i] === 0) continue;
+    const p1 = k + 1 < n ? pct[k + 1] : pct[n - 1];
+    const p2 = k + 2 < n ? pct[k + 2] : pct[n - 1];
+    const w1 = Math.min(1, Math.max(0, p1 - pct[k]) / unrep);
+    const w2 = Math.min(1 - w1, Math.max(0, p2 - p1) / unrep);
+    cy1 += resArr[i] * w1;
+    cy2 += resArr[i] * w2;
+  }
+  const total = resArr.reduce((a, b) => a + b, 0);
+  const m6Inc = 0.5 * cy1;
+  const m12Inc = 0.5 * cy1;
+  const m18Inc = 0.5 * cy2;
+  const m18Cum = cy1 + m18Inc;
+  const remInc = total - m18Cum;
+  return {
+    total,
+    rows: [
+      { id: '6m', bar: 'res-bar-m6', inc: m6Inc, cum: m6Inc },
+      { id: '12m', bar: 'res-bar-m12', inc: m12Inc, cum: cy1 },
+      { id: '18m', bar: 'res-bar-m18', inc: m18Inc, cum: m18Cum },
+      { id: 'rem', bar: 'res-bar-m18p', inc: remInc, cum: total },
+    ],
+  };
 }
 
 function renderUltimateChart(svg, plotWidth, { reported, reserves, se, unitScale, datasetName }) {
@@ -277,7 +306,6 @@ function renderUltimateChart(svg, plotWidth, { reported, reserves, se, unitScale
       const yUlt = y(ult);
       const hRep = Math.max(0, bottom - yRep);
       const hIbnr = Math.max(0, yRep - yUlt);
-      const cohort = cohortOf(i);
 
       let whisker = '';
       if (seVal > 0) {
@@ -295,7 +323,7 @@ function renderUltimateChart(svg, plotWidth, { reported, reserves, se, unitScale
         : '';
 
       return `
-        <g class="chart-bar-group" data-cohort="${cohort}">
+        <g class="chart-bar-group">
           <title>AY ${i + 1}: Reported ${fmtCompactCurrency(rep, unitScale)} · IBNR ${fmtCompactCurrency(ibnr, unitScale)} · Ultimate ${fmtCompactCurrency(ult, unitScale)}${seVal > 0 ? ` · Mack SE ±${fmtCompactCurrency(seVal, unitScale)}` : ''}</title>
           <rect class="chart-bar-reported" x="${bx.toFixed(1)}" y="${yRep.toFixed(1)}" width="${barW.toFixed(1)}" height="${hRep.toFixed(1)}" rx="1.5"/>
           ${hIbnr > 0.3 ? `<rect class="chart-bar-ibnr" x="${bx.toFixed(1)}" y="${yUlt.toFixed(1)}" width="${barW.toFixed(1)}" height="${hIbnr.toFixed(1)}" rx="1.5"/>` : ''}
@@ -383,7 +411,8 @@ function initReservingLab(exports) {
   const methodButtons = [...document.querySelectorAll('[data-res-method]')];
   const viewButtons = [...document.querySelectorAll('[data-res-view]')];
   const tailJumpButtons = [...document.querySelectorAll('[data-tail-jump]')];
-  const cohortRows = [...document.querySelectorAll('[data-res-cohort]')];
+  const horizonRows = [...document.querySelectorAll('[data-res-horizon]')];
+  const horizonSegs = [...document.querySelectorAll('[data-res-seg]')];
 
   if (!shell || !svg || !tailSlider) return;
 
@@ -440,12 +469,11 @@ function initReservingLab(exports) {
   }
 
   function update() {
-    const { ds, tail, reported, ultArr, resArr, seArr, cdfArr, totalSe, ccElr } = runKernels();
+    const { ds, n, tail, reported, ultArr, resArr, seArr, cdfArr, totalSe, ccElr } = runKernels();
 
     const pctSlider = ((tail - 1.0) / 0.2) * 100;
     if (tailRange) tailRange.style.setProperty('--tail-pct', `${pctSlider.toFixed(1)}%`);
 
-    const totalRep = reported.reduce((a, b) => a + b, 0);
     const totalRes = resArr.reduce((a, b) => a + b, 0);
     const totalUlt = ultArr.reduce((a, b) => a + b, 0);
     const cv = totalRes > 0 ? totalSe / totalRes : 0;
@@ -464,27 +492,21 @@ function initReservingLab(exports) {
     byId('res-se-sub').textContent = `CV ${fmtPct(cv)}`;
     byId('res-unreported').textContent = fmtPct(unrepShare);
 
-    // Cohort aggregation: Mature (AY 1-3), Developing (AY 4-7), Immature (AY 8-10)
-    const groups = [
-      { id: 'mat', bar: 'res-bar-mature', idx: [0, 1, 2] },
-      { id: 'dev', bar: 'res-bar-developing', idx: [3, 4, 5, 6] },
-      { id: 'imm', bar: 'res-bar-immature', idx: [7, 8, 9] },
-    ];
-    const absResTotal = Math.max(
+    // Projected 6 / 12 / 18m cash flow runoff
+    const cf = computeCashFlows(n, resArr, cdfArr);
+    const basisEl = byId('res-cf-basis');
+    if (basisEl) basisEl.textContent = ds.basisLabel;
+    const absCfTotal = Math.max(
       1e-9,
-      groups.reduce((acc, g) => acc + Math.max(0, g.idx.reduce((s, i) => s + resArr[i], 0)), 0),
+      cf.rows.reduce((acc, row) => acc + Math.max(0, row.inc), 0),
     );
-    groups.forEach(g => {
-      const rep = g.idx.reduce((s, i) => s + reported[i], 0);
-      const ibnr = g.idx.reduce((s, i) => s + resArr[i], 0);
-      const ult = rep + ibnr;
-      const pctUlt = ult > 0 ? rep / ult : 1;
-      byId(`res-${g.id}-rep`).textContent = fmtCompactCurrency(rep, ds.unitScale);
-      byId(`res-${g.id}-ibnr`).textContent = fmtCompactCurrency(ibnr, ds.unitScale);
-      byId(`res-${g.id}-pct`).textContent = fmtPct(pctUlt);
-      const shareW = (Math.max(0, ibnr) / absResTotal) * 100;
-      const barEl = byId(g.bar);
-      if (barEl) barEl.style.width = `${shareW.toFixed(1)}%`;
+    cf.rows.forEach(row => {
+      const cumPct = cf.total > 0 ? row.cum / cf.total : 0;
+      byId(`res-cf-${row.id}-inc`).textContent = fmtCompactCurrency(row.inc, ds.unitScale);
+      byId(`res-cf-${row.id}-cum`).textContent = fmtCompactCurrency(row.cum, ds.unitScale);
+      byId(`res-cf-${row.id}-pct`).textContent = cf.total > 0 ? fmtPct(cumPct) : '—';
+      const barEl = byId(row.bar);
+      if (barEl) barEl.style.width = `${((Math.max(0, row.inc) / absCfTotal) * 100).toFixed(1)}%`;
     });
 
     byId('res-cc-elr').textContent = Number.isFinite(ccElr) ? fmtPct(ccElr) : '—';
@@ -492,7 +514,7 @@ function initReservingLab(exports) {
     const labelEl = byId('res-chart-label');
     const hintEl = byId('res-chart-hint');
     if (chartView === 'ultimate') {
-      if (labelEl) labelEl.textContent = `Ultimate by Accident Year · ${ds.name}`;
+      if (labelEl) labelEl.textContent = `Ultimate by AY · ${ds.name}`;
       if (hintEl) hintEl.textContent = 'Mack ±1 SE whiskers';
       renderUltimateChart(svg, plotWidth, {
         reported,
@@ -550,13 +572,13 @@ function initReservingLab(exports) {
     });
   });
 
-  cohortRows.forEach(row => {
-    const cohort = row.dataset.resCohort;
-    row.addEventListener('mouseenter', () => {
-      shell.dataset.hoverCohort = cohort;
+  [...horizonRows, ...horizonSegs].forEach(el => {
+    const horizon = el.dataset.resHorizon || el.dataset.resSeg;
+    el.addEventListener('mouseenter', () => {
+      shell.dataset.hoverHorizon = horizon;
     });
-    row.addEventListener('mouseleave', () => {
-      delete shell.dataset.hoverCohort;
+    el.addEventListener('mouseleave', () => {
+      delete shell.dataset.hoverHorizon;
     });
   });
 
