@@ -391,7 +391,7 @@ function initNavInert() {
   const primary = byId('primary-nav');
   const mobile = byId('mobile-nav');
   if (!primary || !mobile) return;
-  const mq = window.matchMedia('(max-width: 48rem)');
+  const mq = window.matchMedia('(max-width: 56rem)');
   function sync() {
     const isMobile = mq.matches;
     primary.inert = isMobile;
@@ -518,18 +518,13 @@ function initReveal() {
 }
 
 function initMethodologyDrawer() {
-  const toggle = byId('method-toggle');
   const drawer = byId('method-drawer');
-  if (!toggle || !drawer) return;
+  if (!drawer) return;
 
-  toggle.addEventListener('click', () => {
-    const open = drawer.hidden;
-    drawer.hidden = !open;
-    toggle.setAttribute('aria-expanded', String(open));
-    toggle.textContent = open ? 'Hide notes ▴' : 'Model notes ▾';
+  drawer.addEventListener('toggle', () => {
     track('lab_interact', {
       control: 'methodology',
-      value: open ? 'open' : 'close',
+      value: drawer.open ? 'open' : 'close',
     });
   });
 }
@@ -553,15 +548,15 @@ function initCommandPalette() {
   if (kbd) kbd.textContent = isMac ? '⌘K' : 'Ctrl K';
 
   const items = [
-    { group: 'Navigate', label: 'Excess Layer & ILF Lab', sub: '#lab', keywords: 'wasm rust simulator chart', run: () => jumpTo('#lab', 'lab') },
+    { group: 'Navigate', label: 'Excess Layer & ILF Simulator', sub: '#lab', keywords: 'wasm rust simulator chart', run: () => jumpTo('#lab', 'lab') },
     { group: 'Navigate', label: 'Core Capabilities', sub: '#work', keywords: 'pricing xll excel monte carlo capital', run: () => jumpTo('#work', 'work') },
     { group: 'Navigate', label: 'Career Experience', sub: '#experience', keywords: 'edgewater oliver wyman tokio marine', run: () => jumpTo('#experience', 'experience') },
     { group: 'Navigate', label: 'Independent Research', sub: '#interests', keywords: 'reserving quant bayesian', run: () => jumpTo('#interests', 'interests') },
     { group: 'Navigate', label: 'Credentials & Background', sub: '#about', keywords: 'fcas acas ut austin cas mentor', run: () => jumpTo('#about', 'about') },
     { group: 'Navigate', label: 'Contact', sub: '#contact', keywords: 'email linkedin github connect', run: () => jumpTo('#contact', 'contact') },
-    { group: 'Lab Presets', label: 'Load High Severity Scenario', sub: '$750k xs $250k · σ 1.55', keywords: 'heavy tail high severity excess preset lab 1m', run: () => runLabPreset(250_000, 1_000_000, 2, 'excess') },
-    { group: 'Lab Presets', label: 'Load Low Severity Scenario', sub: '$200k xs $50k · σ 0.55', keywords: 'light tail low severity working layer preset lab', run: () => runLabPreset(50_000, 250_000, 0, 'working') },
-    { group: 'Lab Presets', label: 'Toggle ILF Curve / Severity PDF', sub: 'Chart view', keywords: 'pdf ilf chart view', run: () => toggleLabView() },
+    { group: 'Simulator', label: 'Load High Scenario', sub: '$750k xs $250k · σ 1.55', keywords: 'heavy tail high severity excess preset lab 1m', requiresModel: true, run: () => runLabPreset(250_000, 1_000_000, 2, 'excess') },
+    { group: 'Simulator', label: 'Load Low Scenario', sub: '$200k xs $50k · σ 0.55', keywords: 'light tail low severity working layer preset lab', requiresModel: true, run: () => runLabPreset(50_000, 250_000, 0, 'working') },
+    { group: 'Simulator', label: 'Toggle ILF Curve / Severity PDF', sub: 'Chart view', keywords: 'pdf ilf chart view', requiresModel: true, run: () => toggleLabView() },
     { group: 'Actions', label: 'Copy Email Address', sub: 'robertdjurgens@gmail.com', keywords: 'mail clipboard contact', run: () => copyEmailFn() },
     { group: 'Actions', label: 'Switch Light / Dark Theme', sub: 'Appearance', keywords: 'dark light mode theme', run: () => toggleThemeFn() },
     { group: 'Actions', label: 'Print / Save Executive Brief (PDF)', sub: 'Print', keywords: 'resume cv pdf print', run: () => setTimeout(() => window.print(), 120) },
@@ -606,11 +601,10 @@ function initCommandPalette() {
 
   function renderList(query = '') {
     const q = query.trim().toLowerCase();
-    filtered = q
-      ? items.filter(item =>
-          `${item.label} ${item.sub} ${item.group} ${item.keywords}`.toLowerCase().includes(q),
-        )
-      : items;
+    filtered = items.filter(item =>
+      (!item.requiresModel || labController) &&
+      `${item.label} ${item.sub} ${item.group} ${item.keywords}`.toLowerCase().includes(q),
+    );
     selectedIndex = 0;
 
     if (!filtered.length) {
@@ -860,7 +854,7 @@ function renderIlf(svg, plotWidth, lev, tail, attach, limit, ilf) {
   const showAttLabel = Math.abs(labelX - attLabelX) > halfW + attHalfW + 8;
 
   svg.innerHTML = `
-    ${chartLabels('Increased limits factor by coverage limit', `The selected ${TAILS[tail].toLowerCase()} tail has an ILF of ${ilf.toFixed(2)} for ${compactDollars(limit - attach)} excess of ${compactDollars(attach)} across a $0 to $1M limit range.`)}
+    ${chartLabels('Increased limits factor by coverage limit', `With the ${TAILS[tail].toLowerCase()} tail, the ${compactDollars(limit)} coverage limit has an ILF of ${ilf.toFixed(2)} relative to the ${compactDollars(attach)} attachment.`)}
     ${axes(plot, xTicks, yTicks, 1)}
     <rect class="chart-primary-band" x="${left.toFixed(1)}" y="${top}" width="${Math.max(0, xAtt - left).toFixed(1)}" height="${(bottom - top).toFixed(1)}"/>
     <rect class="chart-layer-band" x="${xAtt.toFixed(1)}" y="${top}" width="${Math.max(0, xLim - xAtt).toFixed(1)}" height="${(bottom - top).toFixed(1)}"/>
@@ -950,6 +944,9 @@ function showModel(exports) {
     exceedance_prob: exceedanceProb,
     severity_pdf: density,
   } = exports;
+  if (![lev, expectedLayer, simulatedLayer, exceedanceProb, density].every(fn => typeof fn === 'function')) {
+    throw new Error('Model exports are incomplete');
+  }
 
   const shell = byId('excess-layers');
   const dualRange = byId('dual-range');
@@ -1046,9 +1043,9 @@ function showModel(exports) {
     const simDelta = byId('sim-delta');
     const mcVerify = byId('mc-verify');
     if (simCheck) simCheck.textContent = dollars.format(simExcess);
-    if (simDelta) simDelta.textContent = `${sign}${diffPct.toFixed(1)}%`;
+    if (simDelta) simDelta.textContent = `${sign}${diffPct.toFixed(1)}% MC error vs. closed-form`;
     if (mcVerify) {
-      mcVerify.title = `65,536-draw fixed-seed Rust MC: Primary ${dollars.format(simPrimary)}, Excess ${dollars.format(simExcess)} (${sign}${dollars.format(Math.abs(diffExcess))} vs. closed-form)`;
+      mcVerify.title = `65,536-draw fixed-seed Rust MC: Primary ${dollars.format(simPrimary)}, Excess ${dollars.format(simExcess)} (${sign}${dollars.format(Math.abs(diffExcess))} finite-sample MC error vs. closed-form)`;
     }
   }
 
@@ -1089,7 +1086,9 @@ function showModel(exports) {
     byId('tail-sigma').textContent = TAILS[tail];
 
     byId('loss-primary').textContent = dollars.format(primary);
-    byId('loss-excess').textContent = dollars.format(excess);
+    const formattedExcess = dollars.format(excess);
+    byId('loss-excess').textContent = formattedExcess;
+    byId('loss-excess-key').textContent = formattedExcess;
     byId('loss-above').textContent = dollars.format(above);
     byId('pierce-att').textContent = percent.format(pAtt);
     byId('pierce-top').textContent = percent.format(pTop);
@@ -1120,7 +1119,7 @@ function showModel(exports) {
 
     draw();
 
-    latestSummary = `${TAILS[tail]} tail (${TAIL_SIGMAS[tail]}) for ${shorthand}. Primary ${dollars.format(primary)}, Excess ${dollars.format(excess)}, above limit ${dollars.format(above)}, ILF ${ratio(ilf)}, layer burn ${percent.format(layerRate)}, average attached claim ${dollars.format(avgHit)}.`;
+    latestSummary = `${TAILS[tail]} tail (${TAIL_SIGMAS[tail]}). Attachment point ${dollars.format(attach)}, coverage limit ${dollars.format(limit)}, layer width ${dollars.format(width)}. Expected primary loss ${dollars.format(primary)}, excess loss ${dollars.format(excess)}, above limit ${dollars.format(above)}. ILF ${ratio(ilf)}, layer burn ${percent.format(layerRate)}, average attached loss ${dollars.format(avgHit)}.`;
     if (announce) {
       announceResults();
     }
@@ -1360,6 +1359,19 @@ function showModel(exports) {
     });
   });
 
+  // Default $250k xs $100k Moderate state is pre-rendered in HTML.
+  syncSliderVisual(attachSlider.valueAsNumber, limitSlider.valueAsNumber);
+  plotWidth = Math.round(svg.getBoundingClientRect().width);
+  draw();
+
+  new ResizeObserver(entries => {
+    const nextWidth = Math.round(entries[0]?.contentRect.width || 0);
+    if (nextWidth > 0 && nextWidth !== plotWidth) {
+      plotWidth = nextWidth;
+      draw();
+    }
+  }).observe(svg);
+
   labController = {
     applyPreset(attach, limit, tailIndex, name, control = 'preset') {
       applyTail(tailIndex);
@@ -1379,17 +1391,10 @@ function showModel(exports) {
     },
   };
 
-  // Default $250k xs $100k Moderate state is pre-rendered in HTML; avoid 131k-draw MC work on initial paint.
-  syncSliderVisual(attachSlider.valueAsNumber, limitSlider.valueAsNumber);
-  let lastWidth = 0;
-  new ResizeObserver(entries => {
-    const nextWidth = Math.round(entries[0]?.contentRect.width || 0);
-    if (nextWidth > 0 && nextWidth !== lastWidth) {
-      lastWidth = nextWidth;
-      plotWidth = nextWidth;
-      draw();
-    }
-  }).observe(svg);
+  shell.querySelectorAll('button:disabled, input:disabled').forEach(control => {
+    control.disabled = false;
+  });
+  shell.dataset.ready = '';
 }
 
 initTheme();
@@ -1412,7 +1417,7 @@ try {
   console.error('Excess layer model failed to load', error);
   captureError(error, { component: 'wasm-lab' });
   const status = byId('model-status');
-  status.textContent = 'Interactive WebAssembly controls could not load; baseline $350k moderate-tail values are displayed below.';
+  status.textContent = 'The simulator could not load. Showing the $350k limit and Moderate tail baseline. Reload the page to try again.';
   status.hidden = false;
 }
 
