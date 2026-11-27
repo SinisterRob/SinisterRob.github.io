@@ -4,14 +4,14 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-echo "==> Running Rust unit tests (edition 2021)..."
+echo "==> Running Rust unit tests (edition 2024)..."
 TEST_BIN="$(mktemp /tmp/excess_layers_test.XXXXXX)"
 trap 'rm -f "$TEST_BIN"' EXIT
-rustc --edition=2021 --test src/excess_layers.rs -o "$TEST_BIN"
+rustc --edition=2024 --test src/excess_layers.rs -o "$TEST_BIN"
 "$TEST_BIN"
 
 echo "==> Building optimized WebAssembly kernel..."
-rustc --edition=2021 \
+rustc --edition=2024 \
   --crate-type=cdylib \
   --target=wasm32-unknown-unknown \
   -C opt-level=z \

@@ -380,11 +380,7 @@ fn normal_cdf(z: f64) -> f64 {
         * (0.319381530
             + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
     let upper = INV_SQRT_TAU * (-0.5 * x * x).exp() * polynomial;
-    if z < 0.0 {
-        upper
-    } else {
-        1.0 - upper
-    }
+    if z < 0.0 { upper } else { 1.0 - upper }
 }
 
 fn uniform(state: &mut u64) -> f64 {

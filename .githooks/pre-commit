@@ -69,7 +69,7 @@ if [[ ${#STAGED_RS[@]} -gt 0 ]] && command -v rustfmt >/dev/null 2>&1; then
   for file in "${STAGED_RS[@]}"; do
     if ! diff -u \
       --label "staged/$file" <(git show ":$file") \
-      --label "rustfmt/$file" <(git show ":$file" | rustfmt --edition 2021); then
+      --label "rustfmt/$file" <(git show ":$file" | rustfmt --edition 2024); then
       FAILED=1
     fi
   done

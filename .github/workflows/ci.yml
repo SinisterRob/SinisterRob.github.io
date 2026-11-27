@@ -34,7 +34,7 @@ jobs:
           node-version: "22"
 
       - name: Check Rust kernel formatting
-        run: rustfmt --edition 2021 --check src/excess_layers.rs
+        run: rustfmt --edition 2024 --check src/excess_layers.rs
 
       - name: Run static HTML/CSS/JS/Rust/WASM/shell checks
         run: python3 scripts/verify-site.py --static-only
