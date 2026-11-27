@@ -154,7 +154,7 @@ def check_shell_and_rust(failures: list[str]) -> None:
         with tempfile.TemporaryDirectory(prefix="excess_layers_test_") as tmp:
             test_bin = Path(tmp) / "excess_layers_test"
             comp = subprocess.run(
-                ["rustc", "--edition=2021", "--test", "-D", "warnings", str(rs_src), "-o", str(test_bin)],
+                ["rustc", "--edition=2024", "--test", "-D", "warnings", str(rs_src), "-o", str(test_bin)],
                 capture_output=True,
                 text=True,
             )
@@ -245,6 +245,17 @@ def run_browser_checks(failures: list[str]) -> None:
                 failures.append(f"Unexpected baseline ILF: {ilf_val!r}")
             if "MC error vs. closed-form" not in (sim_delta or ""):
                 failures.append(f"Missing MC error label: {sim_delta!r}")
+
+            # 1b. Toggle Gamma + Pareto model and verify body/tail controls update ILF
+            page.click('[data-model="spliced"]')
+            if page.locator("#body-control").is_hidden():
+                failures.append("Body (Gamma) control remained hidden after selecting Gamma + Pareto")
+            page.click('[data-body="2"]')
+            spliced_ilf = page.locator("#ilf").text_content()
+            if not spliced_ilf or not spliced_ilf.endswith("×") or spliced_ilf == "NaN×":
+                failures.append(f"Invalid Gamma + Pareto ILF: {spliced_ilf!r}")
+            page.click('[data-body="1"]')
+            page.click('[data-model="lognormal"]')
 
             # 2. Test side-arrow navigation -> Reserving lab & interactions
             page.click("#lab-next")

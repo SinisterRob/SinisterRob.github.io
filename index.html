@@ -310,7 +310,7 @@
             <div class="wrap">
               <div class="lab-heading">
                 <h1 id="lab-title">Excess Layer &amp; Increased Limits Factor (ILF) Simulator</h1>
-                <p class="lab-subtitle">Compare layer loss and ILFs using synthetic lognormal claims with a $100k mean.</p>
+                <p class="lab-subtitle" id="lab-subtitle">Compare layer loss and ILFs using synthetic lognormal or spliced Gamma–Pareto claims ($100k mean).</p>
               </div>
 
               <article class="lab-shell" id="excess-layers">
@@ -322,9 +322,16 @@
               <div class="control-group preset-group">
                 <span class="control-label" id="preset-label">Scenario presets</span>
                 <div class="preset-chips" role="group" aria-labelledby="preset-label">
-                  <button type="button" class="preset-chip" data-preset="working" data-preset-attach="50000" data-preset-limit="250000" data-preset-tail="0" aria-pressed="false" title="Low scenario: $200k xs $50k · σ 0.55" disabled>Low</button>
-                  <button type="button" class="preset-chip" data-preset="baseline" data-preset-attach="100000" data-preset-limit="350000" data-preset-tail="1" aria-pressed="true" title="Medium scenario: $250k xs $100k · σ 1.00" disabled>Medium</button>
-                  <button type="button" class="preset-chip" data-preset="excess" data-preset-attach="250000" data-preset-limit="1000000" data-preset-tail="2" aria-pressed="false" title="High scenario: $750k xs $250k · σ 1.55" disabled>High</button>
+                  <button type="button" class="preset-chip" data-preset="working" data-preset-attach="50000" data-preset-limit="250000" data-preset-tail="0" aria-pressed="false" title="Low scenario: $200k xs $50k · lighter tail" disabled>Low</button>
+                  <button type="button" class="preset-chip" data-preset="baseline" data-preset-attach="100000" data-preset-limit="350000" data-preset-tail="1" aria-pressed="true" title="Medium scenario: $250k xs $100k · moderate tail" disabled>Medium</button>
+                  <button type="button" class="preset-chip" data-preset="excess" data-preset-attach="250000" data-preset-limit="1000000" data-preset-tail="2" aria-pressed="false" title="High scenario: $750k xs $250k · heavier tail" disabled>High</button>
+                </div>
+                <div class="model-toggle-row">
+                  <span class="control-label" id="model-label">Model</span>
+                  <div class="segmented compact" role="group" aria-labelledby="model-label">
+                    <button type="button" data-model="lognormal" aria-pressed="true" title="Single Lognormal severity ($100k mean)" disabled>Lognormal</button>
+                    <button type="button" data-model="spliced" aria-pressed="false" title="Composite Gamma body + Pareto tail ($100k mean)" disabled>Gamma + Pareto</button>
+                  </div>
                 </div>
               </div>
 
@@ -354,6 +361,17 @@
                   <button type="button" data-tail="0" aria-pressed="false" title="Lighter tail (σ = 0.55)" aria-label="Lighter tail, sigma 0.55" disabled>σ 0.55</button>
                   <button type="button" data-tail="1" aria-pressed="true" title="Moderate tail (σ = 1.00)" aria-label="Moderate tail, sigma 1.00" disabled>1.00</button>
                   <button type="button" data-tail="2" aria-pressed="false" title="Heavier tail (σ = 1.55)" aria-label="Heavier tail, sigma 1.55" disabled>1.55</button>
+                </div>
+                <div class="body-control" id="body-control" hidden>
+                  <div class="range-label">
+                    <span class="control-label" id="body-label">Body (Gamma)</span>
+                    <span class="tail-sigma" id="body-shape-label">Moderate</span>
+                  </div>
+                  <div class="segmented compact" role="group" aria-labelledby="body-label">
+                    <button type="button" data-body="0" aria-pressed="false" title="Dispersed Gamma body (k = 1.2)" aria-label="Dispersed Gamma body, k 1.2" disabled>k 1.2</button>
+                    <button type="button" data-body="1" aria-pressed="true" title="Moderate Gamma body (k = 2.5)" aria-label="Moderate Gamma body, k 2.5" disabled>2.5</button>
+                    <button type="button" data-body="2" aria-pressed="false" title="Tight Gamma body (k = 6.0)" aria-label="Tight Gamma body, k 6.0" disabled>6.0</button>
+                  </div>
                 </div>
               </div>
             </div>

@@ -40,12 +40,12 @@ fn standard_normals() -> &'static [f64; SAMPLE_SIZE] {
     unsafe { &*std::ptr::addr_of!(STANDARD_NORMALS) }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn limited_expected_value(tail: u32, limit: f64) -> f64 {
     limited_mean(limit, log_sd(tail))
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn expected_layer(tail: u32, attach: f64, limit: f64, layer: u32) -> f64 {
     let sigma = log_sd(tail);
     let lower = limited_mean(attach, sigma);
@@ -56,7 +56,7 @@ pub extern "C" fn expected_layer(tail: u32, attach: f64, limit: f64, layer: u32)
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn simulated_layer(tail: u32, attach: f64, limit: f64, layer: u32) -> f64 {
     let sigma = log_sd(tail);
     let log_mean = GROUND_UP_MEAN.ln() - sigma * sigma / 2.0;
@@ -75,7 +75,7 @@ pub extern "C" fn simulated_layer(tail: u32, attach: f64, limit: f64, layer: u32
     total / (SAMPLE_SIZE as f64)
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn exceedance_prob(tail: u32, threshold: f64) -> f64 {
     if threshold <= 0.0 {
         return 1.0;
@@ -86,7 +86,7 @@ pub extern "C" fn exceedance_prob(tail: u32, threshold: f64) -> f64 {
     normal_cdf(-z)
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn severity_pdf(tail: u32, x: f64) -> f64 {
     if x <= 0.0 {
         return 0.0;
@@ -266,17 +266,17 @@ fn sample_gamma_ge1(shape: f64, state: &mut u64) -> f64 {
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn spliced_threshold(body: u32, tail: u32) -> f64 {
     spliced_params(body, tail).splice
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn spliced_limited_expected_value(body: u32, tail: u32, limit: f64) -> f64 {
     spliced_lev_inner(&spliced_params(body, tail), limit)
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn spliced_expected_layer(
     body: u32,
     tail: u32,
@@ -293,7 +293,7 @@ pub extern "C" fn spliced_expected_layer(
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn spliced_simulated_layer(
     body: u32,
     tail: u32,
@@ -329,7 +329,7 @@ pub extern "C" fn spliced_simulated_layer(
     total / (SAMPLE_SIZE as f64)
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn spliced_exceedance_prob(body: u32, tail: u32, threshold: f64) -> f64 {
     if threshold <= 0.0 {
         return 1.0;
@@ -342,7 +342,7 @@ pub extern "C" fn spliced_exceedance_prob(body: u32, tail: u32, threshold: f64) 
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn spliced_severity_pdf(body: u32, tail: u32, x: f64) -> f64 {
     if x <= 0.0 {
         return 0.0;

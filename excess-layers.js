@@ -5,6 +5,11 @@ const LIMIT_STEP = 25_000;
 const PDF_MAX = 1_000_000;
 const TAILS = ['Lighter', 'Moderate', 'Heavier'];
 const TAIL_SIGMAS = ['σ = 0.55', 'σ = 1.00', 'σ = 1.55'];
+const PARETO_ALPHAS = ['α = 4.0', 'α = 2.5', 'α = 1.7'];
+const PARETO_BTN_LABELS = ['α 4.0', '2.5', '1.7'];
+const LOGNORMAL_BTN_LABELS = ['σ 0.55', '1.00', '1.55'];
+const BODIES = ['Dispersed', 'Moderate', 'Tight'];
+const BODY_SHAPES = ['k = 1.2', 'k = 2.5', 'k = 6.0'];
 
 const dollars = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -938,15 +943,24 @@ function renderSeverity(svg, plotWidth, distributions, tailPeaks, density, tail,
 
 function showModel(exports) {
   const {
-    limited_expected_value: lev,
-    expected_layer: expectedLayer,
-    simulated_layer: simulatedLayer,
-    exceedance_prob: exceedanceProb,
-    severity_pdf: density,
+    limited_expected_value: lnLev,
+    expected_layer: lnExpectedLayer,
+    simulated_layer: lnSimulatedLayer,
+    exceedance_prob: lnExceedanceProb,
+    severity_pdf: lnDensity,
+    spliced_limited_expected_value: spLev,
+    spliced_expected_layer: spExpectedLayer,
+    spliced_simulated_layer: spSimulatedLayer,
+    spliced_exceedance_prob: spExceedanceProb,
+    spliced_severity_pdf: spDensity,
+    spliced_threshold: spThreshold,
   } = exports;
-  if (![lev, expectedLayer, simulatedLayer, exceedanceProb, density].every(fn => typeof fn === 'function')) {
+  if (![lnLev, lnExpectedLayer, lnSimulatedLayer, lnExceedanceProb, lnDensity].every(fn => typeof fn === 'function')) {
     throw new Error('Model exports are incomplete');
   }
+  const hasSpliced = [spLev, spExpectedLayer, spSimulatedLayer, spExceedanceProb, spDensity].every(
+    fn => typeof fn === 'function',
+  );
 
   const shell = byId('excess-layers');
   const dualRange = byId('dual-range');
@@ -955,29 +969,49 @@ function showModel(exports) {
   const svg = byId('severity-chart');
   const chartTitleLabel = byId('chart-title-label');
   const tailButtons = [...document.querySelectorAll('[data-tail]')];
+  const modelButtons = [...document.querySelectorAll('[data-model]')];
+  const bodyButtons = [...document.querySelectorAll('[data-body]')];
+  const bodyControl = byId('body-control');
+  const bodyShapeLabel = byId('body-shape-label');
   const viewButtons = [...document.querySelectorAll('[data-chart-view]')];
   const presetButtons = [...document.querySelectorAll('[data-preset]')];
   const tickButtons = [...document.querySelectorAll('[data-limit-jump]')];
   const layerRows = [...document.querySelectorAll('[data-layer-row]')];
 
-  let distributions = null;
-  let tailPeaks = null;
+  let model = 'lognormal';
+  let body = 1;
+  let tail = 1;
+  let view = 'ilf';
+
+  const activeLev = (t, l) => (model === 'spliced' && hasSpliced ? spLev(body, t, l) : lnLev(t, l));
+  const activeExpectedLayer = (t, a, l, k) =>
+    model === 'spliced' && hasSpliced ? spExpectedLayer(body, t, a, l, k) : lnExpectedLayer(t, a, l, k);
+  const activeSimulatedLayer = (t, a, l, k) =>
+    model === 'spliced' && hasSpliced ? spSimulatedLayer(body, t, a, l, k) : lnSimulatedLayer(t, a, l, k);
+  const activeExceedanceProb = (t, x) =>
+    model === 'spliced' && hasSpliced ? spExceedanceProb(body, t, x) : lnExceedanceProb(t, x);
+  const activeDensity = (t, x) =>
+    model === 'spliced' && hasSpliced ? spDensity(body, t, x) : lnDensity(t, x);
+
+  const pdfCache = new Map();
   function ensurePdfData() {
-    if (distributions) return;
+    const key = model === 'spliced' ? `spliced:${body}` : 'lognormal';
+    if (pdfCache.has(key)) return pdfCache.get(key);
     const pdfGrid = [];
     for (let loss = 0; loss <= 60_000; loss += 2_500) pdfGrid.push(loss);
     for (let loss = 65_000; loss <= PDF_MAX; loss += 5_000) pdfGrid.push(loss);
-    distributions = TAILS.map((_, tailIndex) =>
-      pdfGrid.map(loss => [loss, density(tailIndex, loss)]),
+    const distributions = TAILS.map((_, tailIndex) =>
+      pdfGrid.map(loss => [loss, activeDensity(tailIndex, loss)]),
     );
-    tailPeaks = distributions.map(points =>
+    const tailPeaks = distributions.map(points =>
       Math.max(...points.map(([, value]) => value)),
     );
+    const entry = { distributions, tailPeaks };
+    pdfCache.set(key, entry);
+    return entry;
   }
 
-  let tail = 1;
-  let view = 'ilf';
-  let ilf = 1 + expectedLayer(1, 100_000, 350_000, 1) / expectedLayer(1, 100_000, 350_000, 0);
+  let ilf = 1 + activeExpectedLayer(1, 100_000, 350_000, 1) / activeExpectedLayer(1, 100_000, 350_000, 0);
   let plotWidth = 540;
   let lastPlot = { width: 540, left: 44, right: 474, start: 0, end: MAX_LIMIT };
   const simPrimaryCache = new Map();
@@ -1013,27 +1047,33 @@ function showModel(exports) {
     const attach = attachSlider.valueAsNumber;
     const limit = limitSlider.valueAsNumber;
     if (view === 'ilf') {
-      lastPlot = renderIlf(svg, plotWidth, lev, tail, attach, limit, ilf);
-      chartTitleLabel.textContent = `ILF Curve · ${compactDollars(attach)} Base`;
+      lastPlot = renderIlf(svg, plotWidth, activeLev, tail, attach, limit, ilf);
+      const modelTag = model === 'spliced' ? `Gamma ${BODY_SHAPES[body]} + Pareto` : 'Lognormal';
+      chartTitleLabel.textContent = `ILF Curve · ${compactDollars(attach)} Base · ${modelTag}`;
     } else {
-      ensurePdfData();
-      lastPlot = renderSeverity(svg, plotWidth, distributions, tailPeaks, density, tail, attach, limit);
-      chartTitleLabel.textContent = `Severity PDF · ${TAILS[tail]} Tail`;
+      const { distributions, tailPeaks } = ensurePdfData();
+      lastPlot = renderSeverity(svg, plotWidth, distributions, tailPeaks, activeDensity, tail, attach, limit);
+      if (model === 'spliced' && typeof spThreshold === 'function') {
+        const splice = spThreshold(body, tail);
+        chartTitleLabel.textContent = `Severity PDF · Gamma ${BODY_SHAPES[body]} + Pareto ${PARETO_ALPHAS[tail]} (u=${compactDollars(splice)})`;
+      } else {
+        chartTitleLabel.textContent = `Severity PDF · ${TAILS[tail]} Tail`;
+      }
     }
   }
 
   function updateMc(attach, limit, excess) {
-    if (typeof simulatedLayer !== 'function') return;
-    const priKey = `${tail}:${attach}`;
+    const modelKey = model === 'spliced' ? `sp:${body}` : 'ln';
+    const priKey = `${modelKey}:${tail}:${attach}`;
     let simPrimary = simPrimaryCache.get(priKey);
     if (simPrimary === undefined) {
-      simPrimary = simulatedLayer(tail, attach, limit, 0);
+      simPrimary = activeSimulatedLayer(tail, attach, limit, 0);
       simPrimaryCache.set(priKey, simPrimary);
     }
-    const exKey = `${tail}:${attach}:${limit}`;
+    const exKey = `${modelKey}:${tail}:${attach}:${limit}`;
     let simExcess = simExcessCache.get(exKey);
     if (simExcess === undefined) {
-      simExcess = simulatedLayer(tail, attach, limit, 1);
+      simExcess = activeSimulatedLayer(tail, attach, limit, 1);
       simExcessCache.set(exKey, simExcess);
     }
     const diffExcess = simExcess - excess;
@@ -1063,13 +1103,13 @@ function showModel(exports) {
     syncSliderVisual(attach, limit);
     syncPresetChips(attach, limit);
 
-    const primary = expectedLayer(tail, attach, limit, 0);
-    const excess = expectedLayer(tail, attach, limit, 1);
+    const primary = activeExpectedLayer(tail, attach, limit, 0);
+    const excess = activeExpectedLayer(tail, attach, limit, 1);
     const above = Math.max(0, GROUND_UP_MEAN - primary - excess);
     ilf = 1 + excess / primary;
 
-    const pAtt = exceedanceProb(tail, attach);
-    const pTop = exceedanceProb(tail, limit);
+    const pAtt = activeExceedanceProb(tail, attach);
+    const pTop = activeExceedanceProb(tail, limit);
     const layerRate = excess / width;
     const avgHit = pAtt > 1e-9 ? excess / pAtt : 0;
     const shorthand = `${compactDollars(width)} xs ${compactDollars(attach)}`;
@@ -1084,6 +1124,7 @@ function showModel(exports) {
     byId('excess-range').textContent = `${compactDollars(attach)}–${compactDollars(limit)}`;
     byId('above-range').textContent = `>${compactDollars(limit)}`;
     byId('tail-sigma').textContent = TAILS[tail];
+    if (bodyShapeLabel) bodyShapeLabel.textContent = BODIES[body];
 
     byId('loss-primary').textContent = dollars.format(primary);
     const formattedExcess = dollars.format(excess);
@@ -1119,7 +1160,11 @@ function showModel(exports) {
 
     draw();
 
-    latestSummary = `${TAILS[tail]} tail (${TAIL_SIGMAS[tail]}). Attachment point ${dollars.format(attach)}, coverage limit ${dollars.format(limit)}, layer width ${dollars.format(width)}. Expected primary loss ${dollars.format(primary)}, excess loss ${dollars.format(excess)}, above limit ${dollars.format(above)}. ILF ${ratio(ilf)}, layer burn ${percent.format(layerRate)}, average attached loss ${dollars.format(avgHit)}.`;
+    const distDesc =
+      model === 'spliced'
+        ? `Spliced Gamma body (${BODIES[body]}, ${BODY_SHAPES[body]}) + Pareto ${TAILS[tail].toLowerCase()} tail (${PARETO_ALPHAS[tail]})`
+        : `Lognormal ${TAILS[tail].toLowerCase()} tail (${TAIL_SIGMAS[tail]})`;
+    latestSummary = `${distDesc}. Attachment point ${dollars.format(attach)}, coverage limit ${dollars.format(limit)}, layer width ${dollars.format(width)}. Expected primary loss ${dollars.format(primary)}, excess loss ${dollars.format(excess)}, above limit ${dollars.format(above)}. ILF ${ratio(ilf)}, layer burn ${percent.format(layerRate)}, average attached loss ${dollars.format(avgHit)}.`;
     if (announce) {
       announceResults();
     }
@@ -1179,6 +1224,53 @@ function showModel(exports) {
     tail = nextTail;
     tailButtons.forEach(option => option.setAttribute('aria-pressed', String(Number(option.dataset.tail) === tail)));
   }
+
+  function applyBody(nextBody) {
+    body = nextBody;
+    bodyButtons.forEach(option => option.setAttribute('aria-pressed', String(Number(option.dataset.body) === body)));
+  }
+
+  function applyModel(nextModel) {
+    if (nextModel === 'spliced' && !hasSpliced) return;
+    model = nextModel;
+    modelButtons.forEach(btn => btn.setAttribute('aria-pressed', String(btn.dataset.model === model)));
+    if (bodyControl) bodyControl.hidden = model !== 'spliced';
+    const isSpliced = model === 'spliced';
+    tailButtons.forEach((btn, idx) => {
+      btn.textContent = isSpliced ? PARETO_BTN_LABELS[idx] : LOGNORMAL_BTN_LABELS[idx];
+      btn.title = isSpliced
+        ? `${TAILS[idx]} Pareto tail (${PARETO_ALPHAS[idx]})`
+        : `${TAILS[idx]} Lognormal tail (${TAIL_SIGMAS[idx]})`;
+    });
+  }
+
+  modelButtons.forEach(button =>
+    button.addEventListener('click', () => {
+      applyModel(button.dataset.model);
+      trackLabEngagement('model');
+      track('lab_interact', {
+        control: 'model',
+        value: model,
+        tail: TAILS[tail].toLowerCase(),
+        limit: compactDollars(limitSlider.valueAsNumber),
+      });
+      flushCommit();
+    }),
+  );
+
+  bodyButtons.forEach(button =>
+    button.addEventListener('click', () => {
+      applyBody(Number(button.dataset.body));
+      trackLabEngagement('body');
+      track('lab_interact', {
+        control: 'body',
+        value: BODIES[body].toLowerCase(),
+        tail: TAILS[tail].toLowerCase(),
+        limit: compactDollars(limitSlider.valueAsNumber),
+      });
+      flushCommit();
+    }),
+  );
 
   attachSlider.addEventListener('input', () => {
     const maxAttach = limitSlider.valueAsNumber - LIMIT_STEP;

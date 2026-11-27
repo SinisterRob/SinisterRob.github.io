@@ -787,6 +787,25 @@ code {
   gap: 0.22rem;
 }
 
+.model-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 0.42rem;
+  margin-top: 0.14rem;
+}
+
+.model-toggle-row .segmented {
+  margin-top: 0;
+}
+
+.body-control {
+  margin-top: 0.28rem;
+}
+
+.body-control[hidden] {
+  display: none;
+}
+
 .preset-chips {
   display: inline-flex;
   flex-wrap: wrap;
