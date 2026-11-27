@@ -1,0 +1,983 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Loss Reserving &amp; Mack Variability Simulator | Robert Jurgens, FCAS</title>
+  <meta name="description" content="Interactive Rust/WebAssembly P&amp;C loss reserving simulator for Chain-Ladder ultimates, Mack (1993) standard errors, Cape Cod estimates, and cash-flow projections. By Robert Jurgens, FCAS.">
+  <meta name="author" content="Robert Jurgens, FCAS">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="theme-color" content="#f7f4ee">
+  <link rel="canonical" href="https://sinisterrob.github.io/reserving/">
+
+  <!-- Open Graph / Social Sharing -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://sinisterrob.github.io/reserving/">
+  <meta property="og:site_name" content="Robert Jurgens, FCAS">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:title" content="Loss Reserving &amp; Mack Variability Simulator | Robert Jurgens, FCAS">
+  <meta property="og:description" content="Interactive Rust/WebAssembly P&amp;C loss reserving simulator for Chain-Ladder ultimates, Mack (1993) standard errors, Cape Cod estimates, and cash-flow projections. By Robert Jurgens, FCAS.">
+  <meta property="og:image" content="https://sinisterrob.github.io/og-image.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Excess Layer and ILF Simulator by Robert Jurgens, FCAS, showing the 1.48× baseline ILF.">
+
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Loss Reserving &amp; Mack Variability Simulator | Robert Jurgens, FCAS">
+  <meta name="twitter:description" content="Interactive Rust/WebAssembly P&amp;C loss reserving simulator for Chain-Ladder ultimates, Mack (1993) standard errors, Cape Cod estimates, and cash-flow projections. By Robert Jurgens, FCAS.">
+  <meta name="twitter:image" content="https://sinisterrob.github.io/og-image.png">
+  <meta name="twitter:image:alt" content="Excess Layer and ILF Simulator by Robert Jurgens, FCAS, showing the 1.48× baseline ILF.">
+
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="../excess_layers.wasm?v=20261126b" as="fetch" crossorigin>
+  <link rel="preload" href="../reserving_kernels.wasm" as="fetch" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap">
+
+  <!-- Prevent dark-mode flash, handle owner exclusion toggle, and filter automated bot telemetry -->
+  <script>
+    (function () {
+      try {
+        var params = new URLSearchParams(location.search);
+        var ignore = params.get('umami_ignore');
+        if (ignore === '1' || ignore === 'true') {
+          localStorage.setItem('umami.disabled', '1');
+        } else if (ignore === '0' || ignore === 'false') {
+          localStorage.removeItem('umami.disabled');
+        }
+        if (ignore !== null && history.replaceState) {
+          params.delete('umami_ignore');
+          var q = params.toString();
+          history.replaceState(null, '', location.pathname + (q ? '?' + q : '') + location.hash);
+        }
+        var saved = localStorage.getItem('rj-theme');
+        var dark = saved === 'dark' || (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (dark) {
+          document.documentElement.dataset.theme = 'dark';
+          var m = document.querySelector('meta[name="theme-color"]');
+          if (m) m.content = '#0e1013';
+        }
+      } catch (e) {}
+      window.umamiBeforeSend = function (type, payload) {
+        var dbg = location.search.indexOf('debug_analytics') !== -1;
+        if (!dbg && navigator.webdriver) return false;
+        if (payload && typeof payload.url === 'string') {
+          try {
+            var u = new URL(payload.url, location.origin);
+            ['fbclid', 'gclid', 'mc_cid', 'mc_eid', 'igshid', 'si', 'umami_ignore', 'debug_analytics'].forEach(function (k) {
+              u.searchParams.delete(k);
+            });
+            payload.url = u.pathname + (u.search || '');
+          } catch (e) {}
+        }
+        return payload;
+      };
+    })();
+  </script>
+
+  <link rel="stylesheet" href="../style.css?v=20261127j">
+  <script defer src="https://cloud.umami.is/script.js" data-website-id="243f7a71-e9b3-4152-a72c-cc99fc4e9788" data-domains="sinisterrob.github.io" data-exclude-hash="true" data-performance="true" data-errors="true" data-environment="production" data-before-send="umamiBeforeSend"></script>
+  <script type="module" src="../excess-layers.js?v=20261127d"></script>
+  <script type="module" src="../reserving-lab.js?v=20261127e"></script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://sinisterrob.github.io/#website",
+        "url": "https://sinisterrob.github.io/",
+        "name": "Robert Jurgens, FCAS",
+        "description": "Interactive Rust/WebAssembly excess-layer ILF and Mack loss reserving simulators and actuarial portfolio by Robert Jurgens, FCAS.",
+        "inLanguage": "en-US"
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://sinisterrob.github.io/reserving/#webpage",
+        "url": "https://sinisterrob.github.io/reserving/",
+        "name": "Loss Reserving & Mack Variability Simulator | Robert Jurgens, FCAS",
+        "isPartOf": { "@id": "https://sinisterrob.github.io/#website" },
+        "mainEntity": { "@id": "https://sinisterrob.github.io/#reserving-lab" },
+        "author": { "@id": "https://sinisterrob.github.io/#person" },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://sinisterrob.github.io/og-image.png",
+          "width": 1200,
+          "height": 630
+        },
+        "dateModified": "2026-11-27"
+      },
+      {
+        "@type": "Person",
+        "@id": "https://sinisterrob.github.io/#person",
+        "name": "Robert Jurgens",
+        "givenName": "Robert",
+        "familyName": "Jurgens",
+        "additionalName": "Daniel",
+        "alternateName": ["Robert Daniel Jurgens", "Robert D. Jurgens, FCAS"],
+        "honorificSuffix": "FCAS",
+        "url": "https://sinisterrob.github.io/",
+        "email": "mailto:robertdjurgens@gmail.com",
+        "jobTitle": "Senior Actuarial Consultant",
+        "description": "Chicago-based Property & Casualty Actuary (FCAS) specializing in Cayman-domiciled captive insurance, pricing architecture, increased limit factors, economic capital modeling, and native Rust & Excel XLL software.",
+        "knowsLanguage": "en-US",
+        "hasOccupation": {
+          "@type": "Occupation",
+          "name": "Property & Casualty Actuary",
+          "occupationLocation": {
+            "@type": "City",
+            "name": "Chicago"
+          }
+        },
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Chicago",
+          "addressRegion": "IL",
+          "addressCountry": "US"
+        },
+        "worksFor": {
+          "@type": "Organization",
+          "name": "Edgewater Actuarial Insights, LLC"
+        },
+        "alumniOf": {
+          "@type": "CollegeOrUniversity",
+          "name": "The University of Texas at Austin",
+          "url": "https://www.utexas.edu/"
+        },
+        "memberOf": {
+          "@type": "Organization",
+          "name": "Casualty Actuarial Society",
+          "url": "https://www.casact.org/"
+        },
+        "hasCredential": {
+          "@type": "EducationalOccupationalCredential",
+          "name": "Fellow of the Casualty Actuarial Society (FCAS)",
+          "credentialCategory": "Professional Fellowship",
+          "recognizedBy": {
+            "@type": "Organization",
+            "name": "Casualty Actuarial Society",
+            "url": "https://www.casact.org/"
+          }
+        },
+        "award": "Eugene Wisdom Memorial Endowed Scholarship in Actuarial Studies",
+        "knowsAbout": [
+          "Property and Casualty Actuarial Science",
+          "Captive Insurance",
+          "Increased Limit Factors",
+          "Frequency-Severity Modeling",
+          "Statistical Modeling",
+          "Bayesian Modeling",
+          "Monte Carlo Simulation",
+          "Economic Capital Modeling",
+          "Loss Reserving",
+          "Excess Loss Reserving",
+          "Commercial Liability Pricing",
+          "Casualty Excess-of-Loss Reinsurance",
+          "Rust Programming Language",
+          "Python Programming Language",
+          "TypeScript Programming Language",
+          "C# Programming Language",
+          "Excel XLL Add-ins",
+          "Arius Reserving Software",
+          "@RISK Simulation",
+          "R Statistical Computing"
+        ],
+        "sameAs": [
+          "https://www.linkedin.com/in/robert-jurgens-fcas-352017143/",
+          "https://github.com/SinisterRob"
+        ]
+      },
+      {
+        "@type": "WebApplication",
+        "@id": "https://sinisterrob.github.io/#ilf-lab",
+        "name": "Excess Layer & Increased Limits Factor (ILF) Simulator",
+        "url": "https://sinisterrob.github.io/#lab",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires WebAssembly",
+        "description": "Illustrative client-side Rust/WebAssembly exhibit comparing synthetic lognormal and spliced Gamma–Pareto severity tails, limited expected layer losses, exceedance probabilities, and 65,536-draw Monte Carlo verification.",
+        "isAccessibleForFree": true,
+        "author": { "@id": "https://sinisterrob.github.io/#person" }
+      },
+      {
+        "@type": "WebApplication",
+        "@id": "https://sinisterrob.github.io/#reserving-lab",
+        "name": "Loss Reserving & Mack Variability Simulator",
+        "url": "https://sinisterrob.github.io/reserving/",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires WebAssembly",
+        "description": "Client-side Rust/WebAssembly actuarial loss reserving simulator computing Chain-Ladder ultimates, Mack (1993) process and parameter standard errors, Cape Cod estimates, and cash-flow projections on standard P&C triangles.",
+        "isAccessibleForFree": true,
+        "author": { "@id": "https://sinisterrob.github.io/#person" }
+      },
+      {
+        "@type": "SoftwareSourceCode",
+        "@id": "https://sinisterrob.github.io/#wasm-kernel",
+        "name": "excess_layers.rs",
+        "codeRepository": "https://github.com/SinisterRob/SinisterRob.github.io",
+        "url": "https://github.com/SinisterRob/SinisterRob.github.io/blob/main/src/excess_layers.rs",
+        "programmingLanguage": "Rust",
+        "runtimePlatform": "WebAssembly (wasm32-unknown-unknown)",
+        "author": { "@id": "https://sinisterrob.github.io/#person" }
+      },
+      {
+        "@type": "SoftwareSourceCode",
+        "@id": "https://sinisterrob.github.io/#reserving-wasm-kernel",
+        "name": "reserving-kernels",
+        "codeRepository": "https://github.com/SinisterRob/reserving-kernels",
+        "url": "https://github.com/SinisterRob/reserving-kernels",
+        "programmingLanguage": "Rust",
+        "runtimePlatform": "WebAssembly (wasm32-unknown-unknown)",
+        "author": { "@id": "https://sinisterrob.github.io/#person" }
+      }
+    ]
+  }
+  </script>
+</head>
+<body id="top">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="#top" aria-label="Robert Jurgens, FCAS — Back to top">
+        <span class="monogram" aria-hidden="true">RJ</span>
+        <span class="brand-text">
+          <span class="brand-name">Robert Jurgens</span>
+          <span class="brand-cred">FCAS</span>
+        </span>
+      </a>
+      <div class="header-right">
+        <nav class="site-nav" id="primary-nav" aria-label="Primary">
+          <a href="#lab" data-nav="lab">Lab</a>
+          <a href="#work" data-nav="work">Capabilities</a>
+          <a href="#experience" data-nav="experience">Experience</a>
+          <a href="#interests" data-nav="interests">Research</a>
+          <a href="#about" data-nav="about">Credentials</a>
+          <a href="#contact" data-nav="contact">Contact</a>
+        </nav>
+        <div class="header-tools">
+          <button class="cmd-trigger" id="cmd-trigger" type="button" aria-haspopup="dialog" aria-controls="cmd-dialog" aria-label="Open quick jump menu" title="Quick jump & actions (Ctrl+K or ⌘K)">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7"/>
+              <path d="m20 20-3.5-3.5"/>
+            </svg>
+            <kbd class="cmd-kbd" id="cmd-kbd">⌘K</kbd>
+          </button>
+          <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false" aria-label="Switch color theme" title="Toggle light / dark theme">
+            <svg class="icon-sun" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="4"/>
+              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+            </svg>
+            <svg class="icon-moon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile">
+      <div class="wrap mobile-nav-inner">
+        <a href="#lab" data-nav="lab">Lab</a>
+        <a href="#work" data-nav="work">Capabilities</a>
+        <a href="#experience" data-nav="experience">Experience</a>
+        <a href="#interests" data-nav="interests">Research</a>
+        <a href="#about" data-nav="about">Credentials</a>
+        <a href="#contact" data-nav="contact">Contact</a>
+      </div>
+    </nav>
+    <div class="scroll-progress" aria-hidden="true">
+      <div class="scroll-progress-bar" id="scroll-progress-bar"></div>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1">
+    <div class="print-masthead" aria-hidden="true">
+      <div class="print-masthead-left">
+        <p class="print-name">Robert Jurgens, <span>FCAS</span></p>
+        <p class="print-role">Senior Actuarial Consultant · Captive Insurance, Pricing &amp; Loss Reserving</p>
+      </div>
+      <div class="print-masthead-right">
+        <p>Chicago, Illinois · robertdjurgens@gmail.com</p>
+        <p>sinisterrob.github.io · github.com/SinisterRob</p>
+        <p>linkedin.com/in/robert-jurgens-fcas-352017143</p>
+      </div>
+    </div>
+
+    <div class="author-intro">
+      <div class="wrap author-inner">
+        <p>P&amp;C actuary working in captive insurance, pricing, and reserving.</p>
+        <a class="text-link lab-jump" href="#lab" data-nav="hero-lab">Open the simulator <span aria-hidden="true">↓</span></a>
+      </div>
+    </div>
+
+    <section class="section section-lab" id="lab" aria-labelledby="reserving-title">
+      <div class="wrap lab-switcher-row">
+        <div class="lab-switcher" role="tablist" aria-label="Interactive actuarial simulators">
+          <button type="button" class="lab-tab" role="tab" id="tab-ilf" aria-selected="true" aria-controls="slide-ilf" data-lab-slide="0">
+            <span class="lab-tab-num">01</span>
+            <span>Excess Layer &amp; ILF</span>
+          </button>
+          <button type="button" class="lab-tab" role="tab" id="tab-reserving" aria-selected="false" aria-controls="slide-reserving" data-lab-slide="1">
+            <span class="lab-tab-num">02</span>
+            <span>Loss Reserving &amp; Mack SE</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="lab-carousel-stage" id="lab-carousel-stage">
+        <button type="button" class="lab-side-arrow is-prev" id="lab-prev" aria-label="Previous simulator: Excess Layer & ILF" title="Excess Layer & ILF Simulator" disabled>
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6"/>
+          </svg>
+        </button>
+
+        <div class="lab-track" id="lab-track" aria-label="Actuarial simulator carousel">
+          <div class="lab-slide" id="slide-ilf" role="tabpanel" aria-labelledby="tab-ilf" data-slide-index="0">
+            <div class="wrap">
+              <div class="lab-heading">
+                <h2 id="lab-title" class="lab-title-display">Excess Layer &amp; Increased Limits Factor (ILF) Simulator</h2>
+                <p class="lab-subtitle" id="lab-subtitle">Compare layer loss and ILFs using synthetic lognormal or spliced Gamma–Pareto claims ($100k mean).</p>
+              </div>
+
+              <article class="lab-shell" id="excess-layers">
+          <p id="model-status" class="model-status" role="status" hidden></p>
+          <noscript><p class="model-status">Showing baseline values ($350k limit, moderate tail). Enable JavaScript to run the interactive WebAssembly model.</p></noscript>
+
+          <div class="calculator" id="layer-calculator">
+            <div class="lab-controls-bar is-two-col">
+              <div class="control-group slider-group">
+                <div class="layer-input-labels">
+                  <label for="layer-attach">Attachment point <span class="attach-readout" id="attach-value" aria-hidden="true">$100k</span></label>
+                  <label for="layer-top">Coverage limit <span class="limit-readout" id="top-value" aria-hidden="true">$350k</span></label>
+                </div>
+                <div class="dual-range" id="dual-range" style="--attach-pct: 7.69%; --limit-pct: 33.33%">
+                  <div class="dual-range-track" aria-hidden="true"></div>
+                  <input id="layer-attach" class="range-input is-attach" type="range" min="25000" max="1000000" step="25000" value="100000" aria-valuetext="$100,000" disabled>
+                  <input id="layer-top" class="range-input is-limit" type="range" min="25000" max="1000000" step="25000" value="350000" aria-valuetext="$350,000" disabled>
+                </div>
+                <div class="range-ends">
+                  <button type="button" class="tick-btn" data-limit-jump="25000" aria-label="Set attachment point to $25,000" disabled>$25k</button>
+                  <span class="layer-shorthand">Layer <span id="layer-shorthand">$250k xs $100k</span></span>
+                  <button type="button" class="tick-btn" data-limit-jump="1000000" aria-label="Set coverage limit to $1,000,000" disabled>$1M</button>
+                </div>
+              </div>
+
+              <div class="control-group severity-group">
+                <div class="severity-row">
+                  <div class="range-label">
+                    <span class="control-label" id="model-label">Distribution</span>
+                  </div>
+                  <div class="segmented compact" role="group" aria-labelledby="model-label">
+                    <button type="button" data-severity-model="lognormal" aria-pressed="true" title="Single Lognormal severity ($100k mean)" disabled>Lognormal</button>
+                    <button type="button" data-severity-model="spliced" aria-pressed="false" title="Spliced Gamma body + Pareto tail ($100k mean)" disabled>Gamma–Pareto</button>
+                  </div>
+                </div>
+                <div class="severity-row" id="body-severity-row" hidden>
+                  <div class="range-label">
+                    <span class="control-label" id="body-label">Gamma body (k)</span>
+                    <span class="tail-sigma" id="body-shape-label">Moderate</span>
+                  </div>
+                  <div class="segmented compact" role="group" aria-labelledby="body-label">
+                    <button type="button" data-body="0" aria-pressed="false" title="Dispersed Gamma body (k = 1.2)" aria-label="Dispersed Gamma body, k 1.2" disabled>1.2</button>
+                    <button type="button" data-body="1" aria-pressed="true" title="Moderate Gamma body (k = 2.5)" aria-label="Moderate Gamma body, k 2.5" disabled>2.5</button>
+                    <button type="button" data-body="2" aria-pressed="false" title="Tight Gamma body (k = 6.0)" aria-label="Tight Gamma body, k 6.0" disabled>6.0</button>
+                  </div>
+                </div>
+                <div class="severity-row">
+                  <div class="range-label">
+                    <span class="control-label" id="tail-label">Lognormal tail (σ)</span>
+                    <span class="tail-sigma" id="tail-sigma">Moderate</span>
+                  </div>
+                  <div class="segmented compact" role="group" aria-labelledby="tail-label">
+                    <button type="button" data-tail="0" aria-pressed="false" title="Lighter Lognormal tail (σ = 0.55)" aria-label="Lighter tail, sigma 0.55" disabled>0.55</button>
+                    <button type="button" data-tail="1" aria-pressed="true" title="Moderate Lognormal tail (σ = 1.00)" aria-label="Moderate tail, sigma 1.00" disabled>1.00</button>
+                    <button type="button" data-tail="2" aria-pressed="false" title="Heavier Lognormal tail (σ = 1.55)" aria-label="Heavier tail, sigma 1.55" disabled>1.55</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <dl class="kpi-strip" aria-label="Key results">
+              <div class="kpi-tile is-accent">
+                <dt><span class="kpi-title">ILF <span class="info-tip is-left" tabindex="0" role="note" aria-label="Increased Limits Factor: expected loss capped at coverage limit divided by expected loss capped at attachment, L(b) / L(a)." data-tip="Increased Limits Factor: L(b) / L(a), expected loss capped at coverage limit relative to attachment.">?</span></span> <span id="ilf-sub">$350k / $100k</span></dt>
+                <dd id="ilf">1.48×</dd>
+              </div>
+              <div class="kpi-tile">
+                <dt><span class="kpi-title">Expected excess loss <span class="info-tip" tabindex="0" role="note" aria-label="Expected layer payment per ground-up claim: L(b) minus L(a)." data-tip="Expected layer payment per ground-up claim: L(b) − L(a).">?</span></span> <span>Per claim</span></dt>
+                <dd id="loss-excess-key">$29,650</dd>
+              </div>
+              <div class="kpi-tile">
+                <dt><span class="kpi-title">% of layer limit <span class="info-tip" tabindex="0" role="note" aria-label="Expected excess loss per claim divided by layer width: (L(b) minus L(a)) / (b minus a)." data-tip="Expected excess loss per claim divided by layer width: (L(b) − L(a)) / (b − a).">?</span></span> <span id="burn-sub">$250k width</span></dt>
+                <dd id="layer-rate">11.9%</dd>
+              </div>
+              <div class="kpi-tile">
+                <dt><span class="kpi-title">Avg. layer payout <span class="info-tip is-right" tabindex="0" role="note" aria-label="Expected layer payment conditional on a claim exceeding attachment: E[min(X minus a, b minus a) given X > a]." data-tip="Expected layer payment given a claim exceeds attachment: E[min(X − a, b − a) | X > a].">?</span></span> <span id="avg-hit-sub">Given X&gt;$100k</span></dt>
+                <dd id="avg-hit">$96,100</dd>
+              </div>
+            </dl>
+
+            <div class="lab-visual-grid">
+              <div class="chart-panel">
+                <div class="chart-panel-head">
+                  <div class="chart-head-left">
+                    <span class="mono-label" id="chart-title-label">ILF Curve · $100k Base</span>
+                    <span class="chart-scrub-hint">Drag handles on plot</span>
+                  </div>
+                  <div class="segmented compact" role="group" aria-label="Chart view">
+                    <button type="button" data-chart-view="ilf" aria-pressed="true" disabled>ILF</button>
+                    <button type="button" data-chart-view="pdf" aria-pressed="false" disabled>PDF</button>
+                  </div>
+                </div>
+                <svg id="severity-chart" class="severity-chart" viewBox="0 0 540 206" role="img" aria-labelledby="chart-title" aria-describedby="chart-description">
+                  <title id="chart-title">Increased limits factor by coverage limit</title>
+                  <desc id="chart-description">With the Moderate tail, the $350k coverage limit has an ILF of 1.48 relative to the $100k attachment.</desc>
+                  <line class="chart-grid" x1="44" y1="180.0" x2="474" y2="180.0"/>
+                  <text class="chart-text" x="38" y="184.0" text-anchor="end">0.00×</text>
+                  <line class="chart-grid" x1="44" y1="142.7" x2="474" y2="142.7"/>
+                  <text class="chart-text" x="38" y="146.7" text-anchor="end">0.50×</text>
+                  <line class="chart-pivot-line" x1="44" y1="105.5" x2="474" y2="105.5"/>
+                  <text class="chart-text is-attachment" x="38" y="109.5" text-anchor="end">1.00×</text>
+                  <line class="chart-grid" x1="44" y1="68.2" x2="474" y2="68.2"/>
+                  <text class="chart-text" x="38" y="72.2" text-anchor="end">1.50×</text>
+                  <line class="chart-grid" x1="44" y1="30.9" x2="474" y2="30.9"/>
+                  <text class="chart-text" x="38" y="34.9" text-anchor="end">2.00×</text>
+                  <rect class="chart-primary-band" x="44.0" y="22" width="43.0" height="158"/>
+                  <rect class="chart-layer-band" x="87.0" y="22" width="107.5" height="158"/>
+                  <line class="chart-baseline" x1="44" y1="180.0" x2="474" y2="180.0"/>
+                  <text class="chart-text" x="44.0" y="198" text-anchor="start">$0</text>
+                  <text class="chart-text" x="151.5" y="198" text-anchor="middle">$250k</text>
+                  <text class="chart-text" x="259.0" y="198" text-anchor="middle">$500k</text>
+                  <text class="chart-text" x="366.5" y="198" text-anchor="middle">$750k</text>
+                  <text class="chart-text" x="474.0" y="198" text-anchor="end">$1M</text>
+                  <line class="chart-marker attachment" x1="87.0" y1="22" x2="87.0" y2="180"/>
+                  <line class="chart-marker" x1="194.5" y1="22" x2="194.5" y2="180"/>
+                  <path d="M 44.0 180.0 L 46.1 175.2 L 48.3 170.5 L 50.5 165.7 L 54.8 156.3 L 61.2 142.6 L 65.5 134.2 L 76.3 117.1 L 87.0 105.5 L 97.8 98.0 L 108.5 93.3 L 119.3 90.3 L 130.0 88.4 L 140.8 87.2 L 151.5 86.5 L 162.3 85.9 L 173.0 85.6 L 183.8 85.4 L 194.5 85.2 L 205.3 85.1 L 216.0 85.0 L 226.8 85.0 L 237.5 85.0 L 248.3 84.9 L 259.0 84.9 L 269.8 84.9 L 280.5 84.9 L 291.3 84.9 L 302.0 84.9 L 312.8 84.9 L 323.5 84.9 L 334.3 84.9 L 345.0 84.9 L 355.8 84.9 L 366.5 84.9 L 377.3 84.9 L 388.0 84.9 L 398.8 84.9 L 409.5 84.9 L 420.3 84.9 L 431.0 84.9 L 441.8 84.9 L 452.5 84.9 L 463.3 84.9 L 474.0 84.9" class="chart-curve"/>
+                  <path d="M 44.0 180.0 L 46.1 172.0 L 48.3 165.0 L 50.5 159.0 L 54.8 148.6 L 61.2 136.3 L 65.5 129.6 L 76.3 115.9 L 87.0 105.5 L 97.8 97.1 L 108.5 90.1 L 119.3 84.2 L 130.0 79.1 L 140.8 74.7 L 151.5 70.9 L 162.3 67.4 L 173.0 64.3 L 183.8 61.5 L 194.5 59.0 L 205.3 56.7 L 216.0 54.6 L 226.8 52.7 L 237.5 50.9 L 248.3 49.2 L 259.0 47.7 L 269.8 46.2 L 280.5 44.9 L 291.3 43.6 L 302.0 42.5 L 312.8 41.4 L 323.5 40.3 L 334.3 39.4 L 345.0 38.4 L 355.8 37.6 L 366.5 36.7 L 377.3 35.9 L 388.0 35.2 L 398.8 34.5 L 409.5 33.8 L 420.3 33.2 L 431.0 32.5 L 441.8 32.0 L 452.5 31.4 L 463.3 30.9 L 474.0 30.3" class="chart-curve"/>
+                  <path d="M 44.0 180.0 L 46.1 174.0 L 48.3 168.0 L 50.5 162.4 L 54.8 151.9 L 61.2 138.6 L 65.5 131.1 L 76.3 116.3 L 87.0 105.5" class="chart-curve is-primary"/>
+                  <path d="M 87.0 105.5 L 97.8 97.3 L 108.5 91.1 L 119.3 86.2 L 130.0 82.2 L 140.8 79.1 L 151.5 76.5 L 162.3 74.3 L 173.0 72.5 L 183.8 71.0 L 194.5 69.7 L 205.3 68.5 L 216.0 67.6 L 226.8 66.7 L 237.5 66.0 L 248.3 65.4 L 259.0 64.8 L 269.8 64.3 L 280.5 63.9 L 291.3 63.5 L 302.0 63.1 L 312.8 62.8 L 323.5 62.5 L 334.3 62.3 L 345.0 62.1 L 355.8 61.9 L 366.5 61.7 L 377.3 61.5 L 388.0 61.3 L 398.8 61.2 L 409.5 61.1 L 420.3 60.9 L 431.0 60.8 L 441.8 60.7 L 452.5 60.6 L 463.3 60.6 L 474.0 60.5" class="chart-curve is-active"/>
+                  <text class="chart-text" x="482" y="88.9">Lighter</text>
+                  <text class="chart-text is-active" x="482" y="64.5">Moderate</text>
+                  <text class="chart-text" x="482" y="34.3">Heavier</text>
+                  <circle class="chart-dot-attach" cx="87.0" cy="105.5" r="3.8" aria-hidden="true"/>
+                  <circle class="chart-dot-ring" cx="194.5" cy="69.7" r="8.5" aria-hidden="true"/>
+                  <circle class="chart-dot" cx="194.5" cy="69.7" r="4.4" aria-hidden="true"/>
+                  <circle class="chart-handle-hit" data-handle="attach" cx="87.0" cy="105.5" r="22" aria-hidden="true"/>
+                  <circle class="chart-handle-hit" data-handle="limit" cx="194.5" cy="69.7" r="22" aria-hidden="true"/>
+                  <text class="chart-text is-attachment" x="87.0" y="14" text-anchor="middle">$100k</text>
+                  <text class="chart-text is-active" x="194.5" y="14" text-anchor="middle">$350k · 1.48×</text>
+                </svg>
+              </div>
+
+              <div class="ledger-panel">
+                <table class="layer-table" aria-label="Expected layer loss breakdown">
+                  <thead>
+                    <tr>
+                      <th scope="col">Layer</th>
+                      <th scope="col" class="num">Expected</th>
+                      <th scope="col" class="num">Share</th>
+                      <th scope="col" class="num"><span class="info-tip is-right" tabindex="0" role="note" aria-label="Probability a claim exceeds the attachment for the excess row, or the coverage limit for the above-limit row." data-tip="Probability a claim exceeds the attachment (excess row) or coverage limit (above-limit row).">?</span> P(Exceed)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr data-layer-row="primary">
+                      <td><span class="layer-name"><i class="swatch sw-primary"></i>Primary</span><span class="layer-range" id="primary-range">$0–$100k</span></td>
+                      <td class="num strong" id="loss-primary">$61,708</td>
+                      <td class="num" id="pct-primary">61.7%</td>
+                      <td class="num muted">—</td>
+                    </tr>
+                    <tr data-layer-row="excess">
+                      <td><span class="layer-name"><i class="swatch sw-excess"></i>Excess Layer</span><span class="layer-range" id="excess-range">$100k–$350k</span></td>
+                      <td class="num strong" id="loss-excess">$29,650</td>
+                      <td class="num" id="pct-excess">29.7%</td>
+                      <td class="num" id="pierce-att">30.9%</td>
+                    </tr>
+                    <tr data-layer-row="above">
+                      <td><span class="layer-name"><i class="swatch sw-above"></i>Above Limit</span><span class="layer-range" id="above-range">&gt;$350k</span></td>
+                      <td class="num" id="loss-above">$8,642</td>
+                      <td class="num" id="pct-above">8.6%</td>
+                      <td class="num" id="pierce-top">4.0%</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <div class="share-bar" role="presentation">
+                  <div class="share-seg seg-primary" id="bar-primary" data-layer-seg="primary" style="width: 61.71%"></div>
+                  <div class="share-seg seg-excess" id="bar-excess" data-layer-seg="excess" style="width: 29.65%"></div>
+                  <div class="share-seg seg-above" id="bar-above" data-layer-seg="above" style="width: 8.64%"></div>
+                </div>
+                <p class="simulation-check" id="mc-verify" title="65,536-draw fixed-seed Rust MC: Primary $61,650, Excess $29,747 (+$96 finite-sample MC error vs. closed-form)">
+                  Simulated excess <strong id="sim-check">$29,747</strong> · <span id="sim-delta">+0.3% MC error vs. closed-form</span>
+                </p>
+              </div>
+            </div>
+
+            <p class="sr-only" id="results-summary" role="status" aria-live="polite"></p>
+          </div>
+
+          <div class="lab-footer">
+            <details class="method-drawer" id="method-drawer">
+              <summary id="method-toggle">Model assumptions &amp; formulas</summary>
+              <div class="method-grid">
+                <div class="method-col">
+                  <h3>Severity &amp; Limited Expected Loss</h3>
+                  <div class="method-formulas">
+                    <p class="method-formula">L(<var>x</var>) = E[<var>X</var>]Φ(<var>z</var> &minus; σ) + <var>x</var>Φ(&minus;<var>z</var>)</p>
+                    <p class="method-formula is-sub"><var>z</var> = (ln <var>x</var> &minus; μ) / σ, &nbsp; μ = ln(100k) &minus; σ²/2</p>
+                  </div>
+                  <p class="method-note">Fixed $100k ground-up mean across tails; normal CDF via Abramowitz &amp; Stegun (26.2.17).</p>
+                </div>
+                <div class="method-col">
+                  <h3>Layer Mechanics &amp; ILF</h3>
+                  <div class="method-formulas">
+                    <p class="method-formula">ILF = L(<var>b</var>) / L(<var>a</var>), &nbsp; Excess = L(<var>b</var>) &minus; L(<var>a</var>)</p>
+                    <p class="method-formula is-sub">E[Layer | <var>X</var> &gt; <var>a</var>] = (L(<var>b</var>) &minus; L(<var>a</var>)) / P(<var>X</var> &gt; <var>a</var>)</p>
+                  </div>
+                  <p class="method-note">Attachment <var>a</var> sets the ILF base; coverage limit <var>b</var> defines layer width <var>b</var> &minus; <var>a</var>.</p>
+                </div>
+                <div class="method-col">
+                  <h3>Monte Carlo Verification</h3>
+                  <div class="method-formulas">
+                    <p class="method-formula"><var>N</var> = 65,536 draws · seed 2026</p>
+                    <p class="method-formula is-sub">MC error ~ O(1 / √<var>N</var>)</p>
+                  </div>
+                  <p class="method-note">Fixed-seed Rust/WASM cross-check; finite-sample error scales as 1/√<var>N</var> and widens at high attachments or heavier tails.</p>
+                </div>
+              </div>
+              <p class="method-footnote">Synthetic model · excludes client data, ALAE, and treaty terms.</p>
+            </details>
+            <div class="lab-meta-links">
+              <a class="text-link" href="https://github.com/SinisterRob/SinisterRob.github.io/blob/main/src/excess_layers.rs" target="_blank" rel="noopener noreferrer" data-track="rust-source">Rust model source ↗</a>
+              <a class="text-link" href="https://digital.casact.org/issue/may-june-2026/#increased-limit-factors-a-modified-riebesell-form" target="_blank" rel="noopener noreferrer" data-track="cas-actuarial-review">Actuarial Review ↗</a>
+            </div>
+          </div>
+        </article>
+            </div>
+          </div>
+
+          <div class="lab-slide" id="slide-reserving" role="tabpanel" aria-labelledby="tab-reserving" data-slide-index="1">
+            <div class="wrap">
+              <div class="lab-heading">
+                <h1 id="reserving-title" class="lab-title-display">Loss Reserving &amp; Mack Variability Simulator</h1>
+                <p class="lab-subtitle">Compare Chain Ladder, Bornhuetter–Ferguson, and Cape Cod reserves with Mack standard errors on published triangles.</p>
+              </div>
+
+              <article class="lab-shell" id="reserving-lab">
+                <p id="reserving-status" class="model-status" role="status" hidden></p>
+                <noscript><p class="model-status">Showing Mack (1993) RAA baseline ($52.1M IBNR, $26.9M Mack SE). Enable JavaScript to run the interactive WebAssembly reserving kernels.</p></noscript>
+
+                <div class="calculator" id="reserving-calculator">
+                  <div class="lab-controls-bar is-reserving-bar">
+                    <div class="control-group preset-group">
+                      <span class="control-label" id="res-dataset-label">Benchmark triangle</span>
+                      <div class="segmented compact" role="group" aria-labelledby="res-dataset-label">
+                        <button type="button" data-res-dataset="raa" aria-pressed="true" title="Mack (1993) RAA 10×10 GL reinsurance incurred ($000s)" disabled>RAA</button>
+                        <button type="button" data-res-dataset="genins" aria-pressed="false" title="Taylor & Ashe / England & Verrall 10×10 GenIns paid" disabled>GenIns</button>
+                        <button type="button" data-res-dataset="auto" aria-pressed="false" title="Friedland (2010) US Industry Auto 10×10 paid ($000s)" disabled>US Auto</button>
+                      </div>
+                    </div>
+
+                    <div class="control-group slider-group">
+                      <div class="layer-input-labels">
+                        <label for="res-tail-slider">Tail factor <span class="limit-readout" id="res-tail-value" aria-hidden="true">1.00×</span></label>
+                        <span class="res-cdf-meta">12m→Ult CDF <span class="attach-readout" id="res-cdf-readout">8.92×</span></span>
+                      </div>
+                      <div class="single-range" id="res-tail-range" style="--tail-pct: 0%">
+                        <div class="single-range-track" aria-hidden="true"></div>
+                        <input id="res-tail-slider" class="range-input is-single" type="range" min="1.00" max="1.20" step="0.01" value="1.00" aria-valuetext="1.00× tail factor" disabled>
+                      </div>
+                      <div class="range-ends">
+                        <button type="button" class="tick-btn" data-tail-jump="1.00" aria-label="Set tail factor to 1.00" disabled>1.00×</button>
+                        <span class="layer-shorthand" id="res-triangle-meta">10×10 triangle · Vol-wtd LDFs</span>
+                        <button type="button" class="tick-btn" data-tail-jump="1.20" aria-label="Set tail factor to 1.20" disabled>1.20×</button>
+                      </div>
+                    </div>
+
+                    <div class="control-group tail-group">
+                      <div class="range-label">
+                        <span class="control-label" id="res-method-label">Reserving method</span>
+                        <span class="tail-sigma" id="res-method-sub">Chain Ladder</span>
+                        <span class="res-elr-inline" id="res-elr-wrap" hidden>
+                          <label class="res-elr-label" for="res-elr-input">ELR</label>
+                          <span class="res-elr-field">
+                            <input id="res-elr-input" class="res-elr-input" type="number" min="1" max="250" step="any" value="72" inputmode="decimal" title="A priori expected loss ratio (all accident years)" aria-label="Bornhuetter–Ferguson a priori expected loss ratio percent for all accident years" disabled>
+                            <span class="res-elr-unit" aria-hidden="true">%</span>
+                          </span>
+                        </span>
+                      </div>
+                      <div class="segmented compact" role="group" aria-labelledby="res-method-label">
+                        <button type="button" data-res-method="cl" aria-pressed="true" title="Volume-weighted Chain Ladder" disabled>CL</button>
+                        <button type="button" data-res-method="bf" aria-pressed="false" title="Bornhuetter–Ferguson with a priori ELR" disabled>BF</button>
+                        <button type="button" data-res-method="cc" aria-pressed="false" title="Cape Cod with data-implied ELR" disabled>Cape Cod</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <dl class="kpi-strip" aria-label="Reserving key results">
+                    <div class="kpi-tile is-accent">
+                      <dt><span class="kpi-title">Total IBNR reserve <span class="info-tip is-left" tabindex="0" role="note" aria-label="Estimated unpaid incurred-but-not-reported reserve across all accident years under the selected method and tail factor." data-tip="Estimated unpaid reserve across all accident years under the selected method and tail factor.">?</span></span> <span id="res-ibnr-sub">CL · Tail 1.00×</span></dt>
+                      <dd id="res-ibnr">$52.1M</dd>
+                    </div>
+                    <div class="kpi-tile">
+                      <dt><span class="kpi-title">Total ultimate <span class="info-tip" tabindex="0" role="note" aria-label="Sum of reported-to-date loss plus estimated IBNR across all accident years." data-tip="Reported-to-date loss plus estimated IBNR across all accident years.">?</span></span> <span>Reported + IBNR</span></dt>
+                      <dd id="res-ultimate">$213.1M</dd>
+                    </div>
+                    <div class="kpi-tile">
+                      <dt><span class="kpi-title">Mack std. error <span class="info-tip" tabindex="0" role="note" aria-label="Distribution-free Chain Ladder prediction standard error combining process and parameter variance (Mack 1993)." data-tip="Distribution-free prediction standard error combining process and parameter variance (Mack 1993).">?</span></span> <span id="res-se-sub">CV 51.6%</span></dt>
+                      <dd id="res-se">$26.9M</dd>
+                    </div>
+                    <div class="kpi-tile">
+                      <dt><span class="kpi-title">Unreported share <span class="info-tip is-right" tabindex="0" role="note" aria-label="Proportion of total estimated ultimate loss still unpaid: Total IBNR divided by Total Ultimate." data-tip="Share of total estimated ultimate loss still unpaid: Total IBNR / Total Ultimate.">?</span></span> <span>IBNR / Ultimate</span></dt>
+                      <dd id="res-unreported">24.5%</dd>
+                    </div>
+                  </dl>
+
+                  <div class="lab-visual-grid">
+                    <div class="chart-panel">
+                      <div class="chart-panel-head">
+                        <div class="chart-head-left">
+                          <span class="mono-label" id="res-chart-label">Ultimate by AY · RAA</span>
+                          <span class="chart-scrub-hint" id="res-chart-hint"></span>
+                        </div>
+                        <div class="segmented compact" role="group" aria-label="Reserving chart view">
+                          <button type="button" data-res-view="ultimate" aria-pressed="true" disabled>Ultimate</button>
+                          <button type="button" data-res-view="pattern" aria-pressed="false" disabled>Pattern</button>
+                        </div>
+                      </div>
+                      <svg id="reserving-chart" class="severity-chart reserving-chart" viewBox="0 0 540 236" role="img" aria-labelledby="res-chart-title" aria-describedby="res-chart-desc">
+                        <title id="res-chart-title">Estimated ultimate loss and Mack standard error by accident year</title>
+                        <desc id="res-chart-desc">Stacked bars showing reported-to-date loss and estimated IBNR reserve with Mack standard error intervals across 10 accident years.</desc>
+                      </svg>
+                    </div>
+
+                    <div class="ledger-panel">
+                      <div class="ledger-panel-head">
+                        <span class="mono-label">Projected Cash Flow</span>
+                        <span class="chart-scrub-hint" id="res-cf-basis">Incurred emergence · linear 6m</span>
+                      </div>
+                      <table class="layer-table cf-table" aria-label="Projected 6, 12, and 18 month reserve cash flow">
+                        <thead>
+                          <tr>
+                            <th scope="col">Horizon</th>
+                            <th scope="col" class="num">Period</th>
+                            <th scope="col" class="num">Cumul.</th>
+                            <th scope="col" class="num">% IBNR</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr data-res-horizon="m6">
+                            <td><span class="layer-name"><i class="swatch sw-cf-1"></i>0–6 mo</span></td>
+                            <td class="num strong" id="res-cf-6m-inc">$8.8M</td>
+                            <td class="num" id="res-cf-6m-cum">$8.8M</td>
+                            <td class="num" id="res-cf-6m-pct">16.8%</td>
+                          </tr>
+                          <tr data-res-horizon="m12">
+                            <td><span class="layer-name"><i class="swatch sw-cf-2"></i>6–12 mo</span></td>
+                            <td class="num strong" id="res-cf-12m-inc">$8.8M</td>
+                            <td class="num" id="res-cf-12m-cum">$17.5M</td>
+                            <td class="num" id="res-cf-12m-pct">33.6%</td>
+                          </tr>
+                          <tr data-res-horizon="m18">
+                            <td><span class="layer-name"><i class="swatch sw-cf-3"></i>12–18 mo</span></td>
+                            <td class="num strong" id="res-cf-18m-inc">$6.5M</td>
+                            <td class="num" id="res-cf-18m-cum">$24.0M</td>
+                            <td class="num" id="res-cf-18m-pct">46.1%</td>
+                          </tr>
+                          <tr data-res-horizon="m18p">
+                            <td><span class="layer-name"><i class="swatch sw-cf-4"></i>18+ mo</span></td>
+                            <td class="num" id="res-cf-rem-inc">$28.1M</td>
+                            <td class="num" id="res-cf-rem-cum">$52.1M</td>
+                            <td class="num" id="res-cf-rem-pct">100.0%</td>
+                          </tr>
+                        </tbody>
+                      </table>
+
+                      <div class="share-bar" role="presentation">
+                        <div class="share-seg seg-cf-1" id="res-bar-m6" data-res-seg="m6" style="width: 16.8%"></div>
+                        <div class="share-seg seg-cf-2" id="res-bar-m12" data-res-seg="m12" style="width: 16.8%"></div>
+                        <div class="share-seg seg-cf-3" id="res-bar-m18" data-res-seg="m18" style="width: 12.5%"></div>
+                        <div class="share-seg seg-cf-4" id="res-bar-m18p" data-res-seg="m18p" style="width: 53.9%"></div>
+                      </div>
+                      <p class="simulation-check" id="res-meta-check">
+                        Cape Cod implied ELR <strong id="res-cc-elr">71.5%</strong> · <span id="res-kernel-tag">reserving-kernels WASM</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <p class="sr-only" id="res-results-summary" role="status" aria-live="polite"></p>
+                </div>
+
+                <div class="lab-footer">
+                  <details class="method-drawer" id="reserving-method-drawer">
+                    <summary id="reserving-method-toggle">Reserving methods &amp; benchmark datasets</summary>
+                    <div class="method-grid">
+                      <div class="method-col">
+                        <h3>Chain Ladder &amp; Mack (1993)</h3>
+                        <div class="method-formulas">
+                          <p class="method-formula"><var>f</var><sub><var>j</var></sub> = Σ <var>C</var><sub><var>i</var>,<var>j</var>+1</sub> / Σ <var>C</var><sub><var>i</var>,<var>j</var></sub></p>
+                        </div>
+                        <p class="method-note">Volume-weighted LDFs project each origin to ultimate; Mack’s distribution-free variance separates process and parameter risk.</p>
+                      </div>
+                      <div class="method-col">
+                        <h3>BF, Cape Cod &amp; Runoff</h3>
+                        <div class="method-formulas">
+                          <p class="method-formula">IBNR<sub>BF</sub> = ELR · <var>E</var> · (1 &minus; 1/CDF)</p>
+                        </div>
+                        <p class="method-note">Cape Cod derives ELR from used-up exposure <span class="nowrap">(<var>E</var> / CDF)</span>. Cash flow steps along 1/CDF with linear 6-month interpolation; tail beyond 120m groups into 18+ mo.</p>
+                      </div>
+                      <div class="method-col">
+                        <h3>Benchmarks &amp; WASM Kernel</h3>
+                        <div class="method-formulas">
+                          <p class="method-formula">RAA · GenIns · US Auto</p>
+                        </div>
+                        <p class="method-note">Published 10×10 triangles (Mack 1993, Taylor–Ashe, Friedland 2010), computed client-side via zero-dependency reserving_kernels.wasm.</p>
+                      </div>
+                    </div>
+                    <p class="method-footnote">Illustrative exposure vectors scaled to mature volume on RAA and GenIns for BF/Cape Cod comparisons.</p>
+                  </details>
+                  <div class="lab-meta-links">
+                    <a class="text-link" href="https://github.com/SinisterRob/reserving-kernels" target="_blank" rel="noopener noreferrer" data-track="reserving-kernels">reserving-kernels ↗</a>
+                    <a class="text-link" href="https://github.com/SinisterRob/reserving-kernels/blob/main/docs/SOURCES.md" target="_blank" rel="noopener noreferrer" data-track="reserving-sources">Equation traceability ↗</a>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" class="lab-side-arrow is-next" id="lab-next" aria-label="Next simulator: Loss Reserving & Mack Variability" title="Loss Reserving & Mack Variability Simulator">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M9 18l6-6-6-6"/>
+          </svg>
+        </button>
+      </div>
+    </section>
+
+    <section class="section" id="work" aria-labelledby="work-title" data-reveal>
+      <div class="wrap">
+        <div class="section-heading">
+          <div>
+            <h2 id="work-title">Actuarial capabilities</h2>
+          </div>
+        </div>
+
+        <div class="editorial-columns three-up">
+          <article class="ed-col">
+            <h3>Commercial Liability Pricing &amp; Excel XLLs</h3>
+            <p>Led the redesign and technical architecture of commercial liability and renewal pricing models—pairing Excel, VBA, and Power Query with compiled native <code>.xll</code> extensions so actuaries get native speed inside the workbooks they already trust.</p>
+          </article>
+
+          <article class="ed-col">
+            <h3>Primary &amp; Excess Reserving, ILFs &amp; Simulation</h3>
+            <p>Combine primary and excess loss reserving across Arius and @RISK with deterministic Rust Monte Carlo engines—separating claim frequency, severity tails, and retentions for Auto/GL Increased Limit Factors and multi-layer excess structures.</p>
+          </article>
+
+          <article class="ed-col">
+            <h3>Economic Capital &amp; Rating Frameworks</h3>
+            <p>Experience maintaining quarterly internal economic capital models, evaluating S&amp;P Risk-Based Capital Adequacy and Fitch frameworks for ROE and rating risk, and pricing casualty excess-of-loss treaties in MetaRisk and R.</p>
+          </article>
+        </div>
+        <p class="capability-note">Additional development tools include Python, TypeScript, and C#.</p>
+      </div>
+    </section>
+
+    <section class="section" id="experience" aria-labelledby="experience-title" data-reveal>
+      <div class="wrap">
+        <div class="section-heading">
+          <div>
+            <h2 id="experience-title">Experience</h2>
+          </div>
+          <a class="text-link" href="https://www.linkedin.com/in/robert-jurgens-fcas-352017143/" target="_blank" rel="noopener noreferrer" data-track="linkedin-experience">Full profile on LinkedIn ↗</a>
+        </div>
+
+        <ol class="timeline">
+          <li class="timeline-item is-current">
+            <div class="timeline-meta">
+              <p class="period"><time datetime="2023-07">Jul 2023</time> – Present</p>
+              <p class="location">Itasca / Chicago, IL</p>
+            </div>
+            <div class="timeline-rail" aria-hidden="true">
+              <span class="timeline-node"></span>
+            </div>
+            <div class="entry">
+              <div class="entry-head">
+                <h3>Senior Actuarial Consultant</h3>
+                <span class="entry-badge">Promoted Aug 2025</span>
+              </div>
+              <p class="organization">Edgewater Actuarial Insights, LLC</p>
+              <ul class="impact-list">
+                <li>Lead actuarial oversight across <strong>Cayman-domiciled member-owned group captives</strong>, directing actuarial staff across reserving, renewal pricing, new-business pricing, and NCCI Excess Loss Factor benchmarking.</li>
+                <li>Present reserve studies, renewal projections, and custom model-driven diagnostics directly to captive boards, executives, captive managers, and auditors.</li>
+                <li>Led renewal pricing model architecture (Excel, VBA, Power Query, compiled <code>.xll</code> add-ins) and engineered a <strong>Rust-based Monte Carlo ILF simulation engine</strong> for Auto and General Liability.</li>
+              </ul>
+            </div>
+          </li>
+
+          <li class="timeline-item">
+            <div class="timeline-meta">
+              <p class="period"><time datetime="2022-07">Jul 2022</time> – <time datetime="2023-06">Jun 2023</time></p>
+              <p class="location">Chicago, IL</p>
+            </div>
+            <div class="timeline-rail" aria-hidden="true">
+              <span class="timeline-node"></span>
+            </div>
+            <div class="entry">
+              <div class="entry-head">
+                <h3>Manager</h3>
+              </div>
+              <p class="organization">Oliver Wyman Actuarial Consulting</p>
+              <ul class="impact-list">
+                <li>Estimated <strong>unpaid loss and ALAE reserves</strong> for captive and self-insured clients, owning client communication from kickoff through final executive presentation.</li>
+                <li>Delivered custom loss-analytics views to help clients diagnose and mitigate loss drivers; served as <strong>Values Ambassador</strong> for the Central Zone.</li>
+              </ul>
+            </div>
+          </li>
+
+          <li class="timeline-item">
+            <div class="timeline-meta">
+              <p class="period"><time datetime="2018-06">Jun 2018</time> – <time datetime="2022-06">Jun 2022</time></p>
+              <p class="location">Houston, TX</p>
+            </div>
+            <div class="timeline-rail" aria-hidden="true">
+              <span class="timeline-node"></span>
+            </div>
+            <div class="entry">
+              <div class="entry-head">
+                <h3>Assistant Actuarial Analyst → Actuarial Supervisor</h3>
+              </div>
+              <p class="organization">Tokio Marine HCC</p>
+              <ul class="impact-list">
+                <li>Led analysis of proposed changes to the <strong>S&amp;P Risk-Based Capital Adequacy Model</strong>; maintained the internal economic capital model through quarterly production cycles and evaluated S&amp;P and Fitch capital impacts.</li>
+                <li>Supported casualty XOL reinsurance pricing in <strong>MetaRisk and R</strong>, and built an R-backed <strong>Maximum Foreseeable Loss web application</strong> for event cancellation exposure management and treaty authority compliance.</li>
+                <li>Conducted quarterly reserving for Aviation and Trade Credit lines, building a Trade Credit default model that improved IBNR estimates.</li>
+              </ul>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section" id="interests" aria-labelledby="interests-title" data-reveal>
+      <div class="wrap">
+        <div class="section-heading">
+          <div>
+            <h2 id="interests-title">Independent research</h2>
+          </div>
+          <a class="text-link" href="https://github.com/SinisterRob" target="_blank" rel="noopener noreferrer" data-track="github-interests">GitHub profile ↗</a>
+        </div>
+
+        <div class="card-grid three-up">
+          <article class="interest-card">
+            <h3>Reserving &amp; Pricing Kernels</h3>
+            <p>Pure-Rust P&amp;C libraries grounded in CAS/ASTIN literature—<a class="text-link" href="https://github.com/SinisterRob/reserving-kernels" target="_blank" rel="noopener noreferrer" data-track="reserving-kernels">reserving-kernels ↗</a> (chain-ladder, BF/Cape Cod, Mack SE, Merz–Wüthrich CDR, ODP bootstrap, capital allocation) and <a class="text-link" href="https://github.com/SinisterRob/pricing-kernels" target="_blank" rel="noopener noreferrer" data-track="pricing-kernels">pricing-kernels ↗</a> (IRLS GLMs, Bühlmann–Straub credibility, NCCI/ISO experience &amp; retro rating, ILFs, MBBEFD reinsurance, Panjer/FFT aggregates).</p>
+          </article>
+
+          <article class="interest-card">
+            <h3>Portfolio &amp; Risk Systems</h3>
+            <p>Independent study in portfolio optimization, tail-risk measures such as CVaR, and asset-liability modeling.</p>
+          </article>
+
+          <article class="interest-card">
+            <h3>Bayesian Modeling &amp; Calibration</h3>
+            <p>Hierarchical credibility, empirical Bayes shrinkage, and proper-scoring calibration (CRPS, log score, PIT) for validating small-sample loss forecasts and reserve distributions.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="about" aria-labelledby="about-title" data-reveal>
+      <div class="wrap">
+        <div class="section-heading">
+          <div>
+            <h2 id="about-title">Credentials &amp; Background</h2>
+          </div>
+        </div>
+
+        <div class="credential-strip">
+          <article class="cred-item">
+            <h3>Fellow of the Casualty Actuarial Society</h3>
+            <p class="organization">FCAS (2022) · ACAS (2021)</p>
+            <p>Actuarial experience since 2018 across captive insurance, commercial P&amp;C pricing and reserving (WC, AL, GL, Aviation, Trade Credit), casualty reinsurance, and economic capital modeling (reserve &amp; underwriting risk for specialty P&amp;C and a workers’ compensation state fund, plus S&amp;P/Fitch frameworks).</p>
+          </article>
+
+          <article class="cred-item">
+            <h3>The University of Texas at Austin</h3>
+            <p class="organization">B.S. in Mathematics, Highest Honors · 2018</p>
+            <p>Recipient of the Eugene Wisdom Memorial Endowed Scholarship in Actuarial Studies. Team placed second in the 2018 Willis Towers Watson case competition on financial wellness.</p>
+            <ul class="reference-links">
+              <li><a class="text-link" href="https://sites.utexas.edu/actuarial-sciences/2016/09/01/fall-2016-scholarship-recipients/" target="_blank" rel="noopener noreferrer" data-track="ut-scholarship">Scholarship listing ↗</a></li>
+              <li><a class="text-link" href="https://sites.utexas.edu/actuarial-sciences/category/case-competition/page/2/" target="_blank" rel="noopener noreferrer" data-track="ut-case-comp">Case competition ↗</a></li>
+            </ul>
+          </article>
+
+          <article class="cred-item">
+            <h3>CAS Student Central</h3>
+            <p class="organization">Summer Program Mentor · University Liaison (2022–2023)</p>
+            <p>Five-plus years mentoring aspiring P&amp;C actuaries through reserving, pricing, predictive analytics, and executive communication of technical findings.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer" id="contact">
+    <div class="wrap">
+      <div class="footer-inner">
+        <div class="footer-copy">
+          <h2>Let’s talk actuarial modeling or captive strategy</h2>
+          <p class="footer-meta">Robert Jurgens, FCAS · Chicago, Illinois · Open to actuarial consulting, technical modeling &amp; CAS mentoring.</p>
+        </div>
+        <div class="footer-links">
+          <a class="button primary" href="mailto:robertdjurgens@gmail.com" data-contact="mailto">robertdjurgens@gmail.com</a>
+          <button class="button secondary copy-email" id="copy-email" type="button" data-email="robertdjurgens@gmail.com">
+            <svg class="btn-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="9" y="9" width="13" height="13" rx="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+            <span class="copy-label">Copy email</span>
+          </button>
+          <a class="button secondary" href="https://www.linkedin.com/in/robert-jurgens-fcas-352017143/" target="_blank" rel="noopener noreferrer" data-track="linkedin-footer">LinkedIn ↗</a>
+          <a class="button secondary" href="https://github.com/SinisterRob" target="_blank" rel="noopener noreferrer" data-track="github-footer">GitHub ↗</a>
+        </div>
+      </div>
+
+      <div class="footer-colophon">
+        <p class="colophon-left">Zero-dependency Rust/WASM · Static HTML &amp; CSS · <a class="colophon-link" href="../llms.txt">llms.txt</a></p>
+        <div class="colophon-actions">
+          <button type="button" class="colophon-btn" id="print-brief">Print / Save PDF</button>
+          <span aria-hidden="true">·</span>
+          <a class="colophon-link" href="#top" data-nav="footer-top">Back to top ↑</a>
+        </div>
+      </div>
+    </div>
+    <p class="sr-only" id="copy-status" role="status"></p>
+  </footer>
+
+  <!-- Lightweight accessible Quick Jump & Command Palette (⌘K / Ctrl+K) -->
+  <dialog class="cmd-dialog" id="cmd-dialog" aria-labelledby="cmd-dialog-title">
+    <div class="cmd-panel">
+      <div class="cmd-search-row">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"/>
+          <path d="m20 20-3.5-3.5"/>
+        </svg>
+        <label class="sr-only" for="cmd-input" id="cmd-dialog-title">Jump to section or run action</label>
+        <input id="cmd-input" class="cmd-input" type="search" role="combobox" aria-autocomplete="list" aria-expanded="true" aria-controls="cmd-list" placeholder="Jump to section, preset, or action…" autocomplete="off" spellcheck="false">
+        <button type="button" class="cmd-esc" id="cmd-close" aria-label="Close quick jump menu">ESC</button>
+      </div>
+      <div class="cmd-list" id="cmd-list" role="listbox" aria-label="Quick actions"></div>
+      <div class="cmd-foot" aria-hidden="true">
+        <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
+        <span><kbd>↵</kbd> select</span>
+        <span><kbd>esc</kbd> close</span>
+      </div>
+    </div>
+  </dialog>
+</body>
+</html>

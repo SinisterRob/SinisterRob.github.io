@@ -89,12 +89,29 @@ function fmtCompactCurrency(rawValue, unitScale) {
   return `${sign}$${Math.round(abs)}`;
 }
 
+function fmtAxisCurrency(rawValue, unitScale) {
+  const value = rawValue * unitScale;
+  const abs = Math.abs(value);
+  const sign = value < 0 ? '−' : '';
+  if (abs >= 1e9) return `${sign}$${(abs / 1e9).toFixed(1).replace(/\.0$/, '')}B`;
+  if (abs >= 1e6) return `${sign}$${(abs / 1e6).toFixed(1).replace(/\.0$/, '')}M`;
+  if (abs >= 1e3) return `${sign}$${(abs / 1e3).toFixed(0)}k`;
+  return `${sign}$${Math.round(abs)}`;
+}
+
 function fmtPct(v) {
   return `${(v * 100).toFixed(1)}%`;
 }
 
 function fmtFactor(v) {
   return `${v.toFixed(2)}×`;
+}
+
+function fmtElrInput(elr) {
+  const pct = elr * 100;
+  return Number.isInteger(Math.round(pct * 10) / 10)
+    ? String(Math.round(pct))
+    : pct.toFixed(1).replace(/\.0$/, '');
 }
 
 // ---- Lab Carousel Controller (Side Arrows + Native Scroll-Snap + Tabs) ----
@@ -197,10 +214,11 @@ function initLabCarousel() {
     { passive: true },
   );
 
-  // Honor ?lab=reserving deep link on initial load
+  // Honor /reserving/ route or ?lab=reserving deep link on initial load
   try {
     const labParam = new URLSearchParams(window.location.search).get('lab');
-    if (labParam === 'reserving') {
+    const isReservingRoute = window.location.pathname.includes('/reserving');
+    if (labParam === 'reserving' || isReservingRoute) {
       window.requestAnimationFrame(() => goToSlide(1, { smooth: false }));
     } else {
       syncUi(0);
@@ -274,11 +292,21 @@ function renderUltimateChart(svg, plotWidth, { reported, reserves, se, unitScale
     ...reported.map((rep, i) => rep + Math.max(0, reserves[i]) + (Number.isFinite(se[i]) ? se[i] : 0)),
     1,
   );
-  // Nice rounded ceiling for clean actuarial axis ticks
-  const rawStep = (maxVal * 1.08) / 4;
+  // Nice rounded ceiling for clean actuarial axis ticks without excessive headroom
+  const rawStep = (maxVal * 1.06) / 4;
   const mag = 10 ** Math.floor(Math.log10(Math.max(1e-6, rawStep)));
   const norm = rawStep / mag;
-  const niceStep = (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 2.5 ? 2.5 : norm <= 5 ? 5 : 10) * mag;
+  const stepMult =
+    norm <= 1 ? 1 :
+    norm <= 1.25 ? 1.25 :
+    norm <= 1.5 ? 1.5 :
+    norm <= 2 ? 2 :
+    norm <= 2.5 ? 2.5 :
+    norm <= 3 ? 3 :
+    norm <= 4 ? 4 :
+    norm <= 5 ? 5 :
+    norm <= 7.5 ? 7.5 : 10;
+  const niceStep = stepMult * mag;
   const yMax = niceStep * 4;
   const y = val => bottom - (val / yMax) * (bottom - top);
 
@@ -287,7 +315,7 @@ function renderUltimateChart(svg, plotWidth, { reported, reserves, se, unitScale
     .map(
       t => `
       <line class="chart-grid" x1="${left}" y1="${y(t).toFixed(1)}" x2="${right}" y2="${y(t).toFixed(1)}"/>
-      <text class="chart-text" x="${left - 6}" y="${(y(t) + 3.5).toFixed(1)}" text-anchor="end">${t === 0 ? '$0' : fmtCompactCurrency(t, unitScale)}</text>`,
+      <text class="chart-text" x="${left - 6}" y="${(y(t) + 3.5).toFixed(1)}" text-anchor="end">${t === 0 ? '$0' : fmtAxisCurrency(t, unitScale)}</text>`,
     )
     .join('');
 
@@ -407,6 +435,9 @@ function initReservingLab(exports) {
   const svg = byId('reserving-chart');
   const tailSlider = byId('res-tail-slider');
   const tailRange = byId('res-tail-range');
+  const methodSub = byId('res-method-sub');
+  const elrWrap = byId('res-elr-wrap');
+  const elrInput = byId('res-elr-input');
   const datasetButtons = [...document.querySelectorAll('[data-res-dataset]')];
   const methodButtons = [...document.querySelectorAll('[data-res-method]')];
   const viewButtons = [...document.querySelectorAll('[data-res-view]')];
@@ -423,11 +454,24 @@ function initReservingLab(exports) {
   let method = 'cl';
   let chartView = 'ultimate';
   let plotWidth = 540;
+  const bfElrByDataset = Object.fromEntries(
+    Object.entries(DATASETS).map(([key, ds]) => [key, ds.aPrioriElr]),
+  );
+
+  function activeBfElr() {
+    return bfElrByDataset[datasetKey] ?? DATASETS[datasetKey].aPrioriElr;
+  }
+
+  function syncElrInput() {
+    if (!elrInput || document.activeElement === elrInput) return;
+    elrInput.value = fmtElrInput(activeBfElr());
+  }
 
   function runKernels() {
     const ds = DATASETS[datasetKey];
     const n = ds.triangle.length;
     const tail = tailSlider.valueAsNumber;
+    const bfElr = activeBfElr();
 
     // Write triangle & premium into WASM static buffers
     const triBuf = new Float64Array(exports.memory.buffer, exports.rk_tri_ptr(), nMax * nMax);
@@ -454,7 +498,7 @@ function initReservingLab(exports) {
 
     // Run selected reserving method
     if (method === 'bf') {
-      exports.rk_bf_expected_from_premium(n, ds.aPrioriElr);
+      exports.rk_bf_expected_from_premium(n, bfElr);
       exports.rk_bf(n, tail);
     } else if (method === 'cc') {
       exports.rk_cape_cod(n, tail);
@@ -465,11 +509,11 @@ function initReservingLab(exports) {
     const ultArr = [...new Float64Array(exports.memory.buffer, exports.rk_ult_ptr(), n)];
     const resArr = [...new Float64Array(exports.memory.buffer, exports.rk_res_ptr(), n)];
 
-    return { ds, n, tail, reported, ultArr, resArr, seArr, cdfArr, totalSe, ccElr };
+    return { ds, n, tail, bfElr, reported, ultArr, resArr, seArr, cdfArr, totalSe, ccElr };
   }
 
   function update() {
-    const { ds, n, tail, reported, ultArr, resArr, seArr, cdfArr, totalSe, ccElr } = runKernels();
+    const { ds, n, tail, bfElr, reported, ultArr, resArr, seArr, cdfArr, totalSe, ccElr } = runKernels();
 
     const pctSlider = ((tail - 1.0) / 0.2) * 100;
     if (tailRange) tailRange.style.setProperty('--tail-pct', `${pctSlider.toFixed(1)}%`);
@@ -478,15 +522,24 @@ function initReservingLab(exports) {
     const totalUlt = ultArr.reduce((a, b) => a + b, 0);
     const cv = totalRes > 0 ? totalSe / totalRes : 0;
     const unrepShare = totalUlt > 0 ? totalRes / totalUlt : 0;
+    const bfElrLabel = `${fmtElrInput(bfElr)}%`;
 
     byId('res-tail-value').textContent = fmtFactor(tail);
     tailSlider.setAttribute('aria-valuetext', `${fmtFactor(tail)} tail factor`);
     byId('res-cdf-readout').textContent = fmtFactor(cdfArr[0]);
-    byId('res-method-sub').textContent =
-      method === 'bf' ? `BF (${Math.round(ds.aPrioriElr * 100)}% ELR)` : METHOD_NAMES[method];
+
+    const isBf = method === 'bf';
+    if (methodSub) {
+      methodSub.hidden = isBf;
+      methodSub.textContent = isBf ? `BF (${bfElrLabel} ELR)` : METHOD_NAMES[method];
+    }
+    if (elrWrap) elrWrap.hidden = !isBf;
+    syncElrInput();
 
     byId('res-ibnr').textContent = fmtCompactCurrency(totalRes, ds.unitScale);
-    byId('res-ibnr-sub').textContent = `${METHOD_SHORT[method]} · Tail ${fmtFactor(tail)}`;
+    byId('res-ibnr-sub').textContent = isBf
+      ? `BF ${bfElrLabel} · Tail ${fmtFactor(tail)}`
+      : `${METHOD_SHORT[method]} · Tail ${fmtFactor(tail)}`;
     byId('res-ultimate').textContent = fmtCompactCurrency(totalUlt, ds.unitScale);
     byId('res-se').textContent = fmtCompactCurrency(totalSe, ds.unitScale);
     byId('res-se-sub').textContent = `CV ${fmtPct(cv)}`;
@@ -515,7 +568,7 @@ function initReservingLab(exports) {
     const hintEl = byId('res-chart-hint');
     if (chartView === 'ultimate') {
       if (labelEl) labelEl.textContent = `Ultimate by AY · ${ds.name}`;
-      if (hintEl) hintEl.textContent = 'Mack ±1 SE whiskers';
+      if (hintEl) hintEl.textContent = '';
       renderUltimateChart(svg, plotWidth, {
         reported,
         reserves: resArr,
@@ -535,7 +588,8 @@ function initReservingLab(exports) {
 
     const summaryEl = byId('res-results-summary');
     if (summaryEl) {
-      summaryEl.textContent = `${ds.fullName}, ${METHOD_NAMES[method]}, tail ${fmtFactor(tail)}. Total IBNR ${fmtCompactCurrency(totalRes, ds.unitScale)}, ultimate ${fmtCompactCurrency(totalUlt, ds.unitScale)}, Mack SE ${fmtCompactCurrency(totalSe, ds.unitScale)}.`;
+      const methodLabel = isBf ? `${METHOD_NAMES.bf} (${bfElrLabel} ELR)` : METHOD_NAMES[method];
+      summaryEl.textContent = `${ds.fullName}, ${methodLabel}, tail ${fmtFactor(tail)}. Total IBNR ${fmtCompactCurrency(totalRes, ds.unitScale)}, ultimate ${fmtCompactCurrency(totalUlt, ds.unitScale)}, Mack SE ${fmtCompactCurrency(totalSe, ds.unitScale)}.`;
     }
   }
 
@@ -543,6 +597,7 @@ function initReservingLab(exports) {
     btn.addEventListener('click', () => {
       datasetKey = btn.dataset.resDataset;
       datasetButtons.forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+      if (elrInput) elrInput.value = fmtElrInput(activeBfElr());
       update();
     });
   });
@@ -554,6 +609,34 @@ function initReservingLab(exports) {
       update();
     });
   });
+
+  if (elrInput) {
+    const commitElr = ({ normalize = false } = {}) => {
+      const parsed = Number.parseFloat(elrInput.value);
+      if (Number.isFinite(parsed) && parsed > 0) {
+        const clampedPct = Math.min(250, Math.max(1, parsed));
+        bfElrByDataset[datasetKey] = clampedPct / 100;
+        if (normalize) elrInput.value = fmtElrInput(bfElrByDataset[datasetKey]);
+        update();
+      } else if (normalize) {
+        elrInput.value = fmtElrInput(activeBfElr());
+      }
+    };
+    elrInput.addEventListener('input', () => commitElr({ normalize: false }));
+    elrInput.addEventListener('change', () => commitElr({ normalize: true }));
+    elrInput.addEventListener('blur', () => commitElr({ normalize: true }));
+    elrInput.addEventListener('keydown', event => {
+      if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+      event.preventDefault();
+      const delta = (event.key === 'ArrowUp' ? 1 : -1) * (event.shiftKey ? 5 : 1);
+      const current = Number.parseFloat(elrInput.value);
+      const base = Number.isFinite(current) ? current : activeBfElr() * 100;
+      const next = Math.min(250, Math.max(1, Math.round((base + delta) * 10) / 10));
+      bfElrByDataset[datasetKey] = next / 100;
+      elrInput.value = fmtElrInput(bfElrByDataset[datasetKey]);
+      update();
+    });
+  }
 
   viewButtons.forEach(btn => {
     btn.addEventListener('click', () => {

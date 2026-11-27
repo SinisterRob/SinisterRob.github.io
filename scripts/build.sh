@@ -53,4 +53,9 @@ if command -v rsvg-convert >/dev/null 2>&1 && [ -f og-image.svg ]; then
   rsvg-convert -w 1200 -h 630 og-image.svg -o og-image.png
 fi
 
+if command -v python3 >/dev/null 2>&1 && [ -f scripts/generate-reserving-page.py ]; then
+  echo "==> Syncing reserving/index.html..."
+  python3 scripts/generate-reserving-page.py
+fi
+
 echo "==> Build complete."

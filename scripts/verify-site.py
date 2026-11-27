@@ -55,6 +55,26 @@ def check_html(failures: list[str]) -> set[str]:
     if missing_files:
         failures.append(f"Missing local asset references in index.html: {missing_files}")
 
+    res_page = ROOT / "reserving" / "index.html"
+    gen_script = ROOT / "scripts" / "generate-reserving-page.py"
+    if gen_script.exists():
+        sync = subprocess.run([sys.executable, str(gen_script), "--check"], capture_output=True, text=True)
+        if sync.returncode != 0:
+            failures.append(sync.stderr.strip() or "reserving/index.html is out of sync with index.html")
+    if res_page.exists():
+        res_html = res_page.read_text(encoding="utf-8")
+        res_refs = re.findall(r'\b(?:href|src)="([^"#][^"]*)"', res_html)
+        res_missing = sorted(
+            {
+                ref
+                for ref in res_refs
+                if not ref.startswith(("http://", "https://", "mailto:", "tel:", "data:", "//"))
+                and not (res_page.parent / ref.split("?", 1)[0]).resolve().exists()
+            }
+        )
+        if res_missing:
+            failures.append(f"Missing local asset references in reserving/index.html: {res_missing}")
+
     return id_set
 
 
@@ -339,6 +359,17 @@ def run_browser_checks(failures: list[str]) -> None:
                 "parseFloat(getComputedStyle(document.getElementById('work')).opacity) >= 0.99",
                 timeout=2000,
             )
+
+            # 5. Verify /reserving/ route opens on slide 2 with zero errors
+            page.goto(f"{base_url}/reserving/", wait_until="domcontentloaded")
+            page.wait_for_selector("#reserving-lab[data-ready]", timeout=8000)
+            page.wait_for_function(
+                "Math.abs(document.getElementById('lab-track').scrollLeft - document.getElementById('lab-track').clientWidth) < 3",
+                timeout=4000,
+            )
+            res_route_h1 = page.locator("h1").text_content()
+            if "Loss Reserving" not in (res_route_h1 or ""):
+                failures.append(f"/reserving/ expected reserving H1, got {res_route_h1!r}")
 
             if page_errors:
                 failures.extend(page_errors)
