@@ -246,15 +246,24 @@ def run_browser_checks(failures: list[str]) -> None:
             if "MC error vs. closed-form" not in (sim_delta or ""):
                 failures.append(f"Missing MC error label: {sim_delta!r}")
 
-            # 1b. Switch Body severity to Gamma + Pareto and verify tail labels & ILF update
-            page.click('[data-body-mode="gamma-2"]')
+            # 1b. Switch Distribution to Gamma–Pareto, pick body k = 6.0, and verify labels & ILF update
+            if page.locator("#body-severity-row").is_visible():
+                failures.append("Gamma body row should be hidden when Lognormal is active")
+            page.click('[data-severity-model="spliced"]')
+            if not page.locator("#body-severity-row").is_visible():
+                failures.append("Gamma body row did not appear after selecting Gamma–Pareto")
+            if page.locator("#tail-label").text_content() != "Pareto tail":
+                failures.append(f"Expected 'Pareto tail' label, got {page.locator('#tail-label').text_content()!r}")
+            page.click('[data-body="2"]')
             tail_first = page.locator('[data-tail="0"]').text_content()
             if tail_first != "α 4.0":
-                failures.append(f"Expected Pareto tail label 'α 4.0' after Gamma body click, got {tail_first!r}")
+                failures.append(f"Expected Pareto tail label 'α 4.0' after Gamma–Pareto click, got {tail_first!r}")
             spliced_ilf = page.locator("#ilf").text_content()
             if not spliced_ilf or not spliced_ilf.endswith("×") or spliced_ilf == "NaN×":
                 failures.append(f"Invalid Gamma + Pareto ILF: {spliced_ilf!r}")
-            page.click('[data-body-mode="lognormal"]')
+            page.click('[data-severity-model="lognormal"]')
+            if page.locator("#body-severity-row").is_visible():
+                failures.append("Gamma body row did not hide after returning to Lognormal")
 
             # 2. Test side-arrow navigation -> Reserving lab & interactions
             page.click("#lab-next")
@@ -266,6 +275,13 @@ def run_browser_checks(failures: list[str]) -> None:
             res_se = page.locator("#res-se").text_content()
             if res_ibnr != "$52.1M" or res_se != "$26.9M":
                 failures.append(f"Unexpected RAA Mack baseline: IBNR={res_ibnr!r}, SE={res_se!r}")
+            cf_6m = page.locator("#res-cf-6m-inc").text_content()
+            cf_12m = page.locator("#res-cf-12m-cum").text_content()
+            cf_18m = page.locator("#res-cf-18m-cum").text_content()
+            if cf_6m != "$8.8M" or cf_12m != "$17.5M" or cf_18m != "$24.0M":
+                failures.append(
+                    f"Unexpected RAA cash flow projection: 6m={cf_6m!r}, 12m={cf_12m!r}, 18m={cf_18m!r}"
+                )
 
             page.click('[data-res-dataset="auto"]')
             page.click('[data-res-method="cc"]')

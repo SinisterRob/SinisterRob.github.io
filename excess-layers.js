@@ -969,8 +969,11 @@ function showModel(exports) {
   const svg = byId('severity-chart');
   const chartTitleLabel = byId('chart-title-label');
   const tailButtons = [...document.querySelectorAll('[data-tail]')];
-  const bodyModeButtons = [...document.querySelectorAll('[data-body-mode]')];
+  const modelButtons = [...document.querySelectorAll('[data-severity-model]')];
+  const bodyButtons = [...document.querySelectorAll('[data-body]')];
+  const bodySeverityRow = byId('body-severity-row');
   const bodyShapeLabel = byId('body-shape-label');
+  const tailLabel = byId('tail-label');
   const viewButtons = [...document.querySelectorAll('[data-chart-view]')];
   const presetButtons = [...document.querySelectorAll('[data-preset]')];
   const tickButtons = [...document.querySelectorAll('[data-limit-jump]')];
@@ -1123,7 +1126,7 @@ function showModel(exports) {
     byId('above-range').textContent = `>${compactDollars(limit)}`;
     byId('tail-sigma').textContent = TAILS[tail];
     if (bodyShapeLabel) {
-      bodyShapeLabel.textContent = model === 'spliced' ? `Gamma · ${BODIES[body]}` : 'Lognormal';
+      bodyShapeLabel.textContent = BODIES[body];
     }
 
     byId('loss-primary').textContent = dollars.format(primary);
@@ -1225,33 +1228,57 @@ function showModel(exports) {
     tailButtons.forEach(option => option.setAttribute('aria-pressed', String(Number(option.dataset.tail) === tail)));
   }
 
-  function applyBodyMode(modeKey) {
-    if (modeKey === 'lognormal') {
-      model = 'lognormal';
-    } else if (modeKey.startsWith('gamma-') && hasSpliced) {
-      model = 'spliced';
-      body = Number(modeKey.slice(6));
-    } else {
-      return;
-    }
-    const activeKey = model === 'spliced' ? `gamma-${body}` : 'lognormal';
-    bodyModeButtons.forEach(btn => btn.setAttribute('aria-pressed', String(btn.dataset.bodyMode === activeKey)));
+  function applySeverityModel(nextModel) {
+    if (nextModel === 'spliced' && !hasSpliced) return;
+    model = nextModel === 'spliced' ? 'spliced' : 'lognormal';
     const isSpliced = model === 'spliced';
+    modelButtons.forEach(btn =>
+      btn.setAttribute('aria-pressed', String(btn.dataset.severityModel === model)),
+    );
+    if (bodySeverityRow) bodySeverityRow.hidden = !isSpliced;
+    if (tailLabel) tailLabel.textContent = isSpliced ? 'Pareto tail' : 'Lognormal tail';
     tailButtons.forEach((btn, idx) => {
       btn.textContent = isSpliced ? PARETO_BTN_LABELS[idx] : LOGNORMAL_BTN_LABELS[idx];
       btn.title = isSpliced
         ? `${TAILS[idx]} Pareto tail (${PARETO_ALPHAS[idx]})`
         : `${TAILS[idx]} Lognormal tail (${TAIL_SIGMAS[idx]})`;
+      btn.setAttribute(
+        'aria-label',
+        isSpliced
+          ? `${TAILS[idx]} Pareto tail, alpha ${PARETO_ALPHAS[idx].slice(4)}`
+          : `${TAILS[idx]} Lognormal tail, sigma ${TAIL_SIGMAS[idx].slice(4)}`,
+      );
     });
   }
 
-  bodyModeButtons.forEach(button =>
+  function applyBody(nextBody) {
+    body = nextBody;
+    bodyButtons.forEach(btn =>
+      btn.setAttribute('aria-pressed', String(Number(btn.dataset.body) === body)),
+    );
+  }
+
+  modelButtons.forEach(button =>
     button.addEventListener('click', () => {
-      applyBodyMode(button.dataset.bodyMode);
+      applySeverityModel(button.dataset.severityModel);
+      trackLabEngagement('severity_model');
+      track('lab_interact', {
+        control: 'severity_model',
+        value: model,
+        tail: TAILS[tail].toLowerCase(),
+        limit: compactDollars(limitSlider.valueAsNumber),
+      });
+      flushCommit();
+    }),
+  );
+
+  bodyButtons.forEach(button =>
+    button.addEventListener('click', () => {
+      applyBody(Number(button.dataset.body));
       trackLabEngagement('body');
       track('lab_interact', {
         control: 'body',
-        value: button.dataset.bodyMode,
+        value: `gamma-${body}`,
         tail: TAILS[tail].toLowerCase(),
         limit: compactDollars(limitSlider.valueAsNumber),
       });
@@ -1473,6 +1500,11 @@ function showModel(exports) {
   shell.querySelectorAll('button:disabled, input:disabled').forEach(control => {
     control.disabled = false;
   });
+  if (!hasSpliced) {
+    modelButtons.forEach(btn => {
+      if (btn.dataset.severityModel === 'spliced') btn.disabled = true;
+    });
+  }
   shell.dataset.ready = '';
 }
 

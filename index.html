@@ -80,10 +80,10 @@
     })();
   </script>
 
-  <link rel="stylesheet" href="style.css?v=20261126b">
+  <link rel="stylesheet" href="style.css?v=20261127b">
   <script defer src="https://cloud.umami.is/script.js" data-website-id="243f7a71-e9b3-4152-a72c-cc99fc4e9788" data-domains="sinisterrob.github.io" data-exclude-hash="true" data-performance="true" data-errors="true" data-environment="production" data-before-send="umamiBeforeSend"></script>
-  <script type="module" src="excess-layers.js?v=20261126b"></script>
-  <script type="module" src="reserving-lab.js?v=20261126"></script>
+  <script type="module" src="excess-layers.js?v=20261127a"></script>
+  <script type="module" src="reserving-lab.js?v=20261127b"></script>
 
   <script type="application/ld+json">
   {
@@ -339,25 +339,33 @@
               <div class="control-group severity-group">
                 <div class="severity-row">
                   <div class="range-label">
-                    <span class="control-label" id="body-label">Body severity</span>
-                    <span class="tail-sigma" id="body-shape-label">Lognormal</span>
+                    <span class="control-label" id="model-label">Distribution</span>
+                  </div>
+                  <div class="segmented compact" role="group" aria-labelledby="model-label">
+                    <button type="button" data-severity-model="lognormal" aria-pressed="true" title="Single Lognormal severity ($100k mean)" disabled>Lognormal</button>
+                    <button type="button" data-severity-model="spliced" aria-pressed="false" title="Spliced Gamma body + Pareto tail ($100k mean)" disabled>Gamma–Pareto</button>
+                  </div>
+                </div>
+                <div class="severity-row" id="body-severity-row" hidden>
+                  <div class="range-label">
+                    <span class="control-label" id="body-label">Gamma body</span>
+                    <span class="tail-sigma" id="body-shape-label">Moderate</span>
                   </div>
                   <div class="segmented compact" role="group" aria-labelledby="body-label">
-                    <button type="button" data-body-mode="lognormal" aria-pressed="true" title="Single Lognormal curve ($100k mean)" disabled>Lognormal</button>
-                    <button type="button" data-body-mode="gamma-0" aria-pressed="false" title="Gamma body k = 1.2 + Pareto tail ($100k mean)" aria-label="Gamma body k 1.2 plus Pareto tail" disabled>Γ 1.2</button>
-                    <button type="button" data-body-mode="gamma-1" aria-pressed="false" title="Gamma body k = 2.5 + Pareto tail ($100k mean)" aria-label="Gamma body k 2.5 plus Pareto tail" disabled>2.5</button>
-                    <button type="button" data-body-mode="gamma-2" aria-pressed="false" title="Gamma body k = 6.0 + Pareto tail ($100k mean)" aria-label="Gamma body k 6.0 plus Pareto tail" disabled>6.0</button>
+                    <button type="button" data-body="0" aria-pressed="false" title="Dispersed Gamma body (k = 1.2)" aria-label="Dispersed Gamma body, k 1.2" disabled>k 1.2</button>
+                    <button type="button" data-body="1" aria-pressed="true" title="Moderate Gamma body (k = 2.5)" aria-label="Moderate Gamma body, k 2.5" disabled>2.5</button>
+                    <button type="button" data-body="2" aria-pressed="false" title="Tight Gamma body (k = 6.0)" aria-label="Tight Gamma body, k 6.0" disabled>6.0</button>
                   </div>
                 </div>
                 <div class="severity-row">
                   <div class="range-label">
-                    <span class="control-label" id="tail-label">Tail severity</span>
+                    <span class="control-label" id="tail-label">Lognormal tail</span>
                     <span class="tail-sigma" id="tail-sigma">Moderate</span>
                   </div>
                   <div class="segmented compact" role="group" aria-labelledby="tail-label">
-                    <button type="button" data-tail="0" aria-pressed="false" title="Lighter tail (σ = 0.55)" aria-label="Lighter tail, sigma 0.55" disabled>σ 0.55</button>
-                    <button type="button" data-tail="1" aria-pressed="true" title="Moderate tail (σ = 1.00)" aria-label="Moderate tail, sigma 1.00" disabled>1.00</button>
-                    <button type="button" data-tail="2" aria-pressed="false" title="Heavier tail (σ = 1.55)" aria-label="Heavier tail, sigma 1.55" disabled>1.55</button>
+                    <button type="button" data-tail="0" aria-pressed="false" title="Lighter Lognormal tail (σ = 0.55)" aria-label="Lighter tail, sigma 0.55" disabled>σ 0.55</button>
+                    <button type="button" data-tail="1" aria-pressed="true" title="Moderate Lognormal tail (σ = 1.00)" aria-label="Moderate tail, sigma 1.00" disabled>1.00</button>
+                    <button type="button" data-tail="2" aria-pressed="false" title="Heavier Lognormal tail (σ = 1.55)" aria-label="Heavier tail, sigma 1.55" disabled>1.55</button>
                   </div>
                 </div>
               </div>
@@ -544,7 +552,7 @@
                         <span class="control-label" id="res-method-label">Reserving method</span>
                         <span class="tail-sigma" id="res-method-sub">Chain Ladder</span>
                       </div>
-                      <div class="segmented" role="group" aria-labelledby="res-method-label">
+                      <div class="segmented compact" role="group" aria-labelledby="res-method-label">
                         <button type="button" data-res-method="cl" aria-pressed="true" title="Volume-weighted Chain Ladder" disabled>CL</button>
                         <button type="button" data-res-method="bf" aria-pressed="false" title="Bornhuetter–Ferguson with a priori ELR" disabled>BF</button>
                         <button type="button" data-res-method="cc" aria-pressed="false" title="Cape Cod with data-implied ELR" disabled>Cape Cod</button>
@@ -575,7 +583,7 @@
                     <div class="chart-panel">
                       <div class="chart-panel-head">
                         <div class="chart-head-left">
-                          <span class="mono-label" id="res-chart-label">Ultimate by Accident Year · RAA</span>
+                          <span class="mono-label" id="res-chart-label">Ultimate by AY · RAA</span>
                           <span class="chart-scrub-hint" id="res-chart-hint">Mack ±1 SE whiskers</span>
                         </div>
                         <div class="segmented compact" role="group" aria-label="Reserving chart view">
@@ -590,44 +598,55 @@
                     </div>
 
                     <div class="ledger-panel">
-                      <table class="layer-table" aria-label="Reserve breakdown by maturity cohort">
+                      <div class="ledger-panel-head">
+                        <span class="mono-label">Projected Cash Flow</span>
+                        <span class="chart-scrub-hint" id="res-cf-basis">Incurred emergence · linear 6m</span>
+                      </div>
+                      <table class="layer-table cf-table" aria-label="Projected 6, 12, and 18 month reserve cash flow">
                         <thead>
                           <tr>
-                            <th scope="col">Cohort</th>
-                            <th scope="col" class="num">Reported</th>
-                            <th scope="col" class="num">IBNR</th>
-                            <th scope="col" class="num">% Ult</th>
+                            <th scope="col">Horizon</th>
+                            <th scope="col" class="num">Period</th>
+                            <th scope="col" class="num">Cumul.</th>
+                            <th scope="col" class="num">% IBNR</th>
                           </tr>
                         </thead>
                         <tbody>
-                          <tr data-res-cohort="mature">
-                            <td><span class="layer-name"><i class="swatch sw-primary"></i>Mature</span><span class="layer-range">AY 1–3</span></td>
-                            <td class="num strong" id="res-mat-rep">$59.0M</td>
-                            <td class="num" id="res-mat-ibnr">$0.6M</td>
-                            <td class="num" id="res-mat-pct">99.1%</td>
+                          <tr data-res-horizon="m6">
+                            <td><span class="layer-name"><i class="swatch sw-primary"></i>6 mo</span><span class="layer-range">0–6m</span></td>
+                            <td class="num strong" id="res-cf-6m-inc">$8.8M</td>
+                            <td class="num" id="res-cf-6m-cum">$8.8M</td>
+                            <td class="num" id="res-cf-6m-pct">16.8%</td>
                           </tr>
-                          <tr data-res-cohort="developing">
-                            <td><span class="layer-name"><i class="swatch sw-excess"></i>Developing</span><span class="layer-range">AY 4–7</span></td>
-                            <td class="num strong" id="res-dev-rep">$81.4M</td>
-                            <td class="num" id="res-dev-ibnr">$12.2M</td>
-                            <td class="num" id="res-dev-pct">87.0%</td>
+                          <tr data-res-horizon="m12">
+                            <td><span class="layer-name"><i class="swatch sw-excess"></i>12 mo</span><span class="layer-range">6–12m</span></td>
+                            <td class="num strong" id="res-cf-12m-inc">$8.8M</td>
+                            <td class="num" id="res-cf-12m-cum">$17.5M</td>
+                            <td class="num" id="res-cf-12m-pct">33.6%</td>
                           </tr>
-                          <tr data-res-cohort="immature">
-                            <td><span class="layer-name"><i class="swatch sw-above"></i>Immature</span><span class="layer-range">AY 8–10</span></td>
-                            <td class="num strong" id="res-imm-rep">$20.6M</td>
-                            <td class="num" id="res-imm-ibnr">$39.4M</td>
-                            <td class="num" id="res-imm-pct">34.3%</td>
+                          <tr data-res-horizon="m18">
+                            <td><span class="layer-name"><i class="swatch sw-mid"></i>18 mo</span><span class="layer-range">12–18m</span></td>
+                            <td class="num strong" id="res-cf-18m-inc">$6.5M</td>
+                            <td class="num" id="res-cf-18m-cum">$24.0M</td>
+                            <td class="num" id="res-cf-18m-pct">46.1%</td>
+                          </tr>
+                          <tr data-res-horizon="m18p">
+                            <td><span class="layer-name"><i class="swatch sw-above"></i>18m+</span><span class="layer-range">Beyond 18m</span></td>
+                            <td class="num" id="res-cf-rem-inc">$28.1M</td>
+                            <td class="num" id="res-cf-rem-cum">$52.1M</td>
+                            <td class="num" id="res-cf-rem-pct">100.0%</td>
                           </tr>
                         </tbody>
                       </table>
 
                       <div class="share-bar" role="presentation">
-                        <div class="share-seg seg-primary" id="res-bar-mature" style="width: 1.1%"></div>
-                        <div class="share-seg seg-excess" id="res-bar-developing" style="width: 23.4%"></div>
-                        <div class="share-seg seg-above" id="res-bar-immature" style="width: 75.5%"></div>
+                        <div class="share-seg seg-primary" id="res-bar-m6" data-res-seg="m6" style="width: 16.8%"></div>
+                        <div class="share-seg seg-excess" id="res-bar-m12" data-res-seg="m12" style="width: 16.8%"></div>
+                        <div class="share-seg seg-mid" id="res-bar-m18" data-res-seg="m18" style="width: 12.5%"></div>
+                        <div class="share-seg seg-above" id="res-bar-m18p" data-res-seg="m18p" style="width: 53.9%"></div>
                       </div>
                       <p class="simulation-check" id="res-meta-check">
-                        Cape Cod implied ELR <strong id="res-cc-elr">71.6%</strong> · <span id="res-kernel-tag">reserving-kernels WASM</span>
+                        Cape Cod implied ELR <strong id="res-cc-elr">71.5%</strong> · <span id="res-kernel-tag">reserving-kernels WASM</span>
                       </p>
                     </div>
                   </div>
@@ -643,6 +662,7 @@
                   <ul class="method-list">
                     <li><strong>Chain Ladder &amp; Mack (1993).</strong> Volume-weighted age-to-age factors project each origin’s latest diagonal to ultimate; Mack’s distribution-free variance formula decomposes process and parameter risk per accident year and across the aggregate portfolio.</li>
                     <li><strong>Bornhuetter–Ferguson &amp; Cape Cod.</strong> BF weights expected a priori ultimate by the unreported fraction <code>1 − 1/CDF</code>; Cape Cod estimates the expected loss ratio directly from used-up exposure (earned premium divided by CDF).</li>
+                    <li><strong>Cash flow runoff (6 / 12 / 18m).</strong> Each accident year’s remaining reserve is stepped forward along the implied cumulative emergence curve <code>1/CDF</code> for calendar years +1 and +2, then interpolated linearly to 6-month intervals (post-120m tail runoff is grouped into 18m+).</li>
                     <li><strong>Benchmark triangles.</strong> RAA (Mack 1993, Automatic Facultative GL, in $000s), GenIns (Taylor &amp; Ashe 1983 / England &amp; Verrall 1999, paid), and US Industry Auto (Friedland 2010, paid &amp; earned premium, in $000s). For RAA and GenIns, illustrative exposure vectors are scaled to mature volume for BF/Cape Cod comparisons.</li>
                     <li><strong>Client-side Rust/WASM.</strong> Computed directly in your browser by the zero-dependency <code>reserving_kernels.wasm</code> C-ABI build from <code>reserving-kernels</code>.</li>
                   </ul>
