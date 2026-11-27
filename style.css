@@ -548,54 +548,53 @@ code {
 
 .lab-switcher-row {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 0.5rem 1rem;
-  margin-bottom: 0.95rem;
+  gap: 0.5rem 1.25rem;
+  margin-bottom: 1.05rem;
+  border-bottom: 1px solid var(--line);
 }
 
 .lab-switcher {
   display: inline-flex;
   align-items: center;
-  gap: 0.28rem;
-  padding: 0.2rem;
-  border-radius: 999px;
-  background: var(--bg-subtle);
-  border: 1px solid var(--line);
+  gap: 1.25rem;
+  margin-bottom: -1px;
 }
 
 .lab-tab {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  min-height: 2rem;
-  padding: 0.28rem 0.78rem;
+  min-height: 2.15rem;
+  padding: 0.3rem 0.1rem 0.55rem;
   border: 0;
-  border-radius: 999px;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
   background: transparent;
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+  transition: color 0.16s ease, border-color 0.16s ease;
 }
 
 .lab-tab:hover {
   color: var(--text);
+  border-bottom-color: var(--line-strong);
 }
 
 .lab-tab[aria-selected="true"] {
-  background: var(--bg-elevated);
   color: var(--text);
   font-weight: 600;
-  box-shadow: var(--shadow-sm), inset 0 0 0 1px var(--line-strong);
+  border-bottom-color: var(--accent);
 }
 
 .lab-tab-num {
   font-family: var(--mono);
-  font-size: 0.68rem;
+  font-size: 0.69rem;
   font-weight: 600;
   color: var(--muted);
 }
@@ -608,6 +607,7 @@ code {
   font-family: var(--mono);
   font-size: 0.69rem;
   color: var(--muted);
+  padding-bottom: 0.55rem;
 }
 
 .lab-carousel-stage {
@@ -2095,9 +2095,13 @@ code {
     margin-bottom: 2.85rem;
   }
 
+  .lab-switcher {
+    gap: 0.85rem;
+  }
+
   .lab-tab {
-    padding: 0.24rem 0.56rem;
-    font-size: 0.74rem;
+    padding: 0.24rem 0.05rem 0.48rem;
+    font-size: 0.75rem;
     gap: 0.32rem;
   }
 

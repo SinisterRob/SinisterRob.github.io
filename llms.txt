@@ -23,7 +23,7 @@
 
 - [Excess Layer & Increased Limits Factor (ILF) Simulator](https://sinisterrob.github.io/#lab): Illustrative zero-dependency Rust/WebAssembly model (~9.5 KB) comparing synthetic lognormal severity tails (σ = 0.55, 1.00, 1.55; fixed $100k ground-up mean; ILF base is the selected attachment) across closed-form limited expected values, interactive direct-scrubbing ILF/PDF charts, scenario presets, and a fixed-seed 65,536-draw SplitMix64 Box–Muller Monte Carlo verification check.
 - Simulator Source: https://github.com/SinisterRob/SinisterRob.github.io/blob/main/src/excess_layers.rs
-- [reserving-kernels](https://github.com/SinisterRob/reserving-kernels): Pure-Rust actuarial loss-reserving, Mack standard error, ODP bootstrap, portfolio dependence, and parametric severity/ILF crate grounded in primary CAS/ASTIN literature.
+- [reserving-kernels](https://github.com/SinisterRob/reserving-kernels): Pure-Rust actuarial loss-reserving, Mack standard error, Merz–Wüthrich 1-year CDR, ODP bootstrap, portfolio dependence, and Euler/Myers–Read capital allocation crate grounded in primary CAS/ASTIN literature.
 
 ## Community
 
