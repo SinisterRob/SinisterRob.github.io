@@ -6,23 +6,51 @@ on:
   pull_request:
   workflow_dispatch:
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 permissions:
   contents: read
 
 jobs:
-  verify-site:
-    name: Comprehensive CSS / JS / WASM / Layout Check
+  static-lint:
+    name: Static Lint, Rust & WASM
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+
+      - name: Check Rust kernel formatting
+        run: rustfmt --edition 2021 --check src/excess_layers.rs
+
+      - name: Run static HTML/CSS/JS/Rust/WASM/shell checks
+        run: python3 scripts/verify-site.py --static-only
+
+  verify-site:
+    name: CSS / JS / WASM Appearance Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
 
@@ -31,5 +59,28 @@ jobs:
           python -m pip install --upgrade pip playwright
           playwright install chromium
 
-      - name: Run comprehensive site verification
+      - name: Run site appearance & WASM checks
         run: python3 scripts/verify-site.py
+
+  ci-pass:
+    name: CI Pass
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: always()
+    needs: [static-lint, verify-site]
+    steps:
+      - name: Verify all required CI jobs succeeded
+        shell: bash
+        env:
+          RESULTS: >-
+            static-lint=${{ needs.static-lint.result }}
+            verify-site=${{ needs.verify-site.result }}
+        run: |
+          failed=0
+          for item in $RESULTS; do
+            echo "$item"
+            if [[ "$item" != *=success ]]; then
+              failed=1
+            fi
+          done
+          exit "$failed"

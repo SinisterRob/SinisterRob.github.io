@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+# Pre-commit hook for SinisterRob.github.io:
+#   - Rejects conflict markers and whitespace errors in staged changes
+#   - Blocks accidental commits of .env files, private keys, or credentials
+#   - Lints staged JS, Python, Shell, and Rust files
+#   - Runs fast static HTML/CSS/JS/WASM integrity checks
+#
+# Bypass in an emergency with: SKIP_HOOKS=1 git commit ...
+
+set -euo pipefail
+
+if [[ "${SKIP_HOOKS:-0}" == "1" ]]; then
+  exit 0
+fi
+
+ROOT_DIR="$(git rev-parse --show-toplevel)"
+cd "$ROOT_DIR"
+
+# 1. Catch merge conflict markers and trailing whitespace in staged diff.
+git diff --cached --check
+
+# 2. Block accidental commits of secrets, .env files, or private keys.
+STAGED_ALL=()
+while IFS= read -r -d '' file; do
+  STAGED_ALL+=("$file")
+done < <(git diff --cached --name-only --diff-filter=ACMR -z)
+
+if [[ ${#STAGED_ALL[@]} -eq 0 ]]; then
+  exit 0
+fi
+
+SECRET_FAILED=0
+for file in "${STAGED_ALL[@]}"; do
+  base="$(basename "$file")"
+  case "$base" in
+    .env|.env.*|*.pem|*.key|id_rsa|id_ed25519)
+      if [[ "$base" != ".env.example" && "$base" != ".env.sample" ]]; then
+        echo "pre-commit: refusing to commit sensitive file: $file" >&2
+        SECRET_FAILED=1
+      fi
+      ;;
+  esac
+  if git show ":$file" | grep -qE 'BEGIN (RSA |EC |OPENSSH |DSA )?PRIVATE KEY|ghp_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{20,}|cio[A-Za-z0-9]{30,}'; then
+    echo "pre-commit: potential secret or private key detected in staged file: $file" >&2
+    SECRET_FAILED=1
+  fi
+done
+if [[ "$SECRET_FAILED" -ne 0 ]]; then
+  echo "pre-commit: remove secrets before committing (or set SKIP_HOOKS=1 to bypass)." >&2
+  exit 1
+fi
+
+# 3. Check formatting of staged .rs files.
+STAGED_RS=()
+STAGED_SH=()
+STAGED_PY=()
+STAGED_JS=()
+for file in "${STAGED_ALL[@]}"; do
+  case "$file" in
+    *.rs) STAGED_RS+=("$file") ;;
+    *.sh|.githooks/*) STAGED_SH+=("$file") ;;
+    *.py) STAGED_PY+=("$file") ;;
+    *.js|*.mjs) STAGED_JS+=("$file") ;;
+  esac
+done
+
+if [[ ${#STAGED_RS[@]} -gt 0 ]] && command -v rustfmt >/dev/null 2>&1; then
+  FAILED=0
+  for file in "${STAGED_RS[@]}"; do
+    if ! diff -u \
+      --label "staged/$file" <(git show ":$file") \
+      --label "rustfmt/$file" <(git show ":$file" | rustfmt --edition 2021); then
+      FAILED=1
+    fi
+  done
+  if [[ "$FAILED" -ne 0 ]]; then
+    echo "pre-commit: staged Rust files are not rustfmt-clean." >&2
+    exit 1
+  fi
+fi
+
+if [[ ${#STAGED_SH[@]} -gt 0 ]] && command -v shellcheck >/dev/null 2>&1; then
+  TMP_DIR="$(mktemp -d)"
+  trap 'rm -rf "$TMP_DIR"' EXIT
+  for file in "${STAGED_SH[@]}"; do
+    out="$TMP_DIR/$(basename "$file")"
+    git show ":$file" > "$out"
+    shellcheck "$out"
+  done
+fi
+
+if [[ ${#STAGED_PY[@]} -gt 0 ]] && command -v python3 >/dev/null 2>&1; then
+  TMP_PY_DIR="$(mktemp -d)"
+  trap 'rm -rf "${TMP_DIR:-}" "$TMP_PY_DIR"' EXIT
+  for file in "${STAGED_PY[@]}"; do
+    out="$TMP_PY_DIR/$(basename "$file")"
+    git show ":$file" > "$out"
+    python3 -m py_compile "$out"
+  done
+fi
+
+if [[ ${#STAGED_JS[@]} -gt 0 ]] && command -v node >/dev/null 2>&1; then
+  TMP_JS_DIR="$(mktemp -d)"
+  trap 'rm -rf "${TMP_DIR:-}" "${TMP_PY_DIR:-}" "$TMP_JS_DIR"' EXIT
+  for file in "${STAGED_JS[@]}"; do
+    out="$TMP_JS_DIR/$(basename "$file")"
+    git show ":$file" > "$out"
+    node --check "$out"
+  done
+fi
+
+# 4. Fast static HTML/CSS/JS/WASM integrity checks.
+python3 scripts/verify-site.py --static-only

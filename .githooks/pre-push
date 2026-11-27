@@ -1,11 +1,25 @@
 #!/usr/bin/env bash
+# Pre-push hook for SinisterRob.github.io:
+#   - Whitespace & conflict-marker check
+#   - Static HTML/CSS/JS dedupe & DOM integrity, Rust unit tests, WASM export smoke checks,
+#     ShellCheck linting, and full headless Chromium layout/interaction verification.
+#
+# Bypass in an emergency with: SKIP_HOOKS=1 git push ...
+
 set -euo pipefail
+
+if [[ "${SKIP_HOOKS:-0}" == "1" ]]; then
+  exit 0
+fi
 
 ROOT_DIR="$(git rev-parse --show-toplevel)"
 cd "$ROOT_DIR"
 
-echo "pre-push: checking whitespace and conflict markers..."
+echo "pre-push: [1/3] Checking whitespace and conflict markers..."
 git diff --check
 
-echo "pre-push: running comprehensive Rust, static, JS/CSS/WASM, and Chromium layout verification..."
+echo "pre-push: [2/3] Checking Python & hook syntax..."
+python3 -m py_compile scripts/verify-site.py
+
+echo "pre-push: [3/3] Running static lint, Rust/WASM checks, and headless Chromium verification..."
 python3 scripts/verify-site.py

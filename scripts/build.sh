@@ -29,7 +29,7 @@ WASM_GZIP="$(gzip -c excess_layers.wasm | wc -c)"
 echo "    excess_layers.wasm: ${WASM_BYTES} bytes (${WASM_GZIP} bytes gzipped)"
 
 echo "==> Verifying WebAssembly exports..."
-node -e '
+node <<'JS'
 const fs = require("fs");
 WebAssembly.instantiate(fs.readFileSync("excess_layers.wasm")).then(({ instance }) => {
   const e = instance.exports;
@@ -46,7 +46,7 @@ WebAssembly.instantiate(fs.readFileSync("excess_layers.wasm")).then(({ instance 
   const layerRate = (excess / 250000) * 100;
   console.log(`    Verified Moderate $250k xs $100k: Primary=$${primary.toFixed(2)}, Excess=$${excess.toFixed(2)}, ILF=${(1 + excess / primary).toFixed(2)}x, LayerRate=${layerRate.toFixed(2)}%, AvgHit=$${avgHit.toFixed(2)}`);
 });
-'
+JS
 
 if command -v rsvg-convert >/dev/null 2>&1 && [ -f og-image.svg ]; then
   echo "==> Rendering og-image.png from og-image.svg..."
