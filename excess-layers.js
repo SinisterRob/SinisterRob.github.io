@@ -6,8 +6,8 @@ const PDF_MAX = 1_000_000;
 const TAILS = ['Lighter', 'Moderate', 'Heavier'];
 const TAIL_SIGMAS = ['σ = 0.55', 'σ = 1.00', 'σ = 1.55'];
 const PARETO_ALPHAS = ['α = 4.0', 'α = 2.5', 'α = 1.7'];
-const PARETO_BTN_LABELS = ['α 4.0', '2.5', '1.7'];
-const LOGNORMAL_BTN_LABELS = ['σ 0.55', '1.00', '1.55'];
+const PARETO_BTN_LABELS = ['4.0', '2.5', '1.7'];
+const LOGNORMAL_BTN_LABELS = ['0.55', '1.00', '1.55'];
 const BODIES = ['Dispersed', 'Moderate', 'Tight'];
 const BODY_SHAPES = ['k = 1.2', 'k = 2.5', 'k = 6.0'];
 
@@ -1143,7 +1143,7 @@ function showModel(exports) {
     byId('ilf-sub').textContent = `${compactDollars(limit)} / ${compactDollars(attach)}`;
     byId('layer-rate').textContent = percent.format(layerRate);
     byId('burn-sub').textContent = `${compactDollars(width)} width`;
-    byId('avg-hit').textContent = compactDollarsPrecise(avgHit);
+    byId('avg-hit').textContent = dollars.format(avgHit);
     byId('avg-hit-sub').textContent = `Given X>${compactDollars(attach)}`;
 
     const pctPrimary = (primary / GROUND_UP_MEAN) * 100;
@@ -1238,7 +1238,7 @@ function showModel(exports) {
       btn.setAttribute('aria-pressed', String(btn.dataset.severityModel === model)),
     );
     if (bodySeverityRow) bodySeverityRow.hidden = !isSpliced;
-    if (tailLabel) tailLabel.textContent = isSpliced ? 'Pareto tail' : 'Lognormal tail';
+    if (tailLabel) tailLabel.textContent = isSpliced ? 'Pareto tail (α)' : 'Lognormal tail (σ)';
     tailButtons.forEach((btn, idx) => {
       btn.textContent = isSpliced ? PARETO_BTN_LABELS[idx] : LOGNORMAL_BTN_LABELS[idx];
       btn.title = isSpliced

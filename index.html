@@ -80,9 +80,9 @@
     })();
   </script>
 
-  <link rel="stylesheet" href="style.css?v=20261127d">
+  <link rel="stylesheet" href="style.css?v=20261127f">
   <script defer src="https://cloud.umami.is/script.js" data-website-id="243f7a71-e9b3-4152-a72c-cc99fc4e9788" data-domains="sinisterrob.github.io" data-exclude-hash="true" data-performance="true" data-errors="true" data-environment="production" data-before-send="umamiBeforeSend"></script>
-  <script type="module" src="excess-layers.js?v=20261127c"></script>
+  <script type="module" src="excess-layers.js?v=20261127d"></script>
   <script type="module" src="reserving-lab.js?v=20261127c"></script>
 
   <script type="application/ld+json">
@@ -276,6 +276,18 @@
   </header>
 
   <main id="main" tabindex="-1">
+    <div class="print-masthead" aria-hidden="true">
+      <div class="print-masthead-left">
+        <p class="print-name">Robert Jurgens, <span>FCAS</span></p>
+        <p class="print-role">Senior Actuarial Consultant · Captive Insurance, Pricing &amp; Loss Reserving</p>
+      </div>
+      <div class="print-masthead-right">
+        <p>Chicago, Illinois · robertdjurgens@gmail.com</p>
+        <p>sinisterrob.github.io · github.com/SinisterRob</p>
+        <p>linkedin.com/in/robert-jurgens-fcas-352017143</p>
+      </div>
+    </div>
+
     <div class="author-intro">
       <div class="wrap author-inner">
         <p>P&amp;C actuary working in captive insurance, pricing, and reserving.</p>
@@ -295,7 +307,6 @@
             <span>Loss Reserving &amp; Mack SE</span>
           </button>
         </div>
-        <span class="lab-swipe-hint">Use side arrows or scroll horizontally</span>
       </div>
 
       <div class="lab-carousel-stage" id="lab-carousel-stage">
@@ -348,22 +359,22 @@
                 </div>
                 <div class="severity-row" id="body-severity-row" hidden>
                   <div class="range-label">
-                    <span class="control-label" id="body-label">Gamma body</span>
+                    <span class="control-label" id="body-label">Gamma body (k)</span>
                     <span class="tail-sigma" id="body-shape-label">Moderate</span>
                   </div>
                   <div class="segmented compact" role="group" aria-labelledby="body-label">
-                    <button type="button" data-body="0" aria-pressed="false" title="Dispersed Gamma body (k = 1.2)" aria-label="Dispersed Gamma body, k 1.2" disabled>k 1.2</button>
+                    <button type="button" data-body="0" aria-pressed="false" title="Dispersed Gamma body (k = 1.2)" aria-label="Dispersed Gamma body, k 1.2" disabled>1.2</button>
                     <button type="button" data-body="1" aria-pressed="true" title="Moderate Gamma body (k = 2.5)" aria-label="Moderate Gamma body, k 2.5" disabled>2.5</button>
                     <button type="button" data-body="2" aria-pressed="false" title="Tight Gamma body (k = 6.0)" aria-label="Tight Gamma body, k 6.0" disabled>6.0</button>
                   </div>
                 </div>
                 <div class="severity-row">
                   <div class="range-label">
-                    <span class="control-label" id="tail-label">Lognormal tail</span>
+                    <span class="control-label" id="tail-label">Lognormal tail (σ)</span>
                     <span class="tail-sigma" id="tail-sigma">Moderate</span>
                   </div>
                   <div class="segmented compact" role="group" aria-labelledby="tail-label">
-                    <button type="button" data-tail="0" aria-pressed="false" title="Lighter Lognormal tail (σ = 0.55)" aria-label="Lighter tail, sigma 0.55" disabled>σ 0.55</button>
+                    <button type="button" data-tail="0" aria-pressed="false" title="Lighter Lognormal tail (σ = 0.55)" aria-label="Lighter tail, sigma 0.55" disabled>0.55</button>
                     <button type="button" data-tail="1" aria-pressed="true" title="Moderate Lognormal tail (σ = 1.00)" aria-label="Moderate tail, sigma 1.00" disabled>1.00</button>
                     <button type="button" data-tail="2" aria-pressed="false" title="Heavier Lognormal tail (σ = 1.55)" aria-label="Heavier tail, sigma 1.55" disabled>1.55</button>
                   </div>
@@ -386,7 +397,7 @@
               </div>
               <div class="kpi-tile">
                 <dt><span class="kpi-title">Avg. layer payout <span class="info-tip is-right" tabindex="0" role="note" aria-label="Expected layer payment conditional on a claim exceeding attachment: E[min(X minus a, b minus a) given X > a]." data-tip="Expected layer payment given a claim exceeds attachment: E[min(X − a, b − a) | X > a].">?</span></span> <span id="avg-hit-sub">Given X&gt;$100k</span></dt>
-                <dd id="avg-hit">$96.1k</dd>
+                <dd id="avg-hit">$96,100</dd>
               </div>
             </dl>
 
@@ -449,7 +460,7 @@
                       <th scope="col">Layer</th>
                       <th scope="col" class="num">Expected</th>
                       <th scope="col" class="num">Share</th>
-                      <th scope="col" class="num">P(Exceed) <span class="info-tip is-right" tabindex="0" role="note" aria-label="Probability a claim exceeds the attachment for the excess row, or the coverage limit for the above-limit row." data-tip="Probability a claim exceeds the attachment (excess row) or coverage limit (above-limit row).">?</span></th>
+                      <th scope="col" class="num"><span class="info-tip is-right" tabindex="0" role="note" aria-label="Probability a claim exceeds the attachment for the excess row, or the coverage limit for the above-limit row." data-tip="Probability a claim exceeds the attachment (excess row) or coverage limit (above-limit row).">?</span> P(Exceed)</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -494,20 +505,27 @@
               <div class="method-grid">
                 <div class="method-col">
                   <h3>Severity &amp; Limited Expected Loss</h3>
-                  <p class="method-formula">L(x) = E[X]Φ(z − σ) + xΦ(−z)</p>
-                  <p class="method-formula is-sub">z = (ln x − μ)/σ, &nbsp; μ = ln(100k) − σ²/2</p>
+                  <div class="method-formulas">
+                    <p class="method-formula">L(<var>x</var>) = E[<var>X</var>]Φ(<var>z</var> &minus; σ) + <var>x</var>Φ(&minus;<var>z</var>)</p>
+                    <p class="method-formula is-sub"><var>z</var> = (ln <var>x</var> &minus; μ) / σ, &nbsp; μ = ln(100k) &minus; σ²/2</p>
+                  </div>
                   <p class="method-note">Fixed $100k ground-up mean across tails; normal CDF via Abramowitz &amp; Stegun (26.2.17).</p>
                 </div>
                 <div class="method-col">
                   <h3>Layer Mechanics &amp; ILF</h3>
-                  <p class="method-formula">ILF = L(b) / L(a), &nbsp; Excess = L(b) − L(a)</p>
-                  <p class="method-formula is-sub">E[Layer | X &gt; a] = (L(b) − L(a)) / P(X &gt; a)</p>
-                  <p class="method-note">Attachment <em>a</em> sets the ILF base; coverage limit <em>b</em> defines layer width <em>b − a</em>.</p>
+                  <div class="method-formulas">
+                    <p class="method-formula">ILF = L(<var>b</var>) / L(<var>a</var>), &nbsp; Excess = L(<var>b</var>) &minus; L(<var>a</var>)</p>
+                    <p class="method-formula is-sub">E[Layer | <var>X</var> &gt; <var>a</var>] = (L(<var>b</var>) &minus; L(<var>a</var>)) / P(<var>X</var> &gt; <var>a</var>)</p>
+                  </div>
+                  <p class="method-note">Attachment <var>a</var> sets the ILF base; coverage limit <var>b</var> defines layer width <var>b</var> &minus; <var>a</var>.</p>
                 </div>
                 <div class="method-col">
                   <h3>Monte Carlo Verification</h3>
-                  <p class="method-formula">N = 65,536 draws · seed 2026</p>
-                  <p class="method-note">Fixed-seed Rust/WASM cross-check; finite-sample error scales as 1/√N and widens at high attachments or heavier tails.</p>
+                  <div class="method-formulas">
+                    <p class="method-formula"><var>N</var> = 65,536 draws · seed 2026</p>
+                    <p class="method-formula is-sub">MC error ~ O(1 / √<var>N</var>)</p>
+                  </div>
+                  <p class="method-note">Fixed-seed Rust/WASM cross-check; finite-sample error scales as 1/√<var>N</var> and widens at high attachments or heavier tails.</p>
                 </div>
               </div>
               <p class="method-footnote">Synthetic model · excludes client data, ALAE, and treaty terms.</p>
@@ -672,17 +690,23 @@
                     <div class="method-grid">
                       <div class="method-col">
                         <h3>Chain Ladder &amp; Mack (1993)</h3>
-                        <p class="method-formula">f<sub>j</sub> = Σ C<sub>i,j+1</sub> / Σ C<sub>i,j</sub></p>
+                        <div class="method-formulas">
+                          <p class="method-formula"><var>f</var><sub><var>j</var></sub> = Σ <var>C</var><sub><var>i</var>,<var>j</var>+1</sub> / Σ <var>C</var><sub><var>i</var>,<var>j</var></sub></p>
+                        </div>
                         <p class="method-note">Volume-weighted LDFs project each origin to ultimate; Mack’s distribution-free variance separates process and parameter risk.</p>
                       </div>
                       <div class="method-col">
                         <h3>BF, Cape Cod &amp; Runoff</h3>
-                        <p class="method-formula">IBNR<sub>BF</sub> = ELR · E · (1 − 1/CDF)</p>
-                        <p class="method-note">Cape Cod derives ELR from used-up exposure (E/CDF). Cash flow steps along 1/CDF with linear 6-month interpolation; tail beyond 120m groups into 18m+.</p>
+                        <div class="method-formulas">
+                          <p class="method-formula">IBNR<sub>BF</sub> = ELR · <var>E</var> · (1 &minus; 1/CDF)</p>
+                        </div>
+                        <p class="method-note">Cape Cod derives ELR from used-up exposure (<var>E</var>/CDF). Cash flow steps along 1/CDF with linear 6-month interpolation; tail beyond 120m groups into 18m+.</p>
                       </div>
                       <div class="method-col">
                         <h3>Benchmarks &amp; WASM Kernel</h3>
-                        <p class="method-formula">RAA · GenIns · US Auto</p>
+                        <div class="method-formulas">
+                          <p class="method-formula">RAA · GenIns · US Auto</p>
+                        </div>
                         <p class="method-note">Published 10×10 triangles (Mack 1993, Taylor–Ashe, Friedland 2010), computed client-side via zero-dependency reserving_kernels.wasm.</p>
                       </div>
                     </div>
@@ -850,7 +874,7 @@
           <article class="cred-item">
             <h3>Fellow of the Casualty Actuarial Society</h3>
             <p class="organization">FCAS (2022) · ACAS (2021)</p>
-            <p>Actuarial experience since 2018 across captive insurance, commercial P&amp;C pricing and reserving (WC, AL, GL, Aviation, Trade Credit), casualty reinsurance, and rating-agency capital frameworks.</p>
+            <p>Actuarial experience since 2018 across captive insurance, commercial P&amp;C pricing and reserving (WC, AL, GL, Aviation, Trade Credit), casualty reinsurance, and economic capital modeling (reserve &amp; underwriting risk for specialty P&amp;C and a workers’ compensation state fund, plus S&amp;P/Fitch frameworks).</p>
           </article>
 
           <article class="cred-item">

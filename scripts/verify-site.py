@@ -252,12 +252,12 @@ def run_browser_checks(failures: list[str]) -> None:
             page.click('[data-severity-model="spliced"]')
             if not page.locator("#body-severity-row").is_visible():
                 failures.append("Gamma body row did not appear after selecting Gamma–Pareto")
-            if page.locator("#tail-label").text_content() != "Pareto tail":
-                failures.append(f"Expected 'Pareto tail' label, got {page.locator('#tail-label').text_content()!r}")
+            if page.locator("#tail-label").text_content() != "Pareto tail (α)":
+                failures.append(f"Expected 'Pareto tail (α)' label, got {page.locator('#tail-label').text_content()!r}")
             page.click('[data-body="2"]')
             tail_first = page.locator('[data-tail="0"]').text_content()
-            if tail_first != "α 4.0":
-                failures.append(f"Expected Pareto tail label 'α 4.0' after Gamma–Pareto click, got {tail_first!r}")
+            if tail_first != "4.0":
+                failures.append(f"Expected Pareto tail label '4.0' after Gamma–Pareto click, got {tail_first!r}")
             spliced_ilf = page.locator("#ilf").text_content()
             if not spliced_ilf or not spliced_ilf.endswith("×") or spliced_ilf == "NaN×":
                 failures.append(f"Invalid Gamma + Pareto ILF: {spliced_ilf!r}")

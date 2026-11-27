@@ -481,6 +481,10 @@ code {
   text-decoration: underline;
 }
 
+.print-masthead {
+  display: none;
+}
+
 .author-intro {
   border-bottom: 1px solid var(--line);
 }
@@ -756,7 +760,7 @@ code {
 
 .lab-subtitle {
   margin-top: var(--space-2);
-  max-width: var(--prose-width);
+  max-width: 56rem;
   font-size: 0.94rem;
   color: var(--muted);
 }
@@ -786,21 +790,23 @@ code {
 }
 
 .lab-controls-bar.is-two-col {
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.98fr);
+  gap: 0.32rem 1.25rem;
 }
 
 .severity-group {
   display: flex;
   flex-direction: column;
   gap: 0.34rem;
+  padding-left: 1.15rem;
+  border-left: 1px solid var(--line);
 }
 
 .severity-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 13.5rem;
   align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 0.25rem 0.65rem;
+  gap: 0.25rem 0.75rem;
 }
 
 .severity-row[hidden] {
@@ -808,12 +814,15 @@ code {
 }
 
 .severity-row .range-label {
-  min-width: 10.5rem;
+  min-width: 0;
+  justify-content: flex-start;
+  gap: 0.45rem;
 }
 
 .severity-row .segmented {
   margin-top: 0;
-  min-width: 13.5rem;
+  width: 100%;
+  min-width: 0;
 }
 
 .preset-chips {
@@ -1157,8 +1166,15 @@ code {
 
 .chart-scrub-hint {
   font-family: var(--mono);
-  font-size: 0.65rem;
+  font-size: 0.64rem;
   color: var(--muted);
+  opacity: 0.76;
+}
+
+.chart-scrub-hint::before {
+  content: "·";
+  margin-right: 0.42rem;
+  opacity: 0.7;
 }
 
 .lab-shell:not([data-ready]) .chart-scrub-hint {
@@ -1374,9 +1390,11 @@ code {
   padding-bottom: 0.14rem;
 }
 
-.layer-table .num {
+.layer-table th.num,
+.layer-table td.num {
   text-align: right;
   font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
   padding-left: 0.55rem;
 }
@@ -1465,8 +1483,8 @@ code {
 }
 
 .kpi-tile.is-accent {
-  background: var(--accent-soft);
-  border-color: var(--accent-border);
+  background: var(--bg-subtle);
+  border-color: var(--line);
 }
 
 .kpi-tile dt {
@@ -1676,19 +1694,30 @@ code {
   margin: 0 0 0.36rem;
 }
 
+.method-formulas {
+  min-height: 2.75rem;
+  margin-bottom: 0.34rem;
+}
+
 .method-formula {
   font-family: var(--serif);
-  font-style: italic;
+  font-style: normal;
   font-size: 0.96rem;
   color: var(--text);
-  line-height: 1.35;
-  margin: 0 0 0.22rem;
+  line-height: 1.38;
+  margin: 0 0 0.18rem;
 }
 
 .method-formula.is-sub {
   font-size: 0.85rem;
   color: var(--text-secondary);
-  margin-bottom: 0.36rem;
+  margin-bottom: 0;
+}
+
+.method-formula var,
+.method-note var {
+  font-family: var(--serif);
+  font-style: italic;
 }
 
 .method-note {
@@ -1707,9 +1736,25 @@ code {
 }
 
 @media (max-width: 52rem) {
+  .lab-controls-bar.is-two-col {
+    grid-template-columns: 1fr;
+    gap: 0.55rem;
+  }
+
+  .severity-group {
+    padding-left: 0;
+    padding-top: 0.45rem;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+
   .method-grid {
     grid-template-columns: 1fr;
     gap: 0.75rem;
+  }
+
+  .method-formulas {
+    min-height: 0;
   }
 
   .method-col + .method-col {
@@ -1721,6 +1766,11 @@ code {
 }
 
 @media (max-width: 44rem) {
+  .severity-row {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+
   .lab-meta-links {
     position: static;
     margin-top: 0.3rem;
@@ -2415,20 +2465,25 @@ code {
 }
 
 /* Print / Executive PDF Dossier Stylesheet */
+@page {
+  size: letter;
+  margin: 0.45in 0.5in;
+}
+
 @media print {
   :root,
   :root[data-theme="dark"],
   :root[data-theme="light"] {
     --bg: #ffffff;
     --bg-elevated: #ffffff;
-    --bg-subtle: #f6f4ef;
+    --bg-subtle: #f7f5f0;
     --text: #111315;
     --text-secondary: #22262b;
     --muted: #4a525c;
     --line: #d4cec4;
     --line-strong: #9e978d;
     --accent: #8c320e;
-    --accent-soft: #f5ebe6;
+    --accent-soft: #f6ece7;
     --accent-border: #cfa795;
     --layer-primary: #2b5478;
     --layer-above: #8e97a2;
@@ -2437,13 +2492,15 @@ code {
   * {
     box-shadow: none !important;
     text-shadow: none !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 
   body {
     background: #ffffff !important;
     color: #111315 !important;
-    font-size: 8.8pt;
-    line-height: 1.38;
+    font-size: 8.5pt;
+    line-height: 1.36;
   }
 
   [data-reveal],
@@ -2453,6 +2510,7 @@ code {
   }
 
   .site-header,
+  .author-intro,
   .lab-jump,
   .lab-switcher-row,
   .lab-side-arrow,
@@ -2464,8 +2522,57 @@ code {
   .copy-email,
   .footer-colophon,
   .cmd-dialog,
-  .skip-link {
+  .skip-link,
+  .section-heading > .text-link,
+  .reference-links {
     display: none !important;
+  }
+
+  .print-masthead {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 12pt;
+    padding-bottom: 7pt;
+    margin-bottom: 6pt;
+    border-bottom: 1.5pt solid var(--accent);
+  }
+
+  .print-name {
+    font-family: var(--serif);
+    font-size: 19pt;
+    font-weight: 500;
+    line-height: 1.1;
+    color: var(--text);
+    margin: 0;
+  }
+
+  .print-name span {
+    font-family: var(--sans);
+    font-size: 10pt;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    vertical-align: 1pt;
+  }
+
+  .print-role {
+    font-size: 8.1pt;
+    color: var(--muted);
+    margin: 2pt 0 0;
+  }
+
+  .print-masthead-right {
+    text-align: right;
+    font-family: var(--mono);
+    font-size: 7.2pt;
+    line-height: 1.45;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+
+  .print-masthead-right p {
+    margin: 0;
   }
 
   .wrap {
@@ -2473,62 +2580,81 @@ code {
     max-width: none;
   }
 
-  .author-inner,
   .section,
   .site-footer {
-    padding-block: 8pt;
+    padding-block: 6.5pt;
     border-bottom: 0.75pt solid #d4cec4;
   }
 
+  .section-lab {
+    padding-top: 2pt;
+    padding-bottom: 7pt;
+  }
+
+  .lab-track {
+    display: block;
+    overflow: visible;
+  }
+
+  .section-lab:has(#tab-ilf[aria-selected="true"]) #slide-reserving,
+  .section-lab:has(#tab-reserving[aria-selected="true"]) #slide-ilf {
+    display: none !important;
+  }
+
   .section-heading {
-    margin-bottom: 6pt;
+    margin-bottom: 5pt;
     break-inside: avoid;
     break-after: avoid;
   }
 
   .section-heading h2 {
-    font-size: 13.5pt;
-    margin-top: 1.5pt;
+    font-size: 12.5pt;
+    margin-top: 0;
   }
 
-  .lab-heading h1 {
-    font-size: 20pt;
+  .lab-heading {
+    margin-bottom: 5pt;
+  }
+
+  .lab-heading h1,
+  .lab-heading h2 {
+    font-size: 14pt;
+    line-height: 1.2;
   }
 
   .lab-subtitle {
-    font-size: 8.6pt;
+    font-size: 8.2pt;
+    margin-top: 2pt;
   }
 
-  .author-inner p::before {
-    content: "Robert Jurgens, FCAS · ";
-    font-weight: 600;
-    color: var(--text);
+  .lab-footer:not(:has(.method-drawer[open])) {
+    display: none !important;
   }
 
   .method-drawer:not([open]) {
     display: none;
   }
 
-  .site-footer {
-    background: transparent !important;
-    border-bottom: 0;
-    padding-bottom: 0;
-  }
-
   .lab-shell {
-    padding: 8pt;
+    padding: 7pt 8pt;
+    border-radius: 4pt;
     break-inside: avoid;
   }
 
   .lab-visual-grid {
-    margin-top: 6pt;
+    margin-top: 5pt;
     grid-template-columns: 1.12fr 0.98fr;
     gap: 8pt;
   }
 
   .chart-panel {
     justify-content: flex-start;
-    gap: 6pt;
+    gap: 4pt;
+    padding: 6pt 7pt;
+  }
+
+  .ledger-panel {
+    padding: 6pt 7pt;
   }
 
   .layer-name {
@@ -2541,51 +2667,75 @@ code {
     margin-top: 0;
   }
 
+  .kpi-tile {
+    padding: 4pt 6pt;
+  }
+
+  .kpi-tile dd {
+    font-size: 11pt;
+  }
+
   .severity-chart {
-    height: 118pt;
+    height: 108pt;
   }
 
   .editorial-columns.three-up,
   .card-grid.three-up,
   .credential-strip {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 9pt;
+    gap: 8pt;
   }
 
   .ed-col {
-    padding: 8pt 8pt 8pt 0;
+    padding: 6pt 8pt 6pt 0;
     break-inside: avoid;
+  }
+
+  .capability-note {
+    margin-top: 4pt;
+    font-size: 8pt;
   }
 
   .ed-col h3,
   .entry-head h3,
   .interest-card h3,
   .cred-item h3 {
-    font-size: 10.5pt;
+    font-size: 10pt;
   }
 
   .ed-col p,
   .impact-list,
-  .interest-card p:last-child,
+  .interest-card p,
   .cred-item p:not(.organization) {
-    font-size: 8.4pt;
+    font-size: 8.1pt !important;
+    line-height: 1.36 !important;
+  }
+
+  .interest-card .text-link {
+    font-size: inherit !important;
+    font-weight: 600;
   }
 
   .interest-card {
-    padding: 8pt 10pt;
+    padding: 6.5pt 8pt;
+    border-radius: 4pt;
     break-inside: avoid;
   }
 
   .timeline-item {
-    grid-template-columns: 9.5rem 1fr;
+    grid-template-columns: 10.6rem 1fr;
     gap: 8pt;
-    padding-block: 5.5pt;
+    padding-block: 4.5pt;
     break-inside: avoid;
   }
 
+  .timeline-meta .period {
+    white-space: nowrap;
+  }
+
   .impact-list {
-    margin-top: 4pt;
-    gap: 3pt;
+    margin-top: 3pt;
+    gap: 2.5pt;
   }
 
   .timeline-rail {
@@ -2593,7 +2743,7 @@ code {
   }
 
   .cred-item {
-    padding-top: 6pt;
+    padding-top: 5pt;
     break-inside: avoid;
   }
 
@@ -2601,17 +2751,50 @@ code {
     break-after: avoid;
   }
 
+  /* Compact executive sign-off bar instead of web CTA buttons */
+  .site-footer {
+    background: transparent !important;
+    border-bottom: 0;
+    padding-top: 6pt;
+    padding-bottom: 0;
+    break-inside: avoid;
+  }
+
   .footer-inner {
-    gap: 8pt 14pt;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10pt;
   }
 
-  .footer-inner h2 {
-    font-size: 13pt;
+  .footer-copy h2 {
+    display: none;
   }
 
-  .footer-links a[href^="http"]::after {
-    content: " (" attr(href) ")";
-    font-size: 7.5pt;
-    color: #4a525c;
+  .footer-meta {
+    font-size: 7.8pt;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  .footer-links {
+    display: flex;
+    align-items: center;
+    gap: 8pt;
+  }
+
+  .footer-links .button {
+    padding: 0;
+    min-height: auto;
+    border: 0;
+    border-radius: 0;
+    background: transparent !important;
+    color: var(--accent) !important;
+    font-size: 7.8pt;
+    font-weight: 600;
+  }
+
+  .footer-links .button::after {
+    content: none;
   }
 }
