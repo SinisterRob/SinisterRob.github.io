@@ -53,6 +53,7 @@ const OUTBOUND_MAP = {
   'linkedin-experience': { target: 'linkedin', location: 'experience' },
   'github-interests': { target: 'github', location: 'interests' },
   'reserving-kernels': { target: 'reserving_kernels', location: 'interests' },
+  'pricing-kernels': { target: 'pricing_kernels', location: 'interests' },
   'ut-scholarship': { target: 'ut_scholarship', location: 'background' },
   'ut-case-comp': { target: 'ut_case_comp', location: 'background' },
   'linkedin-footer': { target: 'linkedin', location: 'footer' },
@@ -568,6 +569,7 @@ function initCommandPalette() {
     { group: 'External', label: 'Open LinkedIn Profile', sub: 'linkedin.com ↗', keywords: 'social profile', run: () => openExternal('https://www.linkedin.com/in/robert-jurgens-fcas-352017143/', 'linkedin') },
     { group: 'External', label: 'Open GitHub (@SinisterRob)', sub: 'github.com ↗', keywords: 'code repos rust', run: () => openExternal('https://github.com/SinisterRob', 'github') },
     { group: 'External', label: 'Open reserving-kernels Crate', sub: 'reserving-kernels ↗', keywords: 'rust crate reserving mack odp', run: () => openExternal('https://github.com/SinisterRob/reserving-kernels', 'reserving_kernels') },
+    { group: 'External', label: 'Open pricing-kernels Crate', sub: 'pricing-kernels ↗', keywords: 'rust crate pricing glm ilf mbbefd credibility ncci', run: () => openExternal('https://github.com/SinisterRob/pricing-kernels', 'pricing_kernels') },
     { group: 'External', label: 'Inspect Rust WASM Kernel Source', sub: 'excess_layers.rs ↗', keywords: 'rust wasm source', run: () => openExternal('https://github.com/SinisterRob/SinisterRob.github.io/blob/main/src/excess_layers.rs', 'rust_source') },
   ];
 
@@ -1140,9 +1142,9 @@ function showModel(exports) {
     byId('ilf').textContent = ratio(ilf);
     byId('ilf-sub').textContent = `${compactDollars(limit)} / ${compactDollars(attach)}`;
     byId('layer-rate').textContent = percent.format(layerRate);
-    byId('burn-sub').textContent = `of ${compactDollars(width)}`;
+    byId('burn-sub').textContent = `${compactDollars(width)} width`;
     byId('avg-hit').textContent = compactDollarsPrecise(avgHit);
-    byId('avg-hit-sub').textContent = `X>${compactDollars(attach)}`;
+    byId('avg-hit-sub').textContent = `Given X>${compactDollars(attach)}`;
 
     const pctPrimary = (primary / GROUND_UP_MEAN) * 100;
     const pctExcess = (excess / GROUND_UP_MEAN) * 100;
@@ -1167,7 +1169,7 @@ function showModel(exports) {
       model === 'spliced'
         ? `Spliced Gamma body (${BODIES[body]}, ${BODY_SHAPES[body]}) + Pareto ${TAILS[tail].toLowerCase()} tail (${PARETO_ALPHAS[tail]})`
         : `Lognormal ${TAILS[tail].toLowerCase()} tail (${TAIL_SIGMAS[tail]})`;
-    latestSummary = `${distDesc}. Attachment point ${dollars.format(attach)}, coverage limit ${dollars.format(limit)}, layer width ${dollars.format(width)}. Expected primary loss ${dollars.format(primary)}, excess loss ${dollars.format(excess)}, above limit ${dollars.format(above)}. ILF ${ratio(ilf)}, layer burn ${percent.format(layerRate)}, average attached loss ${dollars.format(avgHit)}.`;
+    latestSummary = `${distDesc}. Attachment point ${dollars.format(attach)}, coverage limit ${dollars.format(limit)}, layer width ${dollars.format(width)}. Expected primary loss ${dollars.format(primary)}, excess loss ${dollars.format(excess)}, above limit ${dollars.format(above)}. ILF ${ratio(ilf)}, percent of layer limit ${percent.format(layerRate)}, average layer payout ${dollars.format(avgHit)}.`;
     if (announce) {
       announceResults();
     }

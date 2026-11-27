@@ -10,9 +10,10 @@ Personal portfolio and illustrative excess-layering / ILF workbench for **Robert
 - **`index.html`, `style.css`, `excess-layers.js`** — Static HTML/CSS/SVG front end with pre-rendered baseline values and live WebAssembly hydration.
 - **`scripts/build.sh`** — Runs Rust unit tests, builds the optimized WebAssembly module, verifies exports, and renders `og-image.png`.
 
-## Related Repository
+## Related Repositories
 
-- **[`reserving-kernels`](https://github.com/SinisterRob/reserving-kernels)** — Pure-Rust P&C loss-reserving, Mack standard errors, ODP bootstrap, Iman–Conover dependence, and parametric severity/ILF kernels.
+- **[`reserving-kernels`](https://github.com/SinisterRob/reserving-kernels)** — Pure-Rust P&C loss-reserving, Mack standard errors, Merz–Wüthrich CDR, ODP bootstrap, Iman–Conover dependence, and Euler/Myers–Read capital allocation kernels.
+- **[`pricing-kernels`](https://github.com/SinisterRob/pricing-kernels)** — Pure-Rust commercial ratemaking, IRLS GLMs, credibility, NCCI/ISO experience & retro rating, ILFs, MBBEFD reinsurance, and Panjer/FFT underwriting-risk kernels.
 
 ## Build & Test
 

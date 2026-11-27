@@ -80,10 +80,10 @@
     })();
   </script>
 
-  <link rel="stylesheet" href="style.css?v=20261127b">
+  <link rel="stylesheet" href="style.css?v=20261127d">
   <script defer src="https://cloud.umami.is/script.js" data-website-id="243f7a71-e9b3-4152-a72c-cc99fc4e9788" data-domains="sinisterrob.github.io" data-exclude-hash="true" data-performance="true" data-errors="true" data-environment="production" data-before-send="umamiBeforeSend"></script>
-  <script type="module" src="excess-layers.js?v=20261127a"></script>
-  <script type="module" src="reserving-lab.js?v=20261127b"></script>
+  <script type="module" src="excess-layers.js?v=20261127c"></script>
+  <script type="module" src="reserving-lab.js?v=20261127c"></script>
 
   <script type="application/ld+json">
   {
@@ -373,19 +373,19 @@
 
             <dl class="kpi-strip" aria-label="Key results">
               <div class="kpi-tile is-accent">
-                <dt>ILF <span id="ilf-sub">$350k / $100k</span></dt>
+                <dt><span class="kpi-title">ILF <span class="info-tip is-left" tabindex="0" role="note" aria-label="Increased Limits Factor: expected loss capped at coverage limit divided by expected loss capped at attachment, L(b) / L(a)." data-tip="Increased Limits Factor: L(b) / L(a), expected loss capped at coverage limit relative to attachment.">?</span></span> <span id="ilf-sub">$350k / $100k</span></dt>
                 <dd id="ilf">1.48×</dd>
               </div>
               <div class="kpi-tile">
-                <dt>Expected excess loss <span>Per claim</span></dt>
+                <dt><span class="kpi-title">Expected excess loss <span class="info-tip" tabindex="0" role="note" aria-label="Expected layer payment per ground-up claim: L(b) minus L(a)." data-tip="Expected layer payment per ground-up claim: L(b) − L(a).">?</span></span> <span>Per claim</span></dt>
                 <dd id="loss-excess-key">$29,650</dd>
               </div>
               <div class="kpi-tile">
-                <dt>Layer burn <span id="burn-sub">of $250k</span></dt>
+                <dt><span class="kpi-title">% of layer limit <span class="info-tip" tabindex="0" role="note" aria-label="Expected excess loss per claim divided by layer width: (L(b) minus L(a)) / (b minus a)." data-tip="Expected excess loss per claim divided by layer width: (L(b) − L(a)) / (b − a).">?</span></span> <span id="burn-sub">$250k width</span></dt>
                 <dd id="layer-rate">11.9%</dd>
               </div>
               <div class="kpi-tile">
-                <dt>Avg. attached loss <span id="avg-hit-sub">X&gt;$100k</span></dt>
+                <dt><span class="kpi-title">Avg. layer payout <span class="info-tip is-right" tabindex="0" role="note" aria-label="Expected layer payment conditional on a claim exceeding attachment: E[min(X minus a, b minus a) given X > a]." data-tip="Expected layer payment given a claim exceeds attachment: E[min(X − a, b − a) | X > a].">?</span></span> <span id="avg-hit-sub">Given X&gt;$100k</span></dt>
                 <dd id="avg-hit">$96.1k</dd>
               </div>
             </dl>
@@ -449,7 +449,7 @@
                       <th scope="col">Layer</th>
                       <th scope="col" class="num">Expected</th>
                       <th scope="col" class="num">Share</th>
-                      <th scope="col" class="num">P(Exceed)</th>
+                      <th scope="col" class="num">P(Exceed) <span class="info-tip is-right" tabindex="0" role="note" aria-label="Probability a claim exceeds the attachment for the excess row, or the coverage limit for the above-limit row." data-tip="Probability a claim exceeds the attachment (excess row) or coverage limit (above-limit row).">?</span></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -487,25 +487,37 @@
 
             <p class="sr-only" id="results-summary" role="status" aria-live="polite"></p>
           </div>
-        </article>
 
-        <div class="lab-explanation">
-          <p class="lab-example"><strong>Baseline example.</strong> At the Moderate tail, a $250k layer attaching at $100k has an expected layer loss of $29,650 per claim. The $350k limit gives an ILF of 1.48× because expected loss capped at $350k is 1.48 times expected loss capped at the $100k attachment.</p>
-          <details class="method-drawer" id="method-drawer">
-            <summary id="method-toggle">Model assumptions and formulas</summary>
-            <ul class="method-list">
-              <li><strong>Severity.</strong> The synthetic lognormal model holds the mean claim size at $100k across tails. Its log-scale location is <code>μ = ln(100k) − σ²/2</code>. This illustration excludes client data, allocated loss adjustment expenses, and treaty terms.</li>
-              <li><strong>Limited expected loss.</strong> For a limit <code>x</code>, <code>L(x) = E[X]Φ(z−σ) + xΦ(−z)</code>, where <code>z = (ln(x) − μ)/σ</code>. The standard normal CDF uses the Abramowitz and Stegun 26.2.17 approximation.</li>
-              <li><strong>Layer and ILF.</strong> For attachment <code>a</code> and coverage limit <code>b</code>, the layer width is <code>b − a</code>, expected excess loss is <code>L(b) − L(a)</code>, and the ILF is <code>L(b)/L(a)</code>. The selected attachment is the ILF base.</li>
-              <li><strong>Breakdown.</strong> P(Exceed) is the probability a claim exceeds the attachment for the excess row and the coverage limit for the above-limit row. Layer burn is expected excess loss divided by layer width. Average attached loss is the expected layer payment conditional on the claim exceeding attachment.</li>
-              <li><strong>Simulation check.</strong> The Rust/WebAssembly model runs 65,536 fixed-seed (2026) lognormal draws to cross-check the analytical layer loss. The reported delta is finite-sample Monte Carlo sampling error relative to the exact closed-form value (shrinking as <code>1/√N</code>), which naturally widens at high attachments and heavier tails.</li>
-            </ul>
+          <div class="lab-footer">
+            <details class="method-drawer" id="method-drawer">
+              <summary id="method-toggle">Model assumptions &amp; formulas</summary>
+              <div class="method-grid">
+                <div class="method-col">
+                  <h3>Severity &amp; Limited Expected Loss</h3>
+                  <p class="method-formula">L(x) = E[X]Φ(z − σ) + xΦ(−z)</p>
+                  <p class="method-formula is-sub">z = (ln x − μ)/σ, &nbsp; μ = ln(100k) − σ²/2</p>
+                  <p class="method-note">Fixed $100k ground-up mean across tails; normal CDF via Abramowitz &amp; Stegun (26.2.17).</p>
+                </div>
+                <div class="method-col">
+                  <h3>Layer Mechanics &amp; ILF</h3>
+                  <p class="method-formula">ILF = L(b) / L(a), &nbsp; Excess = L(b) − L(a)</p>
+                  <p class="method-formula is-sub">E[Layer | X &gt; a] = (L(b) − L(a)) / P(X &gt; a)</p>
+                  <p class="method-note">Attachment <em>a</em> sets the ILF base; coverage limit <em>b</em> defines layer width <em>b − a</em>.</p>
+                </div>
+                <div class="method-col">
+                  <h3>Monte Carlo Verification</h3>
+                  <p class="method-formula">N = 65,536 draws · seed 2026</p>
+                  <p class="method-note">Fixed-seed Rust/WASM cross-check; finite-sample error scales as 1/√N and widens at high attachments or heavier tails.</p>
+                </div>
+              </div>
+              <p class="method-footnote">Synthetic model · excludes client data, ALAE, and treaty terms.</p>
+            </details>
             <div class="lab-meta-links">
               <a class="text-link" href="https://github.com/SinisterRob/SinisterRob.github.io/blob/main/src/excess_layers.rs" target="_blank" rel="noopener noreferrer" data-track="rust-source">Rust model source ↗</a>
-              <a class="text-link" href="https://digital.casact.org/issue/may-june-2026/#increased-limit-factors-a-modified-riebesell-form" target="_blank" rel="noopener noreferrer" data-track="cas-actuarial-review">ILF reading in Actuarial Review ↗</a>
+              <a class="text-link" href="https://digital.casact.org/issue/may-june-2026/#increased-limit-factors-a-modified-riebesell-form" target="_blank" rel="noopener noreferrer" data-track="cas-actuarial-review">Actuarial Review ↗</a>
             </div>
-          </details>
-        </div>
+          </div>
+        </article>
             </div>
           </div>
 
@@ -653,25 +665,35 @@
 
                   <p class="sr-only" id="res-results-summary" role="status" aria-live="polite"></p>
                 </div>
-              </article>
 
-              <div class="lab-explanation">
-                <p class="lab-example" id="res-example-copy"><strong>Baseline example.</strong> On Mack’s (1993) RAA 10×10 reinsurance triangle at a 1.00× tail, volume-weighted Chain Ladder estimates $52.1M of unpaid IBNR on $161.0M reported ($213.1M ultimate), with a distribution-free Mack standard error of $26.9M (51.6% CV).</p>
-                <details class="method-drawer" id="reserving-method-drawer">
-                  <summary id="reserving-method-toggle">Reserving methods and benchmark datasets</summary>
-                  <ul class="method-list">
-                    <li><strong>Chain Ladder &amp; Mack (1993).</strong> Volume-weighted age-to-age factors project each origin’s latest diagonal to ultimate; Mack’s distribution-free variance formula decomposes process and parameter risk per accident year and across the aggregate portfolio.</li>
-                    <li><strong>Bornhuetter–Ferguson &amp; Cape Cod.</strong> BF weights expected a priori ultimate by the unreported fraction <code>1 − 1/CDF</code>; Cape Cod estimates the expected loss ratio directly from used-up exposure (earned premium divided by CDF).</li>
-                    <li><strong>Cash flow runoff (6 / 12 / 18m).</strong> Each accident year’s remaining reserve is stepped forward along the implied cumulative emergence curve <code>1/CDF</code> for calendar years +1 and +2, then interpolated linearly to 6-month intervals (post-120m tail runoff is grouped into 18m+).</li>
-                    <li><strong>Benchmark triangles.</strong> RAA (Mack 1993, Automatic Facultative GL, in $000s), GenIns (Taylor &amp; Ashe 1983 / England &amp; Verrall 1999, paid), and US Industry Auto (Friedland 2010, paid &amp; earned premium, in $000s). For RAA and GenIns, illustrative exposure vectors are scaled to mature volume for BF/Cape Cod comparisons.</li>
-                    <li><strong>Client-side Rust/WASM.</strong> Computed directly in your browser by the zero-dependency <code>reserving_kernels.wasm</code> C-ABI build from <code>reserving-kernels</code>.</li>
-                  </ul>
+                <div class="lab-footer">
+                  <details class="method-drawer" id="reserving-method-drawer">
+                    <summary id="reserving-method-toggle">Reserving methods &amp; benchmark datasets</summary>
+                    <div class="method-grid">
+                      <div class="method-col">
+                        <h3>Chain Ladder &amp; Mack (1993)</h3>
+                        <p class="method-formula">f<sub>j</sub> = Σ C<sub>i,j+1</sub> / Σ C<sub>i,j</sub></p>
+                        <p class="method-note">Volume-weighted LDFs project each origin to ultimate; Mack’s distribution-free variance separates process and parameter risk.</p>
+                      </div>
+                      <div class="method-col">
+                        <h3>BF, Cape Cod &amp; Runoff</h3>
+                        <p class="method-formula">IBNR<sub>BF</sub> = ELR · E · (1 − 1/CDF)</p>
+                        <p class="method-note">Cape Cod derives ELR from used-up exposure (E/CDF). Cash flow steps along 1/CDF with linear 6-month interpolation; tail beyond 120m groups into 18m+.</p>
+                      </div>
+                      <div class="method-col">
+                        <h3>Benchmarks &amp; WASM Kernel</h3>
+                        <p class="method-formula">RAA · GenIns · US Auto</p>
+                        <p class="method-note">Published 10×10 triangles (Mack 1993, Taylor–Ashe, Friedland 2010), computed client-side via zero-dependency reserving_kernels.wasm.</p>
+                      </div>
+                    </div>
+                    <p class="method-footnote">Illustrative exposure vectors scaled to mature volume on RAA and GenIns for BF/Cape Cod comparisons.</p>
+                  </details>
                   <div class="lab-meta-links">
-                    <a class="text-link" href="https://github.com/SinisterRob/reserving-kernels" target="_blank" rel="noopener noreferrer" data-track="reserving-kernels">reserving-kernels repository ↗</a>
-                    <a class="text-link" href="https://github.com/SinisterRob/reserving-kernels/blob/main/docs/SOURCES.md" target="_blank" rel="noopener noreferrer" data-track="reserving-sources">Literature &amp; equation traceability ↗</a>
+                    <a class="text-link" href="https://github.com/SinisterRob/reserving-kernels" target="_blank" rel="noopener noreferrer" data-track="reserving-kernels">reserving-kernels ↗</a>
+                    <a class="text-link" href="https://github.com/SinisterRob/reserving-kernels/blob/main/docs/SOURCES.md" target="_blank" rel="noopener noreferrer" data-track="reserving-sources">Equation traceability ↗</a>
                   </div>
-                </details>
-              </div>
+                </div>
+              </article>
             </div>
           </div>
         </div>
@@ -799,8 +821,8 @@
 
         <div class="card-grid three-up">
           <article class="interest-card">
-            <h3>Open Reserving Kernels</h3>
-            <p>Pure-Rust actuarial reserving kernels grounded in CAS/ASTIN literature—chain-ladder, Bornhuetter–Ferguson, Cape Cod, Mack standard errors, Merz–Wüthrich 1-year CDR, ODP bootstrap, Iman–Conover dependence, and Euler/Myers–Read capital allocation—<a class="text-link" href="https://github.com/SinisterRob/reserving-kernels" target="_blank" rel="noopener noreferrer" data-track="reserving-kernels">reserving-kernels ↗</a>.</p>
+            <h3>Reserving &amp; Pricing Kernels</h3>
+            <p>Pure-Rust P&amp;C libraries grounded in CAS/ASTIN literature—<a class="text-link" href="https://github.com/SinisterRob/reserving-kernels" target="_blank" rel="noopener noreferrer" data-track="reserving-kernels">reserving-kernels ↗</a> (chain-ladder, BF/Cape Cod, Mack SE, Merz–Wüthrich CDR, ODP bootstrap, capital allocation) and <a class="text-link" href="https://github.com/SinisterRob/pricing-kernels" target="_blank" rel="noopener noreferrer" data-track="pricing-kernels">pricing-kernels ↗</a> (IRLS GLMs, Bühlmann–Straub credibility, NCCI/ISO experience &amp; retro rating, ILFs, MBBEFD reinsurance, Panjer/FFT aggregates).</p>
           </article>
 
           <article class="interest-card">
