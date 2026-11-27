@@ -709,7 +709,7 @@ function initCommandPalette() {
 }
 
 async function loadModel() {
-  const url = new URL('./excess_layers.wasm', import.meta.url);
+  const url = new URL('./excess_layers.wasm?v=20261126b', import.meta.url);
   if (typeof WebAssembly.instantiateStreaming === 'function') {
     try {
       const { instance } = await WebAssembly.instantiateStreaming(fetch(url));
@@ -969,9 +969,7 @@ function showModel(exports) {
   const svg = byId('severity-chart');
   const chartTitleLabel = byId('chart-title-label');
   const tailButtons = [...document.querySelectorAll('[data-tail]')];
-  const modelButtons = [...document.querySelectorAll('[data-model]')];
-  const bodyButtons = [...document.querySelectorAll('[data-body]')];
-  const bodyControl = byId('body-control');
+  const bodyModeButtons = [...document.querySelectorAll('[data-body-mode]')];
   const bodyShapeLabel = byId('body-shape-label');
   const viewButtons = [...document.querySelectorAll('[data-chart-view]')];
   const presetButtons = [...document.querySelectorAll('[data-preset]')];
@@ -1124,7 +1122,9 @@ function showModel(exports) {
     byId('excess-range').textContent = `${compactDollars(attach)}–${compactDollars(limit)}`;
     byId('above-range').textContent = `>${compactDollars(limit)}`;
     byId('tail-sigma').textContent = TAILS[tail];
-    if (bodyShapeLabel) bodyShapeLabel.textContent = BODIES[body];
+    if (bodyShapeLabel) {
+      bodyShapeLabel.textContent = model === 'spliced' ? `Gamma · ${BODIES[body]}` : 'Lognormal';
+    }
 
     byId('loss-primary').textContent = dollars.format(primary);
     const formattedExcess = dollars.format(excess);
@@ -1225,16 +1225,17 @@ function showModel(exports) {
     tailButtons.forEach(option => option.setAttribute('aria-pressed', String(Number(option.dataset.tail) === tail)));
   }
 
-  function applyBody(nextBody) {
-    body = nextBody;
-    bodyButtons.forEach(option => option.setAttribute('aria-pressed', String(Number(option.dataset.body) === body)));
-  }
-
-  function applyModel(nextModel) {
-    if (nextModel === 'spliced' && !hasSpliced) return;
-    model = nextModel;
-    modelButtons.forEach(btn => btn.setAttribute('aria-pressed', String(btn.dataset.model === model)));
-    if (bodyControl) bodyControl.hidden = model !== 'spliced';
+  function applyBodyMode(modeKey) {
+    if (modeKey === 'lognormal') {
+      model = 'lognormal';
+    } else if (modeKey.startsWith('gamma-') && hasSpliced) {
+      model = 'spliced';
+      body = Number(modeKey.slice(6));
+    } else {
+      return;
+    }
+    const activeKey = model === 'spliced' ? `gamma-${body}` : 'lognormal';
+    bodyModeButtons.forEach(btn => btn.setAttribute('aria-pressed', String(btn.dataset.bodyMode === activeKey)));
     const isSpliced = model === 'spliced';
     tailButtons.forEach((btn, idx) => {
       btn.textContent = isSpliced ? PARETO_BTN_LABELS[idx] : LOGNORMAL_BTN_LABELS[idx];
@@ -1244,27 +1245,13 @@ function showModel(exports) {
     });
   }
 
-  modelButtons.forEach(button =>
+  bodyModeButtons.forEach(button =>
     button.addEventListener('click', () => {
-      applyModel(button.dataset.model);
-      trackLabEngagement('model');
-      track('lab_interact', {
-        control: 'model',
-        value: model,
-        tail: TAILS[tail].toLowerCase(),
-        limit: compactDollars(limitSlider.valueAsNumber),
-      });
-      flushCommit();
-    }),
-  );
-
-  bodyButtons.forEach(button =>
-    button.addEventListener('click', () => {
-      applyBody(Number(button.dataset.body));
+      applyBodyMode(button.dataset.bodyMode);
       trackLabEngagement('body');
       track('lab_interact', {
         control: 'body',
-        value: BODIES[body].toLowerCase(),
+        value: button.dataset.bodyMode,
         tail: TAILS[tail].toLowerCase(),
         limit: compactDollars(limitSlider.valueAsNumber),
       });

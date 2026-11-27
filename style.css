@@ -787,23 +787,30 @@ code {
   gap: 0.22rem;
 }
 
-.model-toggle-row {
+.lab-controls-bar.is-two-col {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.severity-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.34rem;
+}
+
+.severity-row {
   display: flex;
   align-items: center;
-  gap: 0.42rem;
-  margin-top: 0.14rem;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.65rem;
 }
 
-.model-toggle-row .segmented {
+.severity-row .range-label {
+  min-width: 9.2rem;
+}
+
+.severity-row .segmented {
   margin-top: 0;
-}
-
-.body-control {
-  margin-top: 0.28rem;
-}
-
-.body-control[hidden] {
-  display: none;
 }
 
 .preset-chips {

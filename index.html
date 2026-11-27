@@ -33,7 +33,7 @@
   <meta name="twitter:image:alt" content="Excess Layer and ILF Simulator by Robert Jurgens, FCAS, showing the 1.48× baseline ILF.">
 
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="preload" href="excess_layers.wasm" as="fetch" crossorigin>
+  <link rel="preload" href="excess_layers.wasm?v=20261126b" as="fetch" crossorigin>
   <link rel="preload" href="reserving_kernels.wasm" as="fetch" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -80,9 +80,9 @@
     })();
   </script>
 
-  <link rel="stylesheet" href="style.css?v=20261126">
+  <link rel="stylesheet" href="style.css?v=20261126b">
   <script defer src="https://cloud.umami.is/script.js" data-website-id="243f7a71-e9b3-4152-a72c-cc99fc4e9788" data-domains="sinisterrob.github.io" data-exclude-hash="true" data-performance="true" data-errors="true" data-environment="production" data-before-send="umamiBeforeSend"></script>
-  <script type="module" src="excess-layers.js?v=20261126"></script>
+  <script type="module" src="excess-layers.js?v=20261126b"></script>
   <script type="module" src="reserving-lab.js?v=20261126"></script>
 
   <script type="application/ld+json">
@@ -318,23 +318,7 @@
           <noscript><p class="model-status">Showing baseline values ($350k limit, moderate tail). Enable JavaScript to run the interactive WebAssembly model.</p></noscript>
 
           <div class="calculator" id="layer-calculator">
-            <div class="lab-controls-bar">
-              <div class="control-group preset-group">
-                <span class="control-label" id="preset-label">Scenario presets</span>
-                <div class="preset-chips" role="group" aria-labelledby="preset-label">
-                  <button type="button" class="preset-chip" data-preset="working" data-preset-attach="50000" data-preset-limit="250000" data-preset-tail="0" aria-pressed="false" title="Low scenario: $200k xs $50k · lighter tail" disabled>Low</button>
-                  <button type="button" class="preset-chip" data-preset="baseline" data-preset-attach="100000" data-preset-limit="350000" data-preset-tail="1" aria-pressed="true" title="Medium scenario: $250k xs $100k · moderate tail" disabled>Medium</button>
-                  <button type="button" class="preset-chip" data-preset="excess" data-preset-attach="250000" data-preset-limit="1000000" data-preset-tail="2" aria-pressed="false" title="High scenario: $750k xs $250k · heavier tail" disabled>High</button>
-                </div>
-                <div class="model-toggle-row">
-                  <span class="control-label" id="model-label">Model</span>
-                  <div class="segmented compact" role="group" aria-labelledby="model-label">
-                    <button type="button" data-model="lognormal" aria-pressed="true" title="Single Lognormal severity ($100k mean)" disabled>Lognormal</button>
-                    <button type="button" data-model="spliced" aria-pressed="false" title="Composite Gamma body + Pareto tail ($100k mean)" disabled>Gamma + Pareto</button>
-                  </div>
-                </div>
-              </div>
-
+            <div class="lab-controls-bar is-two-col">
               <div class="control-group slider-group">
                 <div class="layer-input-labels">
                   <label for="layer-attach">Attachment point <span class="attach-readout" id="attach-value" aria-hidden="true">$100k</span></label>
@@ -352,25 +336,28 @@
                 </div>
               </div>
 
-              <div class="control-group tail-group">
-                <div class="range-label">
-                  <span class="control-label" id="tail-label">Tail severity</span>
-                  <span class="tail-sigma" id="tail-sigma">Moderate</span>
-                </div>
-                <div class="segmented" role="group" aria-labelledby="tail-label">
-                  <button type="button" data-tail="0" aria-pressed="false" title="Lighter tail (σ = 0.55)" aria-label="Lighter tail, sigma 0.55" disabled>σ 0.55</button>
-                  <button type="button" data-tail="1" aria-pressed="true" title="Moderate tail (σ = 1.00)" aria-label="Moderate tail, sigma 1.00" disabled>1.00</button>
-                  <button type="button" data-tail="2" aria-pressed="false" title="Heavier tail (σ = 1.55)" aria-label="Heavier tail, sigma 1.55" disabled>1.55</button>
-                </div>
-                <div class="body-control" id="body-control" hidden>
+              <div class="control-group severity-group">
+                <div class="severity-row">
                   <div class="range-label">
-                    <span class="control-label" id="body-label">Body (Gamma)</span>
-                    <span class="tail-sigma" id="body-shape-label">Moderate</span>
+                    <span class="control-label" id="body-label">Body severity</span>
+                    <span class="tail-sigma" id="body-shape-label">Lognormal</span>
                   </div>
                   <div class="segmented compact" role="group" aria-labelledby="body-label">
-                    <button type="button" data-body="0" aria-pressed="false" title="Dispersed Gamma body (k = 1.2)" aria-label="Dispersed Gamma body, k 1.2" disabled>k 1.2</button>
-                    <button type="button" data-body="1" aria-pressed="true" title="Moderate Gamma body (k = 2.5)" aria-label="Moderate Gamma body, k 2.5" disabled>2.5</button>
-                    <button type="button" data-body="2" aria-pressed="false" title="Tight Gamma body (k = 6.0)" aria-label="Tight Gamma body, k 6.0" disabled>6.0</button>
+                    <button type="button" data-body-mode="lognormal" aria-pressed="true" title="Single Lognormal curve ($100k mean)" disabled>Lognormal</button>
+                    <button type="button" data-body-mode="gamma-0" aria-pressed="false" title="Gamma body k = 1.2 + Pareto tail ($100k mean)" aria-label="Gamma body k 1.2 plus Pareto tail" disabled>Γ 1.2</button>
+                    <button type="button" data-body-mode="gamma-1" aria-pressed="false" title="Gamma body k = 2.5 + Pareto tail ($100k mean)" aria-label="Gamma body k 2.5 plus Pareto tail" disabled>2.5</button>
+                    <button type="button" data-body-mode="gamma-2" aria-pressed="false" title="Gamma body k = 6.0 + Pareto tail ($100k mean)" aria-label="Gamma body k 6.0 plus Pareto tail" disabled>6.0</button>
+                  </div>
+                </div>
+                <div class="severity-row">
+                  <div class="range-label">
+                    <span class="control-label" id="tail-label">Tail severity</span>
+                    <span class="tail-sigma" id="tail-sigma">Moderate</span>
+                  </div>
+                  <div class="segmented compact" role="group" aria-labelledby="tail-label">
+                    <button type="button" data-tail="0" aria-pressed="false" title="Lighter tail (σ = 0.55)" aria-label="Lighter tail, sigma 0.55" disabled>σ 0.55</button>
+                    <button type="button" data-tail="1" aria-pressed="true" title="Moderate tail (σ = 1.00)" aria-label="Moderate tail, sigma 1.00" disabled>1.00</button>
+                    <button type="button" data-tail="2" aria-pressed="false" title="Heavier tail (σ = 1.55)" aria-label="Heavier tail, sigma 1.55" disabled>1.55</button>
                   </div>
                 </div>
               </div>
