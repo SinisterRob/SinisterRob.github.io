@@ -1149,9 +1149,14 @@ function showModel(exports) {
     const pctPrimary = (primary / GROUND_UP_MEAN) * 100;
     const pctExcess = (excess / GROUND_UP_MEAN) * 100;
     const pctAbove = Math.max(0, 100 - pctPrimary - pctExcess);
-    byId('bar-primary').style.width = `${pctPrimary.toFixed(2)}%`;
-    byId('bar-excess').style.width = `${pctExcess.toFixed(2)}%`;
-    byId('bar-above').style.width = `${pctAbove.toFixed(2)}%`;
+    const setSeg = (id, pct) => {
+      const el = byId(id);
+      el.style.width = `${pct.toFixed(2)}%`;
+      el.textContent = pct >= 8 ? `${Math.round(pct)}%` : '';
+    };
+    setSeg('bar-primary', pctPrimary);
+    setSeg('bar-excess', pctExcess);
+    setSeg('bar-above', pctAbove);
     byId('pct-primary').textContent = `${pctPrimary.toFixed(1)}%`;
     byId('pct-excess').textContent = `${pctExcess.toFixed(1)}%`;
     byId('pct-above').textContent = `${pctAbove.toFixed(1)}%`;

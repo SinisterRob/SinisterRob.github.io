@@ -21,7 +21,7 @@
   --layer-primary-soft: rgba(43, 84, 120, 0.19);
   --layer-excess-soft: rgba(158, 58, 18, 0.22);
   --layer-mid: #c4864b;
-  --layer-above: #8e97a2;
+  --layer-above: #0f766e;
   --cf-1: #c2410c;
   --cf-2: #b45309;
   --cf-3: #0f766e;
@@ -75,7 +75,7 @@
   --cf-bar-ink: #0f1318;
   --layer-excess-soft: rgba(232, 135, 81, 0.24);
   --layer-mid: #c69766;
-  --layer-above: #5d6875;
+  --layer-above: #2dd4bf;
   --chart-line: #73808e;
   --plot-paper: #15181d;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28);
@@ -1484,7 +1484,7 @@ code {
 }
 
 .layer-table td {
-  padding: 0.4rem 0.2rem;
+  padding: 0.52rem 0.2rem;
   border-bottom: 1px solid var(--line);
   vertical-align: middle;
   transition: background 0.14s ease;
@@ -1546,20 +1546,14 @@ code {
 
 .swatch {
   display: inline-block;
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 2px;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 3px;
   flex: none;
 }
 
 .cf-table td {
   padding: 0.56rem 0.2rem;
-}
-
-.cf-table .swatch {
-  width: 0.6rem;
-  height: 0.6rem;
-  border-radius: 3px;
 }
 
 .sw-primary { background: var(--layer-primary); }
@@ -1573,26 +1567,16 @@ code {
 
 .share-bar {
   display: flex;
-  height: 0.42rem;
-  border-radius: 999px;
-  overflow: hidden;
-  background: var(--bg-subtle);
-  gap: 2px;
-}
-
-#reserving-lab .share-bar {
   height: 1.65rem;
   border-radius: 0.42rem;
+  overflow: hidden;
+  background: var(--bg-subtle);
   gap: 3px;
   margin-top: auto;
 }
 
 .share-seg {
   height: 100%;
-  transition: width 0.2s ease, opacity 0.16s ease;
-}
-
-#reserving-lab .share-seg {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1604,6 +1588,7 @@ code {
   color: var(--cf-bar-ink);
   letter-spacing: -0.02em;
   white-space: nowrap;
+  transition: width 0.2s ease, opacity 0.16s ease;
 }
 
 .seg-primary { background: var(--layer-primary); }

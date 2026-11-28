@@ -562,7 +562,7 @@ function initReservingLab(exports) {
       if (barEl) {
         const sharePct = (Math.max(0, row.inc) / absCfTotal) * 100;
         barEl.style.width = `${sharePct.toFixed(1)}%`;
-        barEl.textContent = sharePct >= 10 ? `${Math.round(sharePct)}%` : '';
+        barEl.textContent = sharePct >= 8 ? `${Math.round(sharePct)}%` : '';
       }
     });
 
