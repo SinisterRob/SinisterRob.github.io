@@ -22,10 +22,11 @@
   --layer-excess-soft: rgba(158, 58, 18, 0.22);
   --layer-mid: #c4864b;
   --layer-above: #8e97a2;
-  --cf-1: #9e3a12;
-  --cf-2: #c96a38;
-  --cf-3: #d29c73;
-  --cf-4: #8e97a2;
+  --cf-1: #c2410c;
+  --cf-2: #b45309;
+  --cf-3: #0f766e;
+  --cf-4: #2b5478;
+  --cf-bar-ink: #ffffff;
   --chart-line: #8c96a2;
   --plot-paper: #fdfcf9;
   --shadow-sm: 0 1px 2px rgba(20, 23, 26, 0.04);
@@ -67,10 +68,11 @@
   --accent-border: rgba(232, 135, 81, 0.34);
   --layer-primary: #74a3ce;
   --layer-primary-soft: rgba(116, 163, 206, 0.22);
-  --cf-1: #e88751;
-  --cf-2: #cf9c6f;
-  --cf-3: #a89582;
-  --cf-4: #6f7a88;
+  --cf-1: #f97316;
+  --cf-2: #f59e0b;
+  --cf-3: #2dd4bf;
+  --cf-4: #60a5fa;
+  --cf-bar-ink: #0f1318;
   --layer-excess-soft: rgba(232, 135, 81, 0.24);
   --layer-mid: #c69766;
   --layer-above: #5d6875;
@@ -1551,7 +1553,13 @@ code {
 }
 
 .cf-table td {
-  padding: 0.32rem 0.2rem;
+  padding: 0.56rem 0.2rem;
+}
+
+.cf-table .swatch {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 3px;
 }
 
 .sw-primary { background: var(--layer-primary); }
@@ -1572,9 +1580,30 @@ code {
   gap: 2px;
 }
 
+#reserving-lab .share-bar {
+  height: 1.65rem;
+  border-radius: 0.42rem;
+  gap: 3px;
+  margin-top: auto;
+}
+
 .share-seg {
   height: 100%;
   transition: width 0.2s ease, opacity 0.16s ease;
+}
+
+#reserving-lab .share-seg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--cf-bar-ink);
+  letter-spacing: -0.02em;
+  white-space: nowrap;
 }
 
 .seg-primary { background: var(--layer-primary); }

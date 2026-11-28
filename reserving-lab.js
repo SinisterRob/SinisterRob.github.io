@@ -559,7 +559,11 @@ function initReservingLab(exports) {
       byId(`res-cf-${row.id}-cum`).textContent = fmtCompactCurrency(row.cum, ds.unitScale);
       byId(`res-cf-${row.id}-pct`).textContent = cf.total > 0 ? fmtPct(cumPct) : '—';
       const barEl = byId(row.bar);
-      if (barEl) barEl.style.width = `${((Math.max(0, row.inc) / absCfTotal) * 100).toFixed(1)}%`;
+      if (barEl) {
+        const sharePct = (Math.max(0, row.inc) / absCfTotal) * 100;
+        barEl.style.width = `${sharePct.toFixed(1)}%`;
+        barEl.textContent = sharePct >= 10 ? `${Math.round(sharePct)}%` : '';
+      }
     });
 
     byId('res-cc-elr').textContent = Number.isFinite(ccElr) ? fmtPct(ccElr) : '—';
